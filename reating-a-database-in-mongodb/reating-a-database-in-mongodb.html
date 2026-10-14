@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Creating a MongoDB Database</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#13aa52;--accent-soft:#eaf7ef;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.08em;margin:1.6em 0 .4em}
+.tsn-post h3 .step{display:inline-block;color:#0b7a3a;background:var(--accent-soft);border-radius:4px;padding:0 .4em;margin-right:.4em;font-size:.85em}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:#0b7a3a;border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.86em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post table{width:100%;border-collapse:collapse;margin:.8em 0;font-size:.95em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post .note ul{margin:.3em 0}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.35em 0}
+.tsn-post figure{margin:1em 0;text-align:center}
+.tsn-post figure img{max-width:100%;height:auto;border:1px solid var(--line);border-radius:8px}
+.tsn-post figcaption{color:var(--muted);font-size:.85em;margin-top:4px}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:#0b7a3a}
+.tsn-post .end{background:var(--accent-soft);border-radius:8px;padding:14px 18px;margin-top:1em}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
+</style>
+
+<h1>Creating a Database in MongoDB</h1>
+<div class="meta">By Sunke Nithin · August 25, 2025 &nbsp; <span class="tag">Database</span><span class="tag">MongoDB</span></div>
+
+<p class="lead">In earlier posts we installed MongoDB on Oracle Enterprise Linux 8 (OEL 8) and connected to it using the shell and GUI. Now we'll walk through creating a database in MongoDB 8.0 Community Edition on OEL 8, adding a collection, and performing basic operations in the <code>mongosh</code> shell. We'll authenticate as the admin user (<code>mongoadmin</code>) created earlier.</p>
+
+<div class="toc"><strong>Contents</strong>
+<ol>
+<li><a href="#cdb-pre">Prerequisites</a></li>
+<li><a href="#cdb-create">Creating a Database with mongosh</a></li>
+<li><a href="#cdb-more">Additional Operations</a></li>
+<li><a href="#cdb-best">Best Practices</a></li>
+</ol></div>
+
+<h2 id="cdb-pre"><span class="num">1</span>Prerequisites</h2>
+<ul>
+<li>MongoDB 8.0 Community Edition installed.</li>
+<li>An admin user (<code>mongoadmin</code>) with a secure password and the <code>readWriteAnyDatabase</code> role.</li>
+<li>The MongoDB service running (<code>sudo systemctl status mongod</code>).</li>
+<li><code>mongosh</code> installed (included with the <code>mongodb-org</code> package).</li>
+<li>MongoDB Compass installed (optional, for a GUI).</li>
+<li>For remote access: <code>bindIp</code> set in <code>/etc/mongod.conf</code> (e.g. <code>0.0.0.0</code>) and port <code>27017</code> open in the firewall.</li>
+<li>Basic familiarity with MongoDB concepts (databases, collections, documents).</li>
+</ul>
+
+<h2 id="cdb-create"><span class="num">2</span>Creating a Database Using mongosh</h2>
+<p>MongoDB creates databases <strong>implicitly</strong> — there is no <code>CREATE DATABASE</code> command. A database comes into existence the first time you store data in it.</p>
+
+<h3><span class="step">Step 1</span>Connect to MongoDB</h3>
+<p>Connect as the <code>mongoadmin</code> user:</p>
+<div class="code"><span class="lbl">BASH</span><pre><code>mongosh -u mongoadmin -p --authenticationDatabase admin</code></pre></div>
+<p>Enter the password when prompted. You'll see the <code>admin&gt;</code> prompt.</p>
+
+<h3><span class="step">Step 2</span>Switch to the New Database</h3>
+<p>Switch to a new database (e.g. <code>testdb</code>). MongoDB creates it when data is first inserted:</p>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>use testdb
+show dbs</code></pre></div>
+<p>The <code>use</code> command switches to <code>testdb</code>. If it doesn't exist yet, it is only staged for creation.</p>
+<figure>
+<img src="images/image-363.png" alt="mongosh output: use testdb switches to the database, but show dbs lists only admin, config, inventorydb, local and myDatabase — testdb is not listed yet" loading="lazy">
+</figure>
+<div class="note">Notice that <code>testdb</code> does <strong>not</strong> appear in <code>show dbs</code> yet. A database is only listed once it holds at least one collection with data.</div>
+
+<h3><span class="step">Step 3</span>Create a Collection and Insert Data</h3>
+<p>MongoDB stores data in collections (like tables in a relational database). Create a <code>users</code> collection simply by inserting a document into it:</p>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.users.insertOne({
+  name: "John Doe",
+  email: "john.doe@example.com",
+  role: "Developer",
+  createdAt: new Date()
+})</code></pre></div>
+<figure>
+<img src="images/image-365.png" alt="mongosh output: insertOne is acknowledged with an ObjectId, show collections lists users, and show dbs now includes testdb at 40 KiB" loading="lazy">
+<figcaption>After the first insert, <code>testdb</code> and the <code>users</code> collection both exist.</figcaption>
+</figure>
+<table>
+<tr><th>Part</th><th>Meaning</th></tr>
+<tr><td><code>db.users</code></td><td>The <code>users</code> collection in the current database (<code>testdb</code>).</td></tr>
+<tr><td><code>insertOne()</code></td><td>Adds a single document (a JSON-like object).</td></tr>
+<tr><td>Result</td><td>The database and collection are created automatically on insertion.</td></tr>
+</table>
+
+<h3><span class="step">Step 4</span>Verify the Insertion</h3>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.users.find().pretty()</code></pre></div>
+<figure>
+<img src="images/image-367.png" alt="mongosh output: find returns the John Doe document with its generated ObjectId and a createdAt ISODate" loading="lazy">
+<figcaption>MongoDB added an <code>_id</code> automatically, and <code>new Date()</code> was stored as an <code>ISODate</code>.</figcaption>
+</figure>
+
+<h2 id="cdb-more"><span class="num">3</span>Additional Operations</h2>
+
+<h3>Insert Multiple Documents</h3>
+<p>You can insert several documents at once:</p>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.users.insertMany([
+  { name: "Alice Brown", email: "alice.brown@example.com", role: "Analyst" },
+  { name: "Bob Wilson",  email: "bob.wilson@example.com",  role: "Designer" }
+])</code></pre></div>
+<figure>
+<img src="images/image-369.png" alt="mongosh output: insertMany is acknowledged with two generated ObjectIds" loading="lazy">
+</figure>
+
+<h3>Query Data</h3>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.users.find()                              <span class="cm">// all documents</span>
+db.users.find({ role: "Developer" })         <span class="cm">// only developers</span>
+db.users.find({ role: "Developer" }).pretty()</code></pre></div>
+<figure>
+<img src="images/image-371.png" alt="mongosh output: find() returns John Doe, Alice Brown and Bob Wilson; filtering on role Developer returns only John Doe" loading="lazy">
+</figure>
+
+<h3>Update Data</h3>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.users.updateOne(
+  { email: "john.doe@example.com" },       <span class="cm">// Query (filter)</span>
+  { $set: { role: "Senior Developer" } }   <span class="cm">// Update action</span>
+)</code></pre></div>
+<p><code>updateOne()</code> updates <strong>a single document</strong> that matches the filter:</p>
+<ul>
+<li>If multiple documents match, only the <strong>first match</strong> is updated.</li>
+<li>If no document matches, nothing happens.</li>
+</ul>
+
+<h3>Delete Data</h3>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.users.deleteOne({ email: "john.doe@example.com" })</code></pre></div>
+<table>
+<tr><th>Part</th><th>Meaning</th></tr>
+<tr><td><code>db.users</code></td><td>The <code>users</code> collection in the current database.</td></tr>
+<tr><td><code>deleteOne()</code></td><td>Deletes <strong>a single document</strong> that matches the filter. If several match, only the first is deleted; if none match, nothing happens.</td></tr>
+<tr><td><code>{ email: "john.doe@example.com" }</code></td><td>The filter: delete the document whose <code>email</code> equals <code>"john.doe@example.com"</code>.</td></tr>
+</table>
+
+<h2 id="cdb-best"><span class="num">4</span>Best Practices</h2>
+<ul>
+<li>Use meaningful database and collection names (e.g. <code>inventory</code>, <code>orders</code>).</li>
+<li>Index fields for faster queries, e.g. <code>db.users.createIndex({ email: 1 })</code>.</li>
+<li>Back up data regularly using <code>mongodump</code>.</li>
+<li>For production, enable TLS/SSL and restrict <code>bindIp</code> to trusted IPs.</li>
+</ul>
+<div class="warn"><code>bindIp: 0.0.0.0</code> makes MongoDB listen on every network interface. That's handy in a lab, but in production always pair it with authentication, a firewall and TLS — or bind only to specific addresses.</div>
+
+<h2>Conclusion</h2>
+<div class="end">We created a MongoDB database (<code>testdb</code>) and a collection (<code>users</code>) on OEL 8 using <code>mongosh</code>, then inserted, queried, updated and deleted documents. The shell is well suited to automation. For advanced topics like indexing or backups, see the <a href="https://www.mongodb.com/docs/manual/core/databases-and-collections/" target="_blank" rel="noopener">MongoDB documentation</a>.</div>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>
