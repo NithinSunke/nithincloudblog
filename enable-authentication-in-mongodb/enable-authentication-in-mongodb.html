@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Enable MongoDB Authentication</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#13aa52;--accent-soft:#eaf7ef;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.08em;margin:1.4em 0 .4em}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:#0b7a3a;border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.86em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post .hl{color:#7ee2a8;font-weight:600}
+.tsn-post table{width:100%;border-collapse:collapse;margin:.8em 0;font-size:.95em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.3em 0}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:#0b7a3a}
+.tsn-post .end{background:var(--accent-soft);border-radius:8px;padding:14px 18px;margin-top:1em}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
+</style>
+
+<h1>Enable Authentication in MongoDB</h1>
+<div class="meta">By Sunke Nithin · August 26, 2025 &nbsp; <span class="tag">Database</span><span class="tag">MongoDB</span></div>
+
+<p class="lead">By default, MongoDB installs with authentication <strong>disabled</strong>, which means anyone can connect and access your database without credentials. For security reasons, especially in production environments, it is highly recommended to <strong>enable authentication</strong>.</p>
+
+<p>In this blog, I'll walk you through the steps to enable MongoDB authentication and secure your database with a username and password.</p>
+
+<div class="toc"><strong>Steps</strong>
+<ol>
+<li><a href="#mdb-start">Start MongoDB without Authentication</a></li>
+<li><a href="#mdb-connect">Connect to MongoDB</a></li>
+<li><a href="#mdb-user">Create an Admin User</a></li>
+<li><a href="#mdb-conf">Enable Authentication in the Configuration</a></li>
+<li><a href="#mdb-restart">Restart MongoDB</a></li>
+<li><a href="#mdb-auth">Connect with Authentication</a></li>
+</ol></div>
+
+<h2 id="mdb-start"><span class="num">1</span>Start MongoDB without Authentication</h2>
+<p>When you first install MongoDB, authentication is turned off. This allows you to create the initial admin user.</p>
+<div class="code"><span class="lbl">BASH</span><pre><code>sudo systemctl start mongod</code></pre></div>
+
+<h2 id="mdb-connect"><span class="num">2</span>Connect to MongoDB</h2>
+<div class="code"><span class="lbl">BASH</span><pre><code>mongosh</code></pre></div>
+<p>Switch to the <code>admin</code> database:</p>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>use admin</code></pre></div>
+
+<h2 id="mdb-user"><span class="num">3</span>Create an Admin User</h2>
+<p>Create a root user with a strong username and password:</p>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.createUser({
+  user: "mongoadmin",
+  pwd: "xxxxxxxxx",
+  roles: [ { role: "root", db: "admin" } ]
+})</code></pre></div>
+<p>This creates a root user who can manage all databases.</p>
+<div class="note"><strong>Tip:</strong> Instead of typing the password in clear text, you can use <code>pwd: passwordPrompt()</code> and mongosh will ask for it securely.</div>
+
+<h2 id="mdb-conf"><span class="num">4</span>Enable Authentication in the Configuration</h2>
+<p>Edit your MongoDB configuration file (usually <code>/etc/mongod.conf</code>):</p>
+<div class="code"><span class="lbl">/etc/mongod.conf</span><pre><code>security:
+  <span class="hl">authorization: enabled</span>   <span class="cm"># add this line to enable authorization</span></code></pre></div>
+<p>Save and exit.</p>
+<div class="warn">The file is YAML — indent <code>authorization</code> with spaces (not tabs) under <code>security:</code>, or mongod will fail to start.</div>
+
+<h2 id="mdb-restart"><span class="num">5</span>Restart MongoDB</h2>
+<p>Restart the MongoDB service to apply the changes:</p>
+<div class="code"><span class="lbl">BASH</span><pre><code>sudo systemctl restart mongod</code></pre></div>
+
+<h2 id="mdb-auth"><span class="num">6</span>Connect with Authentication</h2>
+<p>Now that authentication is enabled, you must log in with a user account. There are different ways to connect:</p>
+<table>
+<tr><th>Method</th><th>When to use</th></tr>
+<tr><td>Password on the command line</td><td>Quick tests only — the password is visible in shell history and process lists</td></tr>
+<tr><td><code>-p</code> with no value</td><td>Recommended — mongosh prompts for the password</td></tr>
+<tr><td>No <code>--authenticationDatabase</code></td><td>Works only when the user was created in the <code>admin</code> database</td></tr>
+</table>
+<div class="code"><span class="lbl">BASH</span><pre><code><span class="cm"># Full command with the password in the shell itself (not safe)</span>
+mongosh -u "mongoadmin" -p "xxxxx" --authenticationDatabase "admin"
+
+<span class="cm"># Authenticate against the admin database; mongosh prompts for the password</span>
+mongosh -u "mongoadmin" -p --authenticationDatabase "admin"
+
+<span class="cm"># Without --authenticationDatabase it looks in the admin database;</span>
+<span class="cm"># if the user was created under another database, this will fail</span>
+mongosh -u "mongoadmin" -p</code></pre></div>
+
+<h2><span class="num">✓</span>Best Practices</h2>
+<ul>
+<li>Always use <strong>strong passwords</strong> for database users.</li>
+<li>Create <strong>application-specific users</strong> with only the required roles (avoid using <code>root</code> everywhere).</li>
+<li>Never expose MongoDB directly to the internet without proper firewalls or VPN.</li>
+<li>Regularly rotate passwords and monitor login attempts.</li>
+</ul>
+
+<h2>Conclusion</h2>
+<div class="end">Enabling authentication is the <strong>first step to securing your MongoDB environment</strong>. Without it, anyone could connect and access your data. By following these steps, you ensure that only authorized users can interact with your database.</div>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>
