@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Database Upgrade steps from 11.2.0.2 to 11.2.0.3 — Nithin Cloud Blog</title>
+<meta name="description" content="A full out-of-place upgrade runbook for Oracle Database 11.2.0.2 to 11.2.0.3: pre-upgrade checks, DBUA, and the post-upgrade statistics and patch steps.">
+<meta name="author" content="Sunke Nithin">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="Database Upgrade steps from 11.2.0.2 to 11.2.0.3">
+<meta property="og:description" content="A full out-of-place upgrade runbook for Oracle Database 11.2.0.2 to 11.2.0.3: pre-upgrade checks, DBUA, and the post-upgrade statistics and patch steps.">
+<meta property="article:published_time" content="2019-06-13">
+
+<!-- Relative, so the site works both opened from disk and served over HTTP. -->
+<link rel="stylesheet" href="../style.css">
+</head>
+
+<body>
+
+<header class="site">
+  <div class="wrap narrow">
+    <p class="brand"><a href="../index.html">Nithin Cloud Blog</a></p>
+    <p class="tagline">Notes on Oracle Cloud Infrastructure, networking, and homelab infrastructure.</p>
+  </div>
+</header>
+
+<div class="wrap narrow">
+<article>
+
+  <div class="post-header">
+    <h1>Database Upgrade steps from 11.2.0.2 to 11.2.0.3</h1>
+    <p class="meta">
+      <time datetime="2019-06-13">13 June 2019</time>
+      <span class="dot">&bull;</span>
+      <span>Sunke Nithin</span>
+      <span class="dot">&bull;</span>
+      <span>~8 min read</span>
+    </p>
+    <ul class="chips">
+      <li class="cat">Database</li>
+      <li class="tag">Oracle</li>
+      <li class="tag">Upgrade</li>
+    </ul>
+  </div>
+
+  <h2>Important notes</h2>
+
+  <ul>
+    <li>Metalink [ID 730365.1] &mdash; includes all patchset downloads, and how to upgrade
+      from any Oracle DB version to another one.</li>
+    <li>Metalink [ID 1276368.1] &mdash; out-of-place manual upgrade from a previous
+      11.2.0.N version to the latest 11.2.0.N patchset.</li>
+  </ul>
+
+  <h2>Before starting the upgrade process</h2>
+
+  <p>Take the RMAN backup of database.</p>
+
+  <h3>Backup &amp; truncate audit table SYS.AUD$</h3>
+
+  <p>Truncating the <code>SYS.AUD$</code> table will speed up the upgrade process.</p>
+
+  <p>Backing up and compressing audit data in the <code>SYS.AUD_BKP</code> table:</p>
+
+<pre><code>SQL&gt; create table SYS.AUD_BKP COMPRESS as select * from SYS.AUD$;
+
+SQL&gt; Select count(*) from sys.aud$;
+
+SQL&gt; Truncate table SYS.AUD$;</code></pre>
+
+  <h3>Purge DBA_RECYCLEBIN</h3>
+
+  <p>Purging <code>DBA_RECYCLEBIN</code> will speed up the upgrade process:</p>
+
+<pre><code>SQL&gt; PURGE DBA_RECYCLEBIN;</code></pre>
+
+  <h3>Save a backup of all DB parameters (visible &amp; hidden)</h3>
+
+  <p>This will help you in troubleshooting issues coming after the upgrade (bugs,
+  performance, or whatever the problem is).</p>
+
+  <p>The following statement will make it easy for you:</p>
+
+<pre><code>SQL&gt; Spool All_parameters.txt
+
+set linesize 170
+
+col Parameter for a50
+
+col "Session Value" for a40
+
+col "Instance Value" for a40
+
+SELECT a.ksppinm "Parameter", b.ksppstvl "Session Value", c.ksppstvl "Instance Value" FROM x$ksppi a, x$ksppcv b, x$ksppsv c WHERE a.indx = b.indx AND a.indx = c.indx order by 1;
+
+Spool off</code></pre>
+
+  <p>I also strongly recommend to reset the hidden parameter to its default values before
+  starting the upgrade &mdash; you don't want to get weird problems during the upgrade and
+  not know where they came from.</p>
+
+  <h2>Pre-upgrade steps</h2>
+
+  <h3>Step 1: Software installation</h3>
+
+  <p>Install 11.2.0.3 RDBMS software into a new <code>ORACLE_HOME</code>.</p>
+
+  <p>You only need to install the examples CD if your DB is using Oracle Text Themes.
+  Apply the latest PSU patch on the 11.2.0.3 <code>ORACLE_HOME</code> before upgrading the
+  database.</p>
+
+  <p>PSU patch post steps which run on the database, like executing the script:</p>
+
+<pre><code>$ORACLE_HOME/rdbms/admin/catbundle.sql</code></pre>
+
+  <p>&hellip;are not required in my case, as per the 11.2.0.3.4 PSU read-me. Note that every
+  PSU patch is unique &mdash; not all PSU patches exempt running <code>catcpu.sql</code>
+  after the database upgrade, so you have to read the readme file first.</p>
+
+  <h4>Pre-upgrade information</h4>
+
+  <p>Download the latest version of the <code>utlu112i_5.sql</code> script and execute it
+  (Note ID 884522.1).</p>
+
+  <p>Note: this script already exists under the new Oracle Home
+  <code>$ORACLE_HOME/rdbms/admin</code>, but usually the one in Metalink is updated with the
+  most recent upgrade checks.</p>
+
+<pre><code>SQL&gt; SPOOL upgrade_info.log
+
+SQL&gt; @/u02/app/oracle/product/11.2.0.3/db /rdbms/admin/utlu112i.sql
+
+SQL&gt; SPOOL OFF</code></pre>
+
+  <h3>Step 2: Dictionary check</h3>
+
+  <p>Verify the validity of data dictionary objects by running the
+  <code>dbupgdiag.sql</code> script (download it from NOTE ID 556610.1).</p>
+
+  <p>If the <strong>dbupgdiag.sql</strong> script reports any invalid objects, run
+  <code>utlrp.sql</code> (multiple times) to validate the invalid objects in the database,
+  until there is no change in the number of invalid objects:</p>
+
+<pre><code>SQL&gt; @//u02/app/oracle/product/11.2.0.3/db /rdbms/admin/dbupgdiag.sql
+
+SQL&gt; @?/u02/app/oracle/product/11.2.0.3/db /rdbms/admin/utlrp.sql</code></pre>
+
+  <h4>Gather dictionary statistics</h4>
+
+  <p>Helps in speeding up the upgrade process.</p>
+
+<pre><code>SQL&gt; EXECUTE dbms_stats.gather_dictionary_stats;</code></pre>
+
+  <h3>Step 3: TIMEZONE version</h3>
+
+  <p>In case you have <code>TIMESTAMP WITH TIME ZONE</code> data type in your DB, you need
+  to upgrade the Time Zone version to version 14.</p>
+
+  <p>The possibilities are:</p>
+
+  <ul>
+    <li>If current version &lt; 14 &mdash; you need to upgrade to version 14 after you
+      finish the upgrade to 11.2.0.3.</li>
+    <li>If current version = 14 &mdash; no need to upgrade, skip the whole step.</li>
+    <li>If current version &gt; 14 &mdash; you must upgrade your Time Zone version
+      <em>before</em> upgrading to 11.2.0.3.</li>
+  </ul>
+
+  <div class="callout callout-warn">
+    <p><strong>Data loss risk:</strong> if your current Time Zone version is greater than 14
+    and you upgrade without addressing it first, data stored in the
+    <code>TIMESTAMP WITH TIME ZONE</code> datatype can become corrupted during the upgrade.</p>
+  </div>
+
+  <p>Check your current Time Zone version:</p>
+
+<pre><code>SQL&gt; SELECT version FROM v$timezone_file;
+
+VERSION
+----------
+         4</code></pre>
+
+  <p>In my case the version is older, so I can do this step later, after finalizing the
+  upgrade.</p>
+
+  <p>Check the national characterset is <code>UTF8</code> or <code>AL16UTF16</code>:</p>
+
+<pre><code>SQL&gt; select value from NLS_DATABASE_PARAMETERS where parameter = 'NLS_NCHAR_CHARACTERSET';</code></pre>
+
+  <h3>Step 4: Disable cluster option</h3>
+
+  <p>Set the parameter <code>cluster_database</code> to <code>FALSE</code> for a RAC
+  database.</p>
+
+  <h3>Step 5: Configure log locations</h3>
+
+  <p>Change SPFILE parameters to point to the new <code>ORACLE_HOME</code>:</p>
+
+<pre><code># mkdir -p /u02/app/oracle/product/11.2.0.3/db /diagnostics/orcl
+
+SQL&gt; ALTER SYSTEM SET diagnostic_dest = '/u02/app/oracle/product/11.2.0.3/db /diagnostics/orcl';
+
+SQL&gt; ALTER SYSTEM SET audit_file_dest = '/u02/app/oracle/product/11.2.0.3/db /rdbms/audit' SCOPE=SPFILE;</code></pre>
+
+  <h3>Step 6: New environment variables</h3>
+
+  <p>Make sure the following Linux environment variables are pointing to the new 11.2.0.3
+  <code>ORACLE_HOME</code>: <code>ORACLE_BASE</code>, <code>ORACLE_HOME</code>,
+  <code>PATH</code>, <code>NLS_10</code> and <code>LIBRARY_PATH</code>.</p>
+
+  <h3>Step 7: Modify | move configuration files</h3>
+
+  <p>Make sure that entries inside the <code>/etc/oratab</code> file are pointing to the new
+  11.2.0.3 <code>ORACLE_HOME</code>, and hash the original entries pointing to the 11.2.0.2
+  <code>ORACLE_HOME</code>. For example:</p>
+
+<pre><code>#dbprod: /u01/app/oracle/product/11.2.0.2/db:Y
+dbprod: /u02/app/oracle/product/11.2.0.3/db:Y</code></pre>
+
+  <p>Copy SPFILE &amp; password file to the new <code>ORACLE_HOME</code>:</p>
+
+<pre><code># cd //u01/app/oracle/product/11.2.0.2/db /dbs
+
+# cp spfile* orapw* /u02/app/oracle/product/11.2.0.3/db/dbs/</code></pre>
+
+  <p>Copy network configuration files to the new 11.2.0.3 <code>$TNS_ADMIN</code>
+  directory:</p>
+
+<pre><code># cd $ORACLE_HOME/network/admin
+
+# cp tnsnames.ora listener.ora sqlnet.ora /u02/app/oracle/product/11.2.0.3/db/network/admin/</code></pre>
+
+  <p>Copy DB Control EM directories to the new 11.2.0.3 <code>ORACLE_HOME</code>:</p>
+
+<pre><code># $ORACLE_HOME/
+
+# $ORACLE_HOME/oc4j/j2ee/OC4J_DBConsole_
+
+# $ORACLE_HOME/owb/bin/admin</code></pre>
+
+  <p>Copy the SQL*Plus settings file:</p>
+
+<pre><code># cp /u01/app/oracle/product/11.2.0.2/db/sqlplus/admin/glogin.sql /u02/app/oracle/product/11.2.0.3/db/sqlplus/admin/</code></pre>
+
+  <h3>Step 8: Disable Vault | adjust parameters for JVM</h3>
+
+  <p>Disable Database Vault if enabled.</p>
+
+  <p>If JVM is installed, <code>java_pool_size</code> and <code>shared_pool_size</code> must
+  be set to at least 250MB prior to the upgrade.</p>
+
+  <p>Latest checks:</p>
+
+<pre><code>SELECT * FROM v$recover_file;                          -- no rows selected
+
+SELECT * FROM v$backup WHERE status != 'NOT ACTIVE';
+
+SELECT * FROM dba_2pc_pending;                         -- outstanding distributed transactions
+
+SELECT name FROM sys.user$ WHERE ext_username IS NOT NULL AND password = 'GLOBAL';</code></pre>
+
+  <p>Disable all batch and cron jobs.</p>
+
+  <p>Disable all crontab scripts:</p>
+
+<pre><code># crontab /root/crontab_root
+
+# crontab /dev/null
+
+# crontab -l
+
+# crontab -l &gt; /home/oracle/oracle_crontab
+
+# crontab /dev/null
+
+# crontab -l</code></pre>
+
+  <p>Disable DB jobs:</p>
+
+<pre><code>SQL&gt; EXEC dbms_scheduler.set_scheduler_attribute('SCHEDULER_DISABLED','TRUE');
+
+SQL&gt; alter system set job_queue_processes=0 scope=both;</code></pre>
+
+  <h3>Step 9: Set the database in noarchivelog mode</h3>
+
+  <p>Stop the listener: <code>lsnrctl stop</code><br>
+  Stop DBCONSOLE: <code>emctl stop dbconsole</code></p>
+
+  <p>Putting the database in noarchivelog shrinks the upgrade time.</p>
+
+<pre><code>$ sqlplus "/as sysdba"
+
+SQL&gt; shutdown immediate;
+
+SQL&gt; startup mount
+
+SQL&gt; alter database noarchivelog;
+
+SQL&gt; archive log stop;
+
+SQL&gt; shutdown immediate;</code></pre>
+
+  <div class="callout callout-warn">
+    <p><strong>You must take a cold backup at this stage for the fallback plan.</strong></p>
+  </div>
+
+  <h2>Upgrade steps</h2>
+
+  <p>Note: the database should be opened from the old <code>ORACLE_HOME</code> before
+  running DBUA.</p>
+
+  <p>Note: if Oracle Clusterware is installed, it needs to be up and running before starting
+  DBUA.</p>
+
+  <h3>DBUA way (GUI)</h3>
+
+  <p>Ensure that <code>dbua</code> is running from the new <code>ORACLE_HOME</code>:</p>
+
+<pre><code># which dbua</code></pre>
+
+  <p>Run the DBUA as the Oracle user:</p>
+
+<pre><code># dbua</code></pre>
+
+  <ol>
+    <li>First screen: introduction.</li>
+    <li>Second screen: select the database name.</li>
+    <li>Third screen: check the following &mdash;
+      <ul>
+        <li>Recompile invalid objects at the end of upgrade.</li>
+        <li>Turn off archiving for the duration of upgrade.</li>
+        <li>Upgrade Timezone version and <code>TIMESTAMP WITH TIMEZONE</code> data.</li>
+      </ul>
+    </li>
+    <li>Fourth screen: keep the default.</li>
+    <li>Fifth screen: keep the default.</li>
+    <li>Sixth screen: keep the default.</li>
+    <li>Seventh screen: put a password for <code>DBSNMP</code>, <code>SYSMAN</code>.</li>
+    <li>Eighth screen: select the DB listener.</li>
+    <li>Ninth screen: finish.</li>
+  </ol>
+
+  <p>Notes: continue to post-upgrade steps, but skip these two steps (upgrade the Timezone
+  version &amp; configure EM) as they are automatically configured by DBCA.</p>
+
+  <h2>Optional steps</h2>
+
+  <h3>Step 20: Rebuild unusable indexes &amp; gather statistics</h3>
+
+  <p>Rebuild unusable indexes:</p>
+
+<pre><code>SQL&gt; select 'ALTER INDEX '||OWNER||'.'||INDEX_NAME||' REBUILD ONLINE;' from dba_indexes where status ='UNUSABLE';</code></pre>
+
+  <h4>Gather FIXED OBJECTS stats</h4>
+
+  <p>Fixed objects are the <code>x$</code> tables (loaded in the SGA during startup) on which
+  <code>V$</code> views are built (<code>V$SQL</code> etc.).</p>
+
+  <p>Fixed object statistics are not gathered automatically, nor within the gather DB stats
+  procedure. If the statistics are not gathered on fixed objects, the optimizer will use
+  predefined default values for the statistics. These defaults may lead to inaccurate
+  execution plans.</p>
+
+  <ul>
+    <li>It's recommended to gather the fixed object stats during peak hours (system is busy),
+      or after peak hours but while sessions are still connected (even if idle), to guarantee
+      that the fixed object tables have been populated and the statistics well represent the
+      DB activity. Note that performance degradation may be experienced while the statistics
+      are gathering.</li>
+    <li>Having no statistics is better than having non-representative statistics.</li>
+  </ul>
+
+  <p>Gather the fixed objects stats:</p>
+
+<pre><code>SQL&gt; exec dbms_stats.gather_fixed_objects_stats;</code></pre>
+
+  <h4>Gather DICTIONARY stats</h4>
+
+  <p>Dictionary stats are gathered on dictionary tables owned by SYS, which reside in the
+  system tablespace.</p>
+
+<pre><code>SQL&gt; Exec DBMS_STATS.GATHER_DICTIONARY_STATS ();</code></pre>
+
+  <h4>Gather database statistics</h4>
+
+<pre><code>SQL&gt; EXEC DBMS_STATS.GATHER_DATABASE_STATS(ESTIMATE_PERCENT=&gt;DBMS_STATS.AUTO_SAMPLE_SIZE,degree =&gt; 8);</code></pre>
+
+  <p>In case you need to gather DB stats + histograms on all skewed columns:</p>
+
+<pre><code>SQL&gt; EXEC DBMS_STATS.GATHER_DATABASE_STATS(ESTIMATE_PERCENT=&gt;100,METHOD_OPT=&gt;'FOR ALL COLUMNS SIZE SKEWONLY',cascade =&gt; TRUE,degree =&gt; 8);</code></pre>
+
+  <ul>
+    <li><code>ESTIMATE_PERCENT =&gt; DBMS_STATS.AUTO_SAMPLE_SIZE</code> &mdash; let Oracle
+      estimate skewed values; always gives excellent results.</li>
+    <li>Removed <code>METHOD_OPT =&gt; 'FOR ALL COLUMNS SIZE SKEWONLY'</code> &mdash; as
+      histograms are not recommended to be gathered on all columns.</li>
+    <li>Removed <code>cascade =&gt; TRUE</code> &mdash; to let Oracle determine whether index
+      statistics are to be collected or not.</li>
+  </ul>
+
+  <h3>Step 21: Check Oracle recommended patches</h3>
+
+  <p>Note ID 756671.1 includes the recommended patches for releases starting from 10.2.0.3.
+  Note ID 742060.1 represents the most accurate information Oracle can provide for coming
+  releases.</p>
+
+  <p>You can check the latest applied patches on the database by running this query:</p>
+
+<pre><code>SQL&gt; select * from DBA_REGISTRY_HISTORY;</code></pre>
+
+  <h3>Removing the old ORACLE_HOME (optional, you can do it later)</h3>
+
+  <p>After you feel confident with the new Oracle installation, and you will never downgrade
+  to the previous release, remove the <code>ORACLE_HOME</code>.</p>
+
+  <p>Detach old <code>ORACLE_HOME</code>:</p>
+
+<pre><code># $OLD_HOME/oui/bin/runInstaller -detachHome -silent -local</code></pre>
+
+  <p>Confirm the old <code>ORACLE_HOME</code> is removed from the central inventory:</p>
+
+<pre><code># $OLD_HOME/OPatch/opatch lsinventory -all</code></pre>
+
+  <p>Remove files in the old <code>ORACLE_HOME</code> manually:</p>
+
+<pre><code># rm -rf $OLD_HOME</code></pre>
+
+  <a class="back" href="../index.html">← All posts</a>
+
+</article>
+</div>
+
+<footer class="site">
+  <div class="wrap narrow">
+    <p>&copy; 2026 Sunke Nithin</p>
+  </div>
+</footer>
+
+</body>
+</html>

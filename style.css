@@ -615,3 +615,27 @@ article hr {
   .video-card:hover { transform: none; }
   .video-card:hover .video-play { transform: translate(-50%, -50%); }
 }
+
+/* ---------------- callouts ---------------- */
+
+.callout {
+  margin: 1.5rem 0;
+  padding: .85rem 1.1rem;
+  background: var(--chip);
+  border: 1px solid var(--border-soft);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 10px 10px 0;
+  font-size: .94rem;
+}
+
+.callout p { margin: 0; }
+.callout p + p { margin-top: .5rem; }
+
+.callout-warn {
+  border-left-color: #d1242f;
+  background: #fff5f5;
+}
+
+@media (prefers-color-scheme: dark) {
+  .callout-warn { background: #2a1416; }
+}
