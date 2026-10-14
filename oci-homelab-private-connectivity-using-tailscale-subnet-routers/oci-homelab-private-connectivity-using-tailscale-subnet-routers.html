@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OCI ↔ Homelab Tailscale Connectivity</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#c74634;--accent-soft:#fdf1ef;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.08em;margin:1.4em 0 .4em}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.86em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post table{width:100%;border-collapse:collapse;margin:.8em 0;font-size:.95em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.3em 0}
+.tsn-post .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:.6em 0}
+.tsn-post .flow span{background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:.88em;font-family:Consolas,monospace}
+.tsn-post .flow b{color:var(--accent)}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:var(--accent)}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
+</style>
+
+<h1>OCI ↔ Homelab Private Connectivity Using Tailscale Subnet Routers</h1>
+<div class="meta">By Sunke Nithin · June 10, 2026 &nbsp; <span class="tag">CLOUD</span><span class="tag">LAB</span><span class="tag">Network</span></div>
+
+<p class="lead">This document captures the working setup used to connect an OCI VCN to a Proxmox homelab using Tailscale subnet routers. It includes the exact commands for the OCI router, homelab router, Windows and Linux clients, plus the fixes that resolved routing conflicts.</p>
+
+<div class="toc"><strong>Contents</strong>
+<ol>
+<li><a href="#tsn-arch">Final Architecture</a></li>
+<li><a href="#tsn-addr">Address Plan</a></li>
+<li><a href="#tsn-oci">OCI Router (tsrtr) Commands</a></li>
+<li><a href="#tsn-lxc">Homelab Router (Proxmox LXC) Commands</a></li>
+<li><a href="#tsn-console">OCI Console Steps</a></li>
+<li><a href="#tsn-client">Client Route Commands</a></li>
+<li><a href="#tsn-test">Validation and Testing Commands</a></li>
+<li><a href="#tsn-trouble">Troubleshooting Commands and Fixes</a></li>
+<li><a href="#tsn-check">Clean Command Checklist</a></li>
+</ol></div>
+
+<h2 id="tsn-arch"><span class="num">1</span>Final Architecture</h2>
+<p>The deployed topology:</p>
+<table>
+<tr><th>Side</th><th>Component</th><th>Value</th></tr>
+<tr><td rowspan="3">OCI</td><td>VCN</td><td><code>10.0.0.0/16</code></td></tr>
+<tr><td>Router VM (tsrtr)</td><td><code>10.0.30.254</code></td></tr>
+<tr><td>Tailscale IP</td><td><code>100.88.125.4</code></td></tr>
+<tr><td rowspan="3">Homelab</td><td>LAN</td><td><code>192.168.1.0/24</code></td></tr>
+<tr><td>Proxmox LXC Tailscale Router</td><td><code>192.168.1.250</code></td></tr>
+<tr><td>Tailscale IP</td><td><code>100.x.x.x</code></td></tr>
+</table>
+
+<h3>Traffic flow</h3>
+<div class="flow"><span>Windows/Linux client</span><b>→</b><span>192.168.1.250</span><b>→</b><span>Tailscale</span><b>→</b><span>10.0.30.254</span><b>→</b><span>OCI private VM</span></div>
+<div class="flow"><span>OCI VM</span><b>→</b><span>10.0.30.254</span><b>→</b><span>Tailscale</span><b>→</b><span>192.168.1.250</span><b>→</b><span>Homelab server</span></div>
+<p>The OCI router and the homelab router both run Tailscale and advertise their local subnets as routes.</p>
+
+<h2 id="tsn-addr"><span class="num">2</span>Address Plan</h2>
+<table>
+<tr><th>Item</th><th>Value</th></tr>
+<tr><td>OCI VCN CIDR</td><td><code>10.0.0.0/16</code></td></tr>
+<tr><td>OCI subnet containing the router VM</td><td><code>10.0.16.0/20</code></td></tr>
+<tr><td>OCI router VM private IP</td><td><code>10.0.30.254</code></td></tr>
+<tr><td>Homelab LAN</td><td><code>192.168.1.0/24</code></td></tr>
+<tr><td>Proxmox LXC router IP</td><td><code>192.168.1.250</code></td></tr>
+<tr><td>Conflicting Windows route (removed)</td><td><code>10.0.10.0/24 via 192.168.1.6</code></td></tr>
+</table>
+
+<h2 id="tsn-oci"><span class="num">3</span>OCI Router (tsrtr) Commands</h2>
+<p>Install Tailscale on AlmaLinux / Oracle Linux / other minimal OCI images:</p>
+<div class="code"><span class="lbl">BASH</span><pre><code>sudo dnf update -y
+sudo dnf install -y curl
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo systemctl enable --now tailscaled
+sudo tailscale up</code></pre></div>
+
+<p>Verify installation and connectivity:</p>
+<div class="code"><span class="lbl">BASH</span><pre><code>tailscale version
+tailscale status
+tailscale debug prefs
+tailscale debug prefs | grep -A5 AdvertiseRoutes
+ip addr
+ip route
+cat /proc/sys/net/ipv4/ip_forward</code></pre></div>
+
+<p>Enable forwarding permanently and immediately:</p>
+<div class="code"><span class="lbl">BASH</span><pre><code>sudo tee /etc/sysctl.d/99-tailscale.conf &lt;&lt;EOF
+net.ipv4.ip_forward=1
+net.ipv6.conf.all.forwarding=1
+EOF
+sudo sysctl --system</code></pre></div>
+
+<p>Advertise the OCI VCN route and allow return routes if needed:</p>
+<div class="code"><span class="lbl">BASH</span><pre><code>sudo tailscale up --advertise-routes=10.0.0.0/16
+sudo tailscale up --accept-routes --advertise-routes=10.0.0.0/16</code></pre></div>
+<div class="note">After this, approve <code>10.0.0.0/16</code> in the Tailscale admin console for <strong>tsrtr</strong>.</div>
+
+<h2 id="tsn-lxc"><span class="num">4</span>Homelab Router (Proxmox LXC) Commands</h2>
+<p>Example LXC setup: Debian 12 container with static IP <code>192.168.1.250/24</code>.</p>
+<p>On the Proxmox host, enable the TUN device for the container. Replace <code>201</code> with your container ID:</p>
+<div class="code"><span class="lbl">PROXMOX HOST</span><pre><code>pct stop 201
+nano /etc/pve/lxc/201.conf
+
+<span class="cm"># Add these lines:</span>
+lxc.cgroup2.devices.allow: c 10:200 rwm
+lxc.mount.entry: /dev/net/tun dev/net/tun none bind,create=file
+
+pct start 201</code></pre></div>
+
+<p>Inside the LXC, install Tailscale and start the daemon:</p>
+<div class="code"><span class="lbl">LXC</span><pre><code>apt update
+apt install -y curl
+curl -fsSL https://tailscale.com/install.sh | sh
+systemctl enable --now tailscaled
+tailscale up</code></pre></div>
+
+<p>Enable forwarding inside the LXC:</p>
+<div class="code"><span class="lbl">LXC</span><pre><code>cat &gt;/etc/sysctl.d/99-tailscale.conf &lt;&lt;EOF
+net.ipv4.ip_forward=1
+net.ipv6.conf.all.forwarding=1
+EOF
+sysctl --system
+cat /proc/sys/net/ipv4/ip_forward</code></pre></div>
+
+<p>Advertise the homelab subnet:</p>
+<div class="code"><span class="lbl">LXC</span><pre><code>tailscale set --advertise-routes=192.168.1.0/24
+<span class="cm"># or</span>
+sudo tailscale up --advertise-routes=192.168.1.0/24</code></pre></div>
+
+<p>Verify the route advertisement:</p>
+<div class="code"><span class="lbl">LXC</span><pre><code>tailscale status
+tailscale debug prefs | grep -A5 AdvertiseRoutes</code></pre></div>
+<div class="note">Approve <code>192.168.1.0/24</code> in the Tailscale admin console for the container.</div>
+
+<h2 id="tsn-console"><span class="num">5</span>OCI Console Steps</h2>
+<ol>
+<li>Enable <strong>Skip Source/Destination Check</strong> on the OCI router VNIC.</li>
+<li>In the OCI VCN route table attached to the OCI subnet, add a route to the homelab subnet: <code>192.168.1.0/24</code> → private IP of tsrtr (<code>10.0.30.254</code>).</li>
+<li>Attach that route table to the OCI subnet that contains your OCI workloads.</li>
+<li>Allow traffic in the OCI Security Lists / NSGs for the flows you want to test (ICMP, SSH, HTTPS, etc.).</li>
+</ol>
+
+<h2 id="tsn-client"><span class="num">6</span>Client Route Commands</h2>
+<h3>Windows client</h3>
+<p>Keep only the correct route to OCI through the homelab router.</p>
+<div class="code"><span class="lbl">WINDOWS</span><pre><code>route print
+Get-NetRoute -DestinationPrefix 10.0.0.0/16 | Sort-Object RouteMetric
+
+route -p add 10.0.0.0 mask 255.255.0.0 192.168.1.250
+route delete 10.0.10.0 mask 255.255.255.0 192.168.1.6
+route -p delete 10.0.10.0 mask 255.255.255.0 192.168.1.6
+route print 10.0.*</code></pre></div>
+
+<h3>Linux client</h3>
+<p>Add a temporary route through the homelab router.</p>
+<div class="code"><span class="lbl">LINUX</span><pre><code>ip route add 10.0.0.0/16 via 192.168.1.250
+ip route
+ip route del 10.0.0.0/16 via 192.168.1.250</code></pre></div>
+
+<p>To make the route persistent on a Proxmox host, place it in <code>/etc/network/interfaces</code> under <code>vmbr0</code> using <code>post-up</code> / <code>post-down</code> (or <code>up</code> / <code>down</code>) lines:</p>
+<div class="code"><span class="lbl">/etc/network/interfaces</span><pre><code>post-up /sbin/ip route replace 10.0.0.0/16 via 192.168.1.250 dev vmbr0
+post-down /sbin/ip route del 10.0.0.0/16 via 192.168.1.250 dev vmbr0 || true</code></pre></div>
+
+<h2 id="tsn-test"><span class="num">7</span>Validation and Testing Commands</h2>
+<p>Use these to verify the tunnel and the routes end-to-end:</p>
+<div class="code"><span class="lbl">CHECKS</span><pre><code><span class="cm"># OCI router checks</span>
+tailscale status
+cat /proc/sys/net/ipv4/ip_forward
+ip route
+
+<span class="cm"># Homelab router checks</span>
+tailscale status
+tailscale debug prefs | grep -A5 AdvertiseRoutes
+cat /proc/sys/net/ipv4/ip_forward
+ip route
+
+<span class="cm"># Basic reachability tests</span>
+ping 192.168.1.250
+ping 10.0.30.254
+ping 10.0.10.147
+tracert 10.0.30.254      <span class="cm"># Windows</span>
+tracert 10.0.10.147      <span class="cm"># Windows</span>
+traceroute 10.0.30.254   <span class="cm"># Linux</span>
+traceroute 10.0.10.147   <span class="cm"># Linux</span>
+
+<span class="cm"># Service-level test</span>
+Test-NetConnection 10.0.10.147 -Port 22</code></pre></div>
+<div class="note"><strong>Expected behavior:</strong> Windows and Linux clients should reach the OCI router at <code>10.0.30.254</code>, and then OCI private VMs such as <code>10.0.10.147</code>, once route conflicts are removed.</div>
+
+<h2 id="tsn-trouble"><span class="num">8</span>Troubleshooting Commands and Fixes</h2>
+<h3>"Some peers are advertising routes but --accept-routes is false"</h3>
+<div class="code"><span class="lbl">OCI ROUTER</span><pre><code>sudo tailscale up --accept-routes --advertise-routes=10.0.0.0/16</code></pre></div>
+<p>This happened because the OCI machine was seeing another Tailscale peer advertise routes. The fix was to enable <code>accept-routes</code> on tsrtr.</p>
+
+<h3>Route exists but a specific subnet fails from Windows</h3>
+<p>Check for a more specific conflicting route. The case that caused the issue here was:</p>
+<div class="code"><span class="lbl">WINDOWS</span><pre><code>Get-NetRoute -DestinationPrefix 10.0.0.0/16 | Sort-Object RouteMetric
+
+<span class="cm"># Problem route that had to be removed:</span>
+route delete 10.0.10.0 mask 255.255.255.0 192.168.1.6</code></pre></div>
+<div class="warn">If the homelab Linux VM can reach OCI but Windows cannot, the most likely cause is a stale or more specific Windows route, not Tailscale itself.<br><br>If Windows can reach <code>10.0.30.254</code> but not <code>10.0.10.147</code>, that was the exact symptom of the conflicting <code>/24</code> route overriding the <code>/16</code> route.</div>
+
+<h2 id="tsn-check"><span class="num">9</span>Clean Command Checklist</h2>
+<p>The short checklist of commands used in the final working setup.</p>
+<div class="code"><span class="lbl">CHECKLIST</span><pre><code><span class="cm"># OCI router</span>
+sudo dnf update -y
+sudo dnf install -y curl
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo systemctl enable --now tailscaled
+sudo tailscale up
+sudo tee /etc/sysctl.d/99-tailscale.conf &lt;&lt;EOF
+net.ipv4.ip_forward=1
+net.ipv6.conf.all.forwarding=1
+EOF
+sudo sysctl --system
+sudo tailscale up --advertise-routes=10.0.0.0/16
+sudo tailscale up --accept-routes --advertise-routes=10.0.0.0/16
+
+<span class="cm"># Homelab LXC router</span>
+pct stop 201
+nano /etc/pve/lxc/201.conf
+pct start 201
+apt update
+apt install -y curl
+curl -fsSL https://tailscale.com/install.sh | sh
+systemctl enable --now tailscaled
+tailscale up
+cat &gt;/etc/sysctl.d/99-tailscale.conf &lt;&lt;EOF
+net.ipv4.ip_forward=1
+net.ipv6.conf.all.forwarding=1
+EOF
+sysctl --system
+tailscale set --advertise-routes=192.168.1.0/24
+
+<span class="cm"># Windows</span>
+route -p add 10.0.0.0 mask 255.255.0.0 192.168.1.250
+route delete 10.0.10.0 mask 255.255.255.0 192.168.1.6
+route -p delete 10.0.10.0 mask 255.255.255.0 192.168.1.6
+route print
+
+<span class="cm"># Linux client</span>
+ip route add 10.0.0.0/16 via 192.168.1.250
+ip route del 10.0.0.0/16 via 192.168.1.250</code></pre></div>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>
