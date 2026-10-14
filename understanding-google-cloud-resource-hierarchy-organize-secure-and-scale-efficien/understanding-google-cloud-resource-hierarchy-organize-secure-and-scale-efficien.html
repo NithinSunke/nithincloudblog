@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GCP Resource Hierarchy</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#1a73e8;--accent-soft:#e8f0fe;--accent-ink:#1557b0;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.06em;margin:1.4em 0 .4em}
+.tsn-post h3 .lvl{display:inline-block;font-size:.72em;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-radius:4px;padding:1px 7px;margin-left:.5em;vertical-align:2px;background:#eef2f5;color:#4b5563}
+.tsn-post h3 .lvl.req{background:var(--accent-soft);color:var(--accent-ink)}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.86em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post table{width:100%;border-collapse:collapse;margin:.8em 0;font-size:.95em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.35em 0}
+.tsn-post .ex{display:inline-block;background:#f7f9fa;border:1px solid var(--line);border-radius:6px;padding:2px 10px;font-size:.92em}
+.tsn-post .ids{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:.6em 0}
+.tsn-post .ids div{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:#fff;font-size:.92em}
+.tsn-post .ids b{display:block;color:var(--accent-ink)}
+.tsn-post .diagram{margin:1em 0}
+.tsn-post .diagram svg{display:block;max-width:100%;height:auto;margin:0 auto}
+.tsn-post .diagram figcaption{text-align:center;color:var(--muted);font-size:.85em;margin-top:4px}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:var(--accent-ink)}
+.tsn-post .end{background:var(--accent-soft);border-radius:8px;padding:14px 18px;margin-top:1em}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}.tsn-post .ids{grid-template-columns:1fr}}
+</style>
+
+<h1>Understanding Google Cloud Resource Hierarchy: Organize, Secure, and Scale Efficiently</h1>
+<div class="meta">By Sunke Nithin · August 9, 2025 &nbsp; <span class="tag">Cloud</span><span class="tag">GCP</span></div>
+
+<p class="lead">When working with <strong>Google Cloud Platform (GCP)</strong>, managing your cloud resources well is just as important as deploying them. The <strong>Google Cloud resource hierarchy</strong> gives you a structured way to organize resources, control access and enforce policies across your whole cloud environment. This post explains what the hierarchy is, why it matters, and how to set it up.</p>
+
+<div class="toc"><strong>Contents</strong>
+<ol>
+<li><a href="#rh-what">What is the Resource Hierarchy?</a></li>
+<li><a href="#rh-parts">Hierarchy Components Explained</a></li>
+<li><a href="#rh-iam">IAM Inheritance and Access Control</a></li>
+<li><a href="#rh-bill">Billing and the Hierarchy</a></li>
+<li><a href="#rh-sample">Sample Hierarchy</a></li>
+<li><a href="#rh-best">Best Practices and Getting Started</a></li>
+</ol></div>
+
+<h2 id="rh-what"><span class="num">1</span>What is the Google Cloud Resource Hierarchy?</h2>
+<p>The resource hierarchy is a <strong>top-down structure</strong> that organizes resources — virtual machines, storage buckets, databases and so on — into logical groups for <strong>IAM (Identity and Access Management)</strong>, <strong>billing</strong> and <strong>policy enforcement</strong>.</p>
+<div class="code"><span class="lbl">STRUCTURE</span><pre><code>Organization        (optional)
+   └── Folder       (optional, can be nested)
+         └── Project      (required)
+               └── Resources  (Compute, Storage, etc.)</code></pre></div>
+
+<h2 id="rh-parts"><span class="num">2</span>Hierarchy Components Explained</h2>
+
+<h3>1. Organization <span class="lvl">optional · recommended</span></h3>
+<ul>
+<li><strong>What it is:</strong> the <strong>top-level node</strong> of the hierarchy, representing a company or enterprise.</li>
+<li><strong>How you get one:</strong> it's created automatically for a <strong>Google Workspace</strong> or <strong>Cloud Identity</strong> domain once someone in that domain creates a project or billing account.</li>
+<li><strong>Benefits:</strong> centralized IAM and policy control, unified billing management, and visibility of every resource in the company.</li>
+</ul>
+<p><span class="ex"><strong>Example:</strong> domain <code>examplecorp.com</code> → organization <code>examplecorp.com</code></span></p>
+
+<h3>2. Folders <span class="lvl">optional · highly useful</span></h3>
+<ul>
+<li><strong>Purpose:</strong> logical containers that group <strong>projects</strong> by department, team or environment (Dev / Test / Prod).</li>
+<li><strong>Nesting:</strong> folders can contain other folders (up to 10 levels deep) to mirror your organizational structure.</li>
+<li><strong>Benefits:</strong> IAM policies set on a folder automatically apply to every project underneath it, and units or departments stay cleanly separated.</li>
+</ul>
+<p><span class="ex"><strong>Example:</strong> <code>Engineering</code> → <code>Backend</code> → <code>Production</code></span></p>
+
+<h3>3. Projects <span class="lvl req">required</span></h3>
+<ul>
+<li>The <strong>basic unit</strong> of organization and resource usage in GCP.</li>
+<li>Every GCP resource (VMs, buckets, datasets…) belongs to exactly <strong>one project</strong>.</li>
+</ul>
+<p>Each project has three identifiers:</p>
+<div class="ids">
+<div><b>Project name</b>A display name you can change.</div>
+<div><b>Project ID</b>Globally unique; chosen by you or generated; can't be changed later.</div>
+<div><b>Project number</b>Assigned by Google.</div>
+</div>
+<p><strong>What a project is responsible for:</strong> billing (via its linked billing account), API and service enablement, IAM roles and permissions, and resource quotas.</p>
+<p><span class="ex"><strong>Examples:</strong> <code>ml-prod</code>, <code>finance-dev</code>, <code>infra-backup</code></span></p>
+
+<h3>4. Resources <span class="lvl">your workloads</span></h3>
+<p>These are the <strong>GCP services</strong> you deploy and use, for example:</p>
+<ul>
+<li>Compute Engine VMs</li>
+<li>Cloud Storage buckets</li>
+<li>BigQuery datasets</li>
+<li>Cloud SQL instances</li>
+<li>Pub/Sub topics</li>
+</ul>
+<p>Resources are always created <strong>within a specific project</strong>, and they inherit the IAM policies and organization policies set at the levels above (project, folders, organization).</p>
+
+<h2 id="rh-iam"><span class="num">3</span>IAM Inheritance and Access Control</h2>
+<p>One of the <strong>most powerful features</strong> of the resource hierarchy is <strong>IAM inheritance</strong>: a role granted at one level applies to everything below it.</p>
+<table>
+<tr><th>Level</th><th>A role granted here applies to</th></tr>
+<tr><td>Organization</td><td>All folders, projects and resources below it</td></tr>
+<tr><td>Folder</td><td>All nested folders and projects</td></tr>
+<tr><td>Project</td><td>All resources within the project</td></tr>
+<tr><td>Resource</td><td>Only that resource — adds to what's inherited</td></tr>
+</table>
+<div class="warn"><strong>Inheritance only adds access.</strong> A grant at the project or resource level can't take away a role inherited from a folder or the organization. To restrict inherited access, use an IAM <em>deny policy</em> — or grant the role lower in the hierarchy to begin with.</div>
+<p><strong>Tip:</strong> give broad, low-risk access at the organization or folder level (for example the <code>Viewer</code> role for auditors), and grant more powerful roles to admins and developers only at the project level where they need them.</p>
+<p>For more on roles and policies, see <a href="../understanding-iam-in-google-cloud-platform-a-complete-guide/understanding-iam-in-google-cloud-platform-a-complete-guide.html">Understanding IAM in Google Cloud Platform</a>.</p>
+
+<h2 id="rh-bill"><span class="num">4</span>Billing and the Hierarchy</h2>
+<p>Billing accounts are <strong>not part of the resource hierarchy</strong>, but each <strong>project is linked</strong> to one billing account.</p>
+<ul>
+<li>Use the hierarchy to <strong>group projects by department</strong> and track costs per group.</li>
+<li>Use <strong>labels</strong> and <strong>tags</strong> on projects and resources (for example a cost-center label) to break down costs and manage budgets.</li>
+</ul>
+
+<h2 id="rh-sample"><span class="num">5</span>Sample Hierarchy</h2>
+<figure class="diagram">
+<svg viewBox="0 0 720 330" role="img" aria-labelledby="rh-t" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
+<title id="rh-t">Organization examplecorp.com contains folders Engineering and Finance. Engineering holds projects eng-dev (VMs, Cloud Storage) and eng-prod (GKE, Cloud SQL); Finance holds project finance-data (BigQuery, App Engine).</title>
+<g stroke="#9aa5b1" stroke-width="1.6" fill="none">
+<path d="M360 58V82H185V104"/><path d="M360 82H545V104"/>
+<path d="M185 146V166H95V188"/><path d="M185 166H275V188"/>
+<path d="M545 146V188"/>
+<path d="M95 230V256"/><path d="M275 230V256"/><path d="M545 230V256"/>
+</g>
+<rect x="250" y="12" width="220" height="46" rx="9" fill="#1a73e8"/>
+<text x="360" y="32" text-anchor="middle" font-size="11" fill="#d6e4fd" font-weight="700" letter-spacing=".06em">ORGANIZATION</text>
+<text x="360" y="49" text-anchor="middle" font-size="14" fill="#fff" font-weight="700">examplecorp.com</text>
+<rect x="105" y="104" width="160" height="42" rx="8" fill="#4a8ff0"/>
+<text x="185" y="122" text-anchor="middle" font-size="10.5" fill="#e3edfd" font-weight="700" letter-spacing=".06em">FOLDER</text>
+<text x="185" y="138" text-anchor="middle" font-size="13.5" fill="#fff" font-weight="700">Engineering</text>
+<rect x="465" y="104" width="160" height="42" rx="8" fill="#4a8ff0"/>
+<text x="545" y="122" text-anchor="middle" font-size="10.5" fill="#e3edfd" font-weight="700" letter-spacing=".06em">FOLDER</text>
+<text x="545" y="138" text-anchor="middle" font-size="13.5" fill="#fff" font-weight="700">Finance</text>
+<g font-size="13" font-weight="700" fill="#0b3d91" text-anchor="middle">
+<rect x="30" y="188" width="130" height="42" rx="8" fill="#8cb7f5"/><text x="95" y="206" font-size="10" fill="#1557b0" letter-spacing=".06em">PROJECT</text><text x="95" y="222">eng-dev</text>
+<rect x="210" y="188" width="130" height="42" rx="8" fill="#8cb7f5"/><text x="275" y="206" font-size="10" fill="#1557b0" letter-spacing=".06em">PROJECT</text><text x="275" y="222">eng-prod</text>
+<rect x="480" y="188" width="130" height="42" rx="8" fill="#8cb7f5"/><text x="545" y="206" font-size="10" fill="#1557b0" letter-spacing=".06em">PROJECT</text><text x="545" y="222">finance-data</text>
+</g>
+<g font-size="12" fill="#1557b0" text-anchor="middle">
+<rect x="20" y="256" width="150" height="54" rx="8" fill="#e8f0fe" stroke="#8cb7f5"/><text x="95" y="279">VM instances</text><text x="95" y="297">Cloud Storage</text>
+<rect x="200" y="256" width="150" height="54" rx="8" fill="#e8f0fe" stroke="#8cb7f5"/><text x="275" y="279">GKE</text><text x="275" y="297">Cloud SQL</text>
+<rect x="470" y="256" width="150" height="54" rx="8" fill="#e8f0fe" stroke="#8cb7f5"/><text x="545" y="279">BigQuery</text><text x="545" y="297">App Engine</text>
+</g>
+</svg>
+<figcaption>An example company: department folders, environment projects, and the resources inside them.</figcaption>
+</figure>
+
+<h2 id="rh-best"><span class="num">6</span>Best Practices</h2>
+<table>
+<tr><th>Best practice</th><th>Why it's useful</th></tr>
+<tr><td>Use an organization node</td><td>Centralized control and policy enforcement</td></tr>
+<tr><td>Structure folders by department or environment</td><td>Simplifies access and policy management</td></tr>
+<tr><td>Limit IAM grants directly on resources</td><td>Keeps access consistent by granting roles at the folder or project level</td></tr>
+<tr><td>Tag and label resources</td><td>Helps with billing and resource tracking</td></tr>
+<tr><td>Monitor with Cloud Asset Inventory</td><td>Visualize and audit the hierarchy and its IAM policies</td></tr>
+</table>
+
+<h3>Getting started</h3>
+<p>If you're setting up Google Cloud for your organization:</p>
+<ol>
+<li><strong>Set up Cloud Identity</strong> (or Google Workspace) and verify your domain.</li>
+<li>Let the <strong>organization node</strong> be created — it appears automatically for the verified domain.</li>
+<li>Create <strong>folders</strong> that match your company or team structure.</li>
+<li>Create <strong>projects</strong> for each application, team or environment.</li>
+<li>Assign <strong>IAM roles</strong> at the appropriate levels.</li>
+<li>Link <strong>billing accounts</strong> to the projects.</li>
+</ol>
+
+<h2>Conclusion</h2>
+<div class="end">Google Cloud's resource hierarchy is more than an organizational structure — it's the foundation for <strong>secure</strong>, <strong>scalable</strong> and <strong>manageable</strong> cloud infrastructure. Whether you're running a startup or a multi-department enterprise, designing your hierarchy thoughtfully saves time, reduces complexity and improves governance.</div>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>
