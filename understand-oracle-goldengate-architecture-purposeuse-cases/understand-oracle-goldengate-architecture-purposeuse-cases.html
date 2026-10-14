@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Understanding Oracle GoldenGate</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#c74634;--accent-soft:#fdf1ef;--accent-ink:#a3372a;--gold:#b7791f;--gold-soft:#fdf6e7;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.04em;margin:1.4em 0 .4em}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px}
+.tsn-post table{width:100%;border-collapse:collapse;margin:.8em 0;font-size:.95em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post td:first-child{white-space:nowrap;font-weight:600}
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.35em 0}
+.tsn-post .uses{display:flex;flex-wrap:wrap;gap:8px;margin:.8em 0}
+.tsn-post .uses span{background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:3px 12px;font-size:.88em;font-weight:600}
+.tsn-post .diagram{margin:1em 0;overflow-x:auto}
+.tsn-post .diagram svg{display:block;max-width:100%;height:auto;margin:0 auto}
+.tsn-post .diagram figcaption{text-align:center;color:var(--muted);font-size:.85em;margin-top:4px}
+.tsn-post .mnemonic{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin:.8em 0}
+.tsn-post .mnemonic div{border:1px solid var(--line);border-radius:8px;padding:8px 12px;text-align:center;background:#fff}
+.tsn-post .mnemonic b{display:block;color:var(--accent-ink)}
+.tsn-post .mnemonic span{font-size:.88em;color:var(--muted)}
+.tsn-post .steps{list-style:none;padding:0;margin:.8em 0;counter-reset:s}
+.tsn-post .steps li{position:relative;padding:4px 0 10px 2.6em;margin:0;border-left:2px solid var(--line);margin-left:1em}
+.tsn-post .steps li:last-child{border-left-color:transparent}
+.tsn-post .steps li::before{counter-increment:s;content:counter(s);position:absolute;left:-1em;top:2px;width:2em;height:2em;line-height:2em;text-align:center;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:.85em}
+.tsn-post .steps strong{display:block}
+.tsn-post .steps ul{margin:.2em 0 0}
+.tsn-post .takeaways{background:var(--gold-soft);border:1px solid #f0dcae;border-radius:10px;padding:8px 18px}
+.tsn-post .takeaways h2{border:0;margin:.6em 0 .2em;padding:0;font-size:1.15em;color:var(--gold)}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:var(--accent-ink)}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}.tsn-post td:first-child{white-space:normal}}
+</style>
+
+<h1>Understanding Oracle GoldenGate: Architecture, Purpose and Use Cases</h1>
+<div class="meta">By Sunke Nithin · April 27, 2025 &nbsp; <span class="tag">Replication</span><span class="tag">Oracle</span><span class="tag">Goldengate</span></div>
+
+<p class="lead"><strong>Oracle GoldenGate (OGG)</strong> is a real-time data replication and integration tool. It <strong>captures</strong> changes as they happen in a <strong>source database</strong> and <strong>applies</strong> them to a <strong>target database</strong> almost immediately. Because it reads the database's <strong>redo / transaction logs</strong> rather than querying tables, it puts very little load on the source.</p>
+
+<div class="uses"><span>Data replication</span><span>Data migration</span><span>Disaster recovery</span><span>Real-time reporting</span><span>Cloud integration</span></div>
+
+<div class="toc"><strong>Contents</strong>
+<ol>
+<li><a href="#ogg-arch">GoldenGate Architecture</a></li>
+<li><a href="#ogg-purpose">Purpose of GoldenGate</a></li>
+<li><a href="#ogg-uses">Common Use Cases</a></li>
+<li><a href="#ogg-case">Case Study: Zero-Downtime Migration</a></li>
+</ol></div>
+
+<h2 id="ogg-arch"><span class="num">1</span>GoldenGate Architecture</h2>
+<p>GoldenGate is built from <strong>five main components</strong>:</p>
+<table>
+<tr><th>Component</th><th>Purpose</th></tr>
+<tr><td>Manager</td><td>Controls the startup, shutdown and monitoring of the other processes.</td></tr>
+<tr><td>Extract</td><td>Captures (reads) changes from the source database — from the logs, not from the tables directly.</td></tr>
+<tr><td>Data Pump</td><td>(Optional) A secondary Extract that moves trail files across the network securely and efficiently.</td></tr>
+<tr><td>Trail Files</td><td>Intermediate files that store the captured changes until they are applied.</td></tr>
+<tr><td>Replicat</td><td>Applies the changes to the target database.</td></tr>
+</table>
+
+<figure class="diagram">
+<svg viewBox="0 0 820 200" role="img" aria-labelledby="ogg-flow-t" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
+<title id="ogg-flow-t">GoldenGate data flow: Source DB, Extract, local trail, Data Pump, network, remote trail, Replicat, Target DB</title>
+<defs><marker id="ogg-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#8a94a0"/></marker></defs>
+<rect x="6" y="8" width="388" height="184" rx="12" fill="#f5f8fc" stroke="#d5dde6"/>
+<text x="200" y="30" text-anchor="middle" font-size="13" font-weight="700" fill="#5b6672">SOURCE SERVER</text>
+<rect x="426" y="8" width="388" height="184" rx="12" fill="#fdf6f4" stroke="#efd3cd"/>
+<text x="620" y="30" text-anchor="middle" font-size="13" font-weight="700" fill="#5b6672">TARGET SERVER</text>
+<!-- source db -->
+<rect x="24" y="78" width="82" height="56" rx="8" fill="#fff" stroke="#9aa5b1"/>
+<text x="65" y="102" text-anchor="middle" font-size="13" font-weight="700" fill="#1f2933">Source</text><text x="65" y="119" text-anchor="middle" font-size="12" fill="#5b6672">DB redo</text>
+<rect x="128" y="78" width="74" height="56" rx="8" fill="#c74634"/>
+<text x="165" y="111" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">Extract</text>
+<rect x="222" y="86" width="64" height="40" rx="6" fill="#fff" stroke="#c74634" stroke-dasharray="4 3"/>
+<text x="254" y="104" text-anchor="middle" font-size="11" fill="#a3372a">local</text><text x="254" y="118" text-anchor="middle" font-size="11" fill="#a3372a">trail</text>
+<rect x="306" y="78" width="74" height="56" rx="8" fill="#c74634"/>
+<text x="343" y="104" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">Data</text><text x="343" y="120" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">Pump</text>
+<!-- target -->
+<rect x="440" y="86" width="64" height="40" rx="6" fill="#fff" stroke="#c74634" stroke-dasharray="4 3"/>
+<text x="472" y="104" text-anchor="middle" font-size="11" fill="#a3372a">remote</text><text x="472" y="118" text-anchor="middle" font-size="11" fill="#a3372a">trail</text>
+<rect x="526" y="78" width="80" height="56" rx="8" fill="#c74634"/>
+<text x="566" y="111" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">Replicat</text>
+<rect x="628" y="78" width="82" height="56" rx="8" fill="#fff" stroke="#9aa5b1"/>
+<text x="669" y="102" text-anchor="middle" font-size="13" font-weight="700" fill="#1f2933">Target</text><text x="669" y="119" text-anchor="middle" font-size="12" fill="#5b6672">DB</text>
+<!-- arrows -->
+<g stroke="#8a94a0" stroke-width="2" fill="none" marker-end="url(#ogg-ar)">
+<path d="M106 106H124"/><path d="M202 106H218"/><path d="M286 106H302"/><path d="M380 106H436"/><path d="M504 106H522"/><path d="M606 106H624"/>
+</g>
+<text x="408" y="98" text-anchor="middle" font-size="11" fill="#5b6672">network</text>
+<!-- manager -->
+<rect x="140" y="152" width="120" height="26" rx="13" fill="#eef2f5"/><text x="200" y="169" text-anchor="middle" font-size="12" fill="#4b5563">Manager</text>
+<rect x="560" y="152" width="120" height="26" rx="13" fill="#eef2f5"/><text x="620" y="169" text-anchor="middle" font-size="12" fill="#4b5563">Manager</text>
+</svg>
+<figcaption>Source DB → Extract → trail files → Data Pump → trail files → Replicat → Target DB. A Manager process on each server starts and monitors the others.</figcaption>
+</figure>
+
+<p><strong>Think of it like this:</strong></p>
+<div class="mnemonic">
+<div><b>Extract</b><span>Capture</span></div>
+<div><b>Trail</b><span>Store</span></div>
+<div><b>Pump</b><span>Move</span></div>
+<div><b>Replicat</b><span>Apply</span></div>
+</div>
+
+<div class="note">This describes GoldenGate's <strong>Classic Architecture</strong>. In the newer <strong>Microservices Architecture</strong> (the default from 19c/21c onwards), the same Extract → trail → Replicat flow runs under a web-managed <em>Service Manager</em>, and the Data Pump role is handled by the <em>Distribution</em> and <em>Receiver</em> services.</div>
+
+<h2 id="ogg-purpose"><span class="num">2</span>Purpose of GoldenGate</h2>
+<ul>
+<li><strong>Real-time replication:</strong> keep two databases in sync with very low lag — seconds or less.</li>
+<li><strong>Near-zero-downtime migrations:</strong> move from an old database to a new one without taking applications offline for the copy.</li>
+<li><strong>High availability:</strong> maintain a live standby database ready for quick failover.</li>
+<li><strong>Data distribution:</strong> feed real-time data into reporting systems, cloud warehouses or analytics tools.</li>
+<li><strong>Heterogeneous replication:</strong> replicate between different database types (e.g. Oracle → MySQL).</li>
+</ul>
+
+<h2 id="ogg-uses"><span class="num">3</span>Common Use Cases</h2>
+<table>
+<tr><th>Use case</th><th>Example</th></tr>
+<tr><td>Database migration</td><td>Move from on-premises Oracle to OCI Autonomous Database with minimal downtime.</td></tr>
+<tr><td>Disaster recovery</td><td>Keep a live standby system in another data center.</td></tr>
+<tr><td>Real-time reporting</td><td>Send live data from a transactional system to a reporting database.</td></tr>
+<tr><td>Hybrid cloud</td><td>Keep an on-premises system and Oracle Cloud in sync.</td></tr>
+<tr><td>Multi-master replication</td><td>Keep several systems updated together (a complex setup that needs conflict handling).</td></tr>
+<tr><td>Data warehousing</td><td>Feed changed data into a data lake or data warehouse.</td></tr>
+</table>
+
+<h2 id="ogg-case"><span class="num">4</span>Case Study: E-commerce Database Migration with GoldenGate</h2>
+
+<h3>Background</h3>
+<p>A large e-commerce company — let's call it <strong>ShopABC</strong> — runs its online store on an <strong>Oracle 12c</strong> database. It wants to migrate to <strong>Oracle 19c on Oracle Cloud (OCI)</strong>, but:</p>
+<ul>
+<li>It <strong>can't afford a long outage</strong> — the website must stay online 24×7.</li>
+<li>It needs <strong>real-time synchronization</strong> during the migration.</li>
+<li>It wants a <strong>failback option</strong> in case something goes wrong.</li>
+</ul>
+
+<h3>Solution: Using Oracle GoldenGate</h3>
+<ol class="steps">
+<li><strong>Set up GoldenGate on both sides</strong>
+<ul><li>Install GoldenGate on the on-premises 12c server and the 19c cloud server.</li><li>Configure Extract on the source and Replicat on the target.</li></ul></li>
+<li><strong>Perform the initial load</strong>
+<ul><li>Bulk-copy all existing data from 12c to 19c — with a GoldenGate initial-load task, or Data Pump export/import from a consistent SCN.</li></ul></li>
+<li><strong>Enable change data capture (CDC)</strong>
+<ul><li>Extract continuously reads new changes (new orders, customer updates) from the redo logs.</li><li>Replicat applies them to the 19c cloud database in near real time.</li></ul></li>
+<li><strong>Monitor synchronization</strong>
+<ul><li>Watch replication <strong>lag</strong> and process <strong>checkpoints</strong> (for example with <code>INFO ALL</code> and <code>LAG REPLICAT</code> in GGSCI) until the target is consistently caught up.</li></ul></li>
+<li><strong>Final switchover</strong>
+<ul><li>Pick a low-traffic time (e.g. 2 AM).</li><li>Stop the application briefly (perhaps 10–15 minutes), let Replicat apply the last changes, then point the application at the new cloud database.</li><li>Resume operations on 19c.</li></ul></li>
+<li><strong>Decommission the old environment</strong>
+<ul><li>After confirming everything works, shut down the old 12c system.</li></ul></li>
+</ol>
+
+<div class="note"><strong>Failback:</strong> to be able to fall back after switchover, set up reverse replication (Extract on 19c, Replicat on 12c) <em>before</em> the application moves. That keeps the old 12c database current with changes made on 19c until you're confident enough to decommission it.</div>
+
+<h3>Benefits for ShopABC</h3>
+<table>
+<tr><th>Benefit</th><th>What it meant</th></tr>
+<tr><td>Near-zero downtime</td><td>Customers kept shopping throughout; the only outage was the short switchover.</td></tr>
+<tr><td>Minimal risk</td><td>If a problem appeared, they could fall back to the original database.</td></tr>
+<tr><td>Real-time sync</td><td>Orders and customer updates stayed live on both sides until cutover.</td></tr>
+<tr><td>Cost saving</td><td>No need for an expensive, long maintenance window.</td></tr>
+</table>
+
+<h3>GoldenGate setup for this case</h3>
+<figure class="diagram">
+<svg viewBox="0 0 760 130" role="img" aria-labelledby="ogg-case-t" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
+<title id="ogg-case-t">On-prem Oracle 12c to GoldenGate Extract to trail files to GoldenGate Replicat to Oracle Cloud 19c</title>
+<defs><marker id="ogg-ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#8a94a0"/></marker></defs>
+<rect x="6" y="36" width="130" height="58" rx="8" fill="#fff" stroke="#9aa5b1"/>
+<text x="71" y="60" text-anchor="middle" font-size="13" font-weight="700" fill="#1f2933">On-prem</text><text x="71" y="78" text-anchor="middle" font-size="12" fill="#5b6672">Oracle 12c</text>
+<rect x="166" y="36" width="120" height="58" rx="8" fill="#c74634"/>
+<text x="226" y="60" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">GoldenGate</text><text x="226" y="78" text-anchor="middle" font-size="12" fill="#fff">Extract</text>
+<rect x="316" y="44" width="110" height="42" rx="6" fill="#fff" stroke="#c74634" stroke-dasharray="4 3"/>
+<text x="371" y="70" text-anchor="middle" font-size="12" fill="#a3372a">Trail files</text>
+<rect x="456" y="36" width="120" height="58" rx="8" fill="#c74634"/>
+<text x="516" y="60" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">GoldenGate</text><text x="516" y="78" text-anchor="middle" font-size="12" fill="#fff">Replicat</text>
+<rect x="606" y="36" width="148" height="58" rx="8" fill="#fff" stroke="#9aa5b1"/>
+<text x="680" y="60" text-anchor="middle" font-size="13" font-weight="700" fill="#1f2933">Oracle Cloud</text><text x="680" y="78" text-anchor="middle" font-size="12" fill="#5b6672">19c DB (OCI)</text>
+<g stroke="#8a94a0" stroke-width="2" fill="none" marker-end="url(#ogg-ar2)"><path d="M136 65H162"/><path d="M286 65H312"/><path d="M426 65H452"/><path d="M576 65H602"/></g>
+<text x="71" y="118" text-anchor="middle" font-size="11" fill="#5b6672">redo logs</text>
+<text x="754" y="118" text-anchor="end" font-size="11" fill="#5b6672">apps switch here at cutover</text>
+</svg>
+</figure>
+
+<div class="takeaways">
+<h2>✅ Key Takeaways</h2>
+<ul>
+<li>GoldenGate is one of the leading tools for <strong>near-zero-downtime migrations</strong>.</li>
+<li>It doesn't just copy data — it <strong>keeps syncing live changes</strong> until you cut over.</li>
+<li>Administrators watch <strong>lag</strong> and <strong>checkpoints</strong> closely.</li>
+<li>Real-world GoldenGate projects usually follow <strong>Initial Load → Live Sync → Final Cutover</strong>.</li>
+</ul>
+</div>
+
+<p style="margin-top:1.4em">See it in practice: <a href="../migrating-mongodb-to-oracle-autonomous-database-with-oracle-goldengate/migrating-mongodb-to-oracle-autonomous-database-with-oracle-goldengate.html">Migrating MongoDB to Oracle Autonomous Database with Oracle GoldenGate</a>.</p>
+
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>
