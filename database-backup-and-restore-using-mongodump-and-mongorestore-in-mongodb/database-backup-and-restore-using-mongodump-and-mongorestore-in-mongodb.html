@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Database Backup and Restore Using mongodump and mongorestore in MongoDB — Nithin Cloud Blog</title>
+<meta name="description" content="Using mongodump and mongorestore for logical MongoDB backups: worked examples for full, per-database, per-collection and compressed backups, plus limitations and best practices.">
+<meta name="author" content="Sunke Nithin">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="Database Backup and Restore Using mongodump and mongorestore in MongoDB">
+<meta property="og:description" content="Using mongodump and mongorestore for logical MongoDB backups: worked examples for full, per-database, per-collection and compressed backups, plus limitations and best practices.">
+<meta property="article:published_time" content="2025-08-27">
+
+<!-- Relative, so the site works both opened from disk and served over HTTP. -->
+<link rel="stylesheet" href="../style.css">
+</head>
+
+<body>
+
+<header class="site">
+  <div class="wrap narrow">
+    <p class="brand"><a href="../index.html">Nithin Cloud Blog</a></p>
+    <p class="tagline">Notes on Oracle Cloud Infrastructure, networking, and homelab infrastructure.</p>
+  </div>
+</header>
+
+<div class="wrap narrow">
+<article>
+
+  <div class="post-header">
+    <h1>Database Backup and Restore Using mongodump and mongorestore in MongoDB</h1>
+    <p class="meta">
+      <time datetime="2025-08-27">27 August 2025</time>
+      <span class="dot">&bull;</span>
+      <span>Sunke Nithin</span>
+      <span class="dot">&bull;</span>
+      <span>~7 min read</span>
+    </p>
+    <ul class="chips">
+      <li class="cat">Database</li>
+      <li class="tag">MongoDB</li>
+    </ul>
+  </div>
+
+  <p>Backing up and restoring a MongoDB database is a critical task for ensuring data
+  integrity and availability, whether for disaster recovery, migrations, or testing. MongoDB
+  provides two powerful command-line utilities, <code>mongodump</code> and
+  <code>mongorestore</code>, for logical backups and restores. These tools export and import
+  data in BSON format, preserving the database’s structure, including collections, indexes,
+  and metadata. In this blog post, we’ll walk through how to use them, explore their use
+  cases, provide step-by-step examples, and highlight best practices and limitations to help
+  you manage your MongoDB backups effectively.</p>
+
+  <h2>What are mongodump and mongorestore?</h2>
+
+  <ul>
+    <li><strong>mongodump:</strong> A utility that creates a binary export of MongoDB data in
+      BSON format, capturing entire databases, specific collections, or filtered data. It’s
+      ideal for logical backups and supports point-in-time recovery for replica sets.</li>
+    <li><strong>mongorestore:</strong> A utility that restores BSON data created by
+      <code>mongodump</code> into a MongoDB instance, recreating databases, collections, and
+      indexes.</li>
+  </ul>
+
+  <p>These tools are part of the MongoDB Database Tools package and are well-suited for small
+  to medium-sized deployments, migrations, and disaster recovery.</p>
+
+  <h2>Step-by-step guide to using mongodump and mongorestore</h2>
+
+  <h3>Prerequisites</h3>
+
+  <ul>
+    <li><strong>MongoDB installation:</strong> Ensure MongoDB and the Database Tools package
+      are installed. Download from MongoDB’s official site if needed.</li>
+    <li><strong>Access permissions:</strong> Have <code>find</code> privileges for
+      <code>mongodump</code> (e.g. the <code>backup</code> role) and <code>insert</code>,
+      <code>createCollection</code> privileges for <code>mongorestore</code> (e.g. the
+      <code>restore</code> role).</li>
+    <li><strong>MongoDB instance:</strong> A running MongoDB instance (local or remote) with
+      sample data for testing.</li>
+    <li><strong>Disk space:</strong> Ensure sufficient disk space for backup files, especially
+      for large databases.</li>
+  </ul>
+
+  <h3>Steps for mongodump</h3>
+
+  <h4>Back up all databases</h4>
+
+<pre><code>mongodump --out /backup/mongodb_backup_$(date +%F)</code></pre>
+
+  <figure>
+    <img src="images/image-404.png" loading="lazy"
+         alt="Terminal running mongodump with the --out flag, writing every database to a dated backup directory.">
+  </figure>
+
+  <figure>
+    <img src="images/image-406.png" loading="lazy"
+         alt="Directory listing of the resulting backup folder, showing one subdirectory per database with BSON and metadata files.">
+  </figure>
+
+  <h4>Back up a specific database</h4>
+
+<pre><code>mongodump --db myDatabase --out /opt/myDatabase_backup --username mongoadm --authenticationDatabase admin</code></pre>
+
+  <figure>
+    <img src="images/image-408.png" loading="lazy"
+         alt="Terminal output of mongodump dumping only the myDatabase database, listing each collection as it is written.">
+  </figure>
+
+  <h4>Back up a specific collection</h4>
+
+<pre><code>mongodump --db myDatabase --collection users --out /opt/myDatabase_users_backup --username mongoadm --authenticationDatabase admin</code></pre>
+
+  <figure>
+    <img src="images/image-410.png" loading="lazy"
+         alt="Terminal output of mongodump dumping only the users collection from myDatabase.">
+  </figure>
+
+  <h4>Back up with compression</h4>
+
+<pre><code>mongodump --db myDatabase --gzip --archive=/opt/myDatabase_backup.gz --username mongoadm --authenticationDatabase admin</code></pre>
+
+  <figure>
+    <img src="images/image-412.png" loading="lazy"
+         alt="Terminal output of mongodump writing myDatabase.users, dataCollection, user and logCollection into the compressed archive /opt/myDatabase_backup.gz, finishing with the document counts dumped from each collection.">
+  </figure>
+
+  <h3>Steps for mongorestore</h3>
+
+  <h4>Restore all databases</h4>
+
+<pre><code>mongorestore /opt/mongodb_backup_2025-08-27 --username mongoadm --authenticationDatabase admin</code></pre>
+
+  <figure>
+    <img src="images/image-414.png" loading="lazy"
+         alt="Terminal output of mongorestore reading the dated backup directory and restoring every database it contains.">
+  </figure>
+
+  <h4>Restore a specific database</h4>
+
+<pre><code>mongorestore /opt/mongodb_backup_2025-08-27/myDatabase --db myDatabsae -u mongoadm --authenticationDatabase admin</code></pre>
+
+  <figure>
+    <img src="images/image-416.png" loading="lazy"
+         alt="Terminal output of mongorestore restoring into the target named myDatabsae, warning that --db and --collection are deprecated in favour of --nsInclude, reporting 5 documents restored successfully with 0 failures, and a following mongosh session where show databases lists myDatabsae at 160 KiB.">
+  </figure>
+
+  <h4>Restore a specific collection</h4>
+
+<pre><code>mongorestore --db mydb --collection users /backup/users_backup/mydb/users.bson -u mongoadm --authenticationDatabase admin</code></pre>
+
+  <h4>Restore with drop</h4>
+
+<pre><code>mongorestore --db mydb --drop /backup/mydb_backup/mydb -u mongoadm --authenticationDatabase admin</code></pre>
+
+  <p>Drops the existing <code>mydb</code> database before restoring, to avoid duplicates.</p>
+
+  <h4>Restore from a compressed archive</h4>
+
+<pre><code>mongorestore --gzip --archive=/backup/mydb_backup.gz -u mongoadm --authenticationDatabase admin</code></pre>
+
+  <p>Restores from a compressed <code>.gz</code> archive.</p>
+
+  <h4>Restore with no index creation</h4>
+
+<pre><code>mongorestore --noIndexRestore --db mydb /backup/mydb_backup/mydb -u mongoadm --authenticationDatabase admin</code></pre>
+
+  <p>Skips index creation, useful for manual index management or performance optimization.</p>
+
+  <h3>Common options</h3>
+
+  <ul>
+    <li><code>--out</code>, <code>--archive</code>: Specify the output directory or archive
+      file for <code>mongodump</code>.</li>
+    <li><code>--gzip</code>: Enable compression for backups and restores.</li>
+    <li><code>--oplog</code>, <code>--oplogReplay</code>: Enable point-in-time recovery for
+      replica sets.</li>
+    <li><code>--drop</code>: Drop target collections/databases before restoring.</li>
+    <li><code>--host</code>, <code>--port</code>, <code>--uri</code>: Connect to local or
+      remote MongoDB instances.</li>
+    <li><code>--ssl</code>: Use SSL/TLS for secure connections.</li>
+    <li><code>--nsInclude</code>, <code>--nsExclude</code>: Filter namespaces (databases and
+      collections) for backup/restore.</li>
+  </ul>
+
+  <h2>Use cases for mongodump and mongorestore</h2>
+
+  <ol>
+    <li><strong>Disaster recovery:</strong>
+      <ul>
+        <li>Create regular backups of critical databases to recover from data loss due to
+          hardware failures, human errors, or corruption.</li>
+        <li>Example: back up a production database nightly and restore it to a new instance
+          after a crash.</li>
+      </ul>
+    </li>
+    <li><strong>Database migration:</strong>
+      <ul>
+        <li>Move databases between servers, environments (e.g. dev to prod), or MongoDB
+          versions.</li>
+        <li>Example: migrate <code>mydb</code> from an on-premises server to a cloud-hosted
+          MongoDB instance.</li>
+      </ul>
+    </li>
+    <li><strong>Testing and development:</strong>
+      <ul>
+        <li>Create snapshots of production data for testing or development environments.</li>
+        <li>Example: restore a production backup to a staging server for QA testing.</li>
+      </ul>
+    </li>
+    <li><strong>Point-in-time recovery:</strong>
+      <ul>
+        <li>Restore replica sets to a specific point in time using oplog entries, minimizing
+          data loss.</li>
+        <li>Example: recover a database to its state before an accidental data deletion.</li>
+      </ul>
+    </li>
+    <li><strong>Archiving:</strong>
+      <ul>
+        <li>Archive historical data in BSON format for compliance or auditing purposes.</li>
+        <li>Example: back up a <code>transactions</code> collection for regulatory
+          retention.</li>
+      </ul>
+    </li>
+  </ol>
+
+  <h2>Limitations of mongodump and mongorestore</h2>
+
+  <ol>
+    <li><strong>Performance impact on large deployments:</strong>
+      <ul>
+        <li><strong>Issue:</strong> <code>mongodump</code> can strain resources on running
+          <code>mongod</code> instances, especially for large datasets.</li>
+        <li><strong>Impact:</strong> May cause slowdowns in production environments.</li>
+        <li><strong>Workaround:</strong> Run backups during low-traffic periods, or use tools
+          like MongoDB Atlas for managed backups.</li>
+      </ul>
+    </li>
+    <li><strong>No atomicity for sharded clusters with transactions:</strong>
+      <ul>
+        <li><strong>Issue:</strong> For MongoDB 4.2+ sharded clusters with in-progress
+          transactions, <code>mongodump</code> cannot guarantee atomicity.</li>
+        <li><strong>Impact:</strong> Inconsistent backups for distributed systems.</li>
+        <li><strong>Alternative:</strong> Use MongoDB Atlas, Cloud Manager, or Percona Backup
+          for MongoDB for sharded clusters.</li>
+      </ul>
+    </li>
+    <li><strong>Excludes the <code>local</code> database:</strong>
+      <ul>
+        <li><strong>Issue:</strong> <code>mongodump</code> skips the <code>local</code>
+          database (containing the oplog for replica sets) unless explicitly included.</li>
+        <li><strong>Impact:</strong> Manual inclusion of the oplog via <code>--oplog</code> is
+          required for point-in-time recovery.</li>
+        <li><strong>Workaround:</strong> Always use <code>--oplog</code> for replica set
+          backups.</li>
+      </ul>
+    </li>
+    <li><strong>Manual handling of users and roles:</strong>
+      <ul>
+        <li><strong>Issue:</strong> <code>mongodump</code> doesn’t back up user/role
+          configurations in the <code>admin</code> database by default.</li>
+        <li><strong>Impact:</strong> Authentication settings must be recreated or explicitly
+          backed up.</li>
+        <li><strong>Workaround:</strong> Include <code>--db admin</code> in
+          <code>mongodump</code> to capture user data.</li>
+      </ul>
+    </li>
+    <li><strong>Resource requirements:</strong>
+      <ul>
+        <li><strong>Issue:</strong> Backups require significant disk space and memory,
+          especially without <code>--gzip</code>.</li>
+        <li><strong>Impact:</strong> Large databases may strain storage systems.</li>
+        <li><strong>Workaround:</strong> Use <code>--gzip</code> or <code>--archive</code> for
+          compression.</li>
+      </ul>
+    </li>
+    <li><strong>No incremental backups:</strong>
+      <ul>
+        <li><strong>Issue:</strong> <code>mongodump</code> creates full backups each time,
+          unlike incremental backup solutions.</li>
+        <li><strong>Impact:</strong> Increased storage and time for frequent backups.</li>
+        <li><strong>Alternative:</strong> Use MongoDB Atlas or Percona Backup for incremental
+          options.</li>
+      </ul>
+    </li>
+  </ol>
+
+  <h2>Best practices for mongodump and mongorestore</h2>
+
+  <ol>
+    <li><strong>Automate backups:</strong> Use cron jobs or automation tools to schedule
+      regular <code>mongodump</code> runs:
+<pre><code>0 2 * * * mongodump --db mydb --gzip --archive=/backup/mydb_$(date +%F).gz</code></pre>
+      Example: runs daily at 2 AM.
+    </li>
+    <li><strong>Enable compression:</strong> Use <code>--gzip</code> or <code>--archive</code>
+      to reduce backup file sizes and save storage.</li>
+    <li><strong>Use point-in-time recovery:</strong> Always include <code>--oplog</code> for
+      replica set backups and <code>--oplogReplay</code> for restores to ensure
+      consistency.</li>
+    <li><strong>Test restores:</strong> Periodically restore backups to a sandbox environment
+      to verify integrity and practise recovery procedures.</li>
+    <li><strong>Secure backups:</strong> Use <code>--ssl</code> for secure connections and
+      encrypt backup files (e.g. with AES-256) for sensitive data. Store backups in secure,
+      off-site locations (e.g. AWS S3, Google Cloud Storage).</li>
+    <li><strong>Monitor and validate:</strong> Monitor backup processes for errors and
+      validate restored data using MongoDB shell queries:
+<pre><code>db.users.countDocuments()
+db.users.getIndexes()</code></pre>
+    </li>
+  </ol>
+
+  <h2>Conclusion</h2>
+
+  <p><code>mongodump</code> and <code>mongorestore</code> are robust tools for logical backups
+  and restores in MongoDB, offering flexibility for disaster recovery, migrations, and testing.
+  Their ability to preserve data types, indexes, and oplogs (for replica sets) makes them more
+  comprehensive than <code>mongoexport</code>/<code>mongoimport</code>. However, limitations
+  like performance impacts on large deployments and lack of atomicity for sharded clusters mean
+  they’re best suited for small to medium-sized setups. For enterprise-grade or sharded
+  environments, consider MongoDB Atlas, Ops Manager, or Percona Backup for MongoDB.</p>
+
+  <a class="back" href="../index.html">← All posts</a>
+
+</article>
+</div>
+
+<footer class="site">
+  <div class="wrap narrow">
+    <p>&copy; 2026 Sunke Nithin</p>
+  </div>
+</footer>
+
+</body>
+</html>
