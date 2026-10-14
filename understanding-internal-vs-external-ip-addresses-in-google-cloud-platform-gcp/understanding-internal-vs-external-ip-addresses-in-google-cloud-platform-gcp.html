@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GCP Internal vs External IPs</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#1a73e8;--accent-soft:#e8f0fe;--accent-ink:#1557b0;--int:#188038;--int-soft:#e6f4ea;--ext:#c5221f;--ext-soft:#fce8e6;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h2.int .num{background:var(--int)}
+.tsn-post h2.ext .num{background:var(--ext)}
+.tsn-post h3{font-size:1.04em;margin:1.4em 0 .4em}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.86em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post table{width:100%;border-collapse:collapse;margin:.8em 0;font-size:.95em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post th.i{background:var(--int-soft);color:var(--int)}
+.tsn-post th.e{background:var(--ext-soft);color:var(--ext)}
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post .warn ul{margin:.3em 0}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.35em 0}
+.tsn-post .why{display:flex;flex-wrap:wrap;gap:8px;margin:.8em 0}
+.tsn-post .why span{background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:3px 12px;font-size:.88em;font-weight:600}
+.tsn-post .diagram{margin:1em 0}
+.tsn-post .diagram svg{display:block;max-width:100%;height:auto;margin:0 auto}
+.tsn-post .diagram figcaption{text-align:center;color:var(--muted);font-size:.85em;margin-top:4px}
+.tsn-post .pair{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin:.8em 0}
+.tsn-post .pair > div{border-radius:10px;padding:6px 16px 4px}
+.tsn-post .pair .i{background:var(--int-soft);border:1px solid #c4e3cd}
+.tsn-post .pair .e{background:var(--ext-soft);border:1px solid #f4c7c3}
+.tsn-post .pair h3{margin:.6em 0 .2em}
+.tsn-post .pair .i h3{color:var(--int)}
+.tsn-post .pair .e h3{color:var(--ext)}
+.tsn-post .pair ul{margin:.3em 0 .6em}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:var(--accent-ink)}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
+</style>
+
+<h1>Understanding Internal vs External IP Addresses in Google Cloud Platform (GCP)</h1>
+<div class="meta">By Sunke Nithin · August 9, 2025 &nbsp; <span class="tag">Cloud</span><span class="tag">GCP</span><span class="tag">Network</span></div>
+
+<p class="lead">When you deploy resources in <strong>Google Cloud Platform (GCP)</strong>, understanding how <strong>internal and external IP addresses</strong> work is crucial for designing secure, scalable architectures. Whether you're launching a VM, setting up a load balancer or deploying a Kubernetes cluster, knowing how GCP handles IP addressing helps you:</p>
+<div class="why"><span>Control access</span><span>Manage costs</span><span>Secure your workloads</span></div>
+<p>Let's look at the differences, use cases, how to assign each type, and the key best practices.</p>
+
+<div class="toc"><strong>Contents</strong>
+<ol>
+<li><a href="#gip-what">What Are Internal and External IPs?</a></li>
+<li><a href="#gip-int">Internal IP Addresses</a></li>
+<li><a href="#gip-ext">External IP Addresses</a></li>
+<li><a href="#gip-best">Best Practices</a></li>
+<li><a href="#gip-sum">Summary</a></li>
+</ol></div>
+
+<h2 id="gip-what"><span class="num">1</span>What Are Internal and External IPs?</h2>
+<table>
+<tr><th>Type</th><th>Scope</th><th>Usage</th><th>Reachable from</th></tr>
+<tr><td><strong style="color:var(--int)">Internal IP</strong></td><td>Private</td><td>VM-to-VM communication inside GCP</td><td>Within the VPC (and connected networks)</td></tr>
+<tr><td><strong style="color:var(--ext)">External IP</strong></td><td>Public</td><td>Access to GCP resources from the internet</td><td>The internet</td></tr>
+</table>
+
+<figure class="diagram">
+<svg viewBox="0 0 760 250" role="img" aria-labelledby="gip-t" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
+<title id="gip-t">Internet reaches only the web VM's external IP; inside the VPC the web VM talks to the database VM over internal IPs; the database VM reaches the internet outbound through Cloud NAT</title>
+<defs><marker id="gip-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#8a94a0"/></marker></defs>
+<!-- internet -->
+<rect x="20" y="96" width="120" height="56" rx="28" fill="#fff" stroke="#9aa5b1"/>
+<text x="80" y="129" text-anchor="middle" font-size="14" font-weight="700" fill="#1f2933">Internet</text>
+<!-- vpc -->
+<rect x="200" y="18" width="540" height="214" rx="14" fill="#f5f8fc" stroke="#c9d6e8"/>
+<text x="220" y="42" font-size="13" font-weight="700" fill="#1557b0">VPC network · subnet 10.0.0.0/24</text>
+<!-- web vm -->
+<rect x="240" y="80" width="170" height="92" rx="10" fill="#fff" stroke="#9aa5b1"/>
+<text x="325" y="104" text-anchor="middle" font-size="14" font-weight="700" fill="#1f2933">Web VM</text>
+<rect x="256" y="114" width="138" height="22" rx="11" fill="#fce8e6"/><text x="325" y="129" text-anchor="middle" font-size="11.5" fill="#c5221f">ext 34.x.x.x</text>
+<rect x="256" y="142" width="138" height="22" rx="11" fill="#e6f4ea"/><text x="325" y="157" text-anchor="middle" font-size="11.5" fill="#188038">int 10.0.0.10</text>
+<!-- db vm -->
+<rect x="530" y="80" width="170" height="92" rx="10" fill="#fff" stroke="#9aa5b1"/>
+<text x="615" y="104" text-anchor="middle" font-size="14" font-weight="700" fill="#1f2933">Database VM</text>
+<rect x="546" y="128" width="138" height="22" rx="11" fill="#e6f4ea"/><text x="615" y="143" text-anchor="middle" font-size="11.5" fill="#188038">int 10.0.0.20 only</text>
+<!-- nat -->
+<rect x="546" y="192" width="138" height="28" rx="6" fill="#eef2f5"/><text x="615" y="211" text-anchor="middle" font-size="12" fill="#4b5563">Cloud NAT (outbound)</text>
+<g stroke="#8a94a0" stroke-width="2" fill="none" marker-end="url(#gip-ar)">
+<path d="M140 124H236"/>
+<path d="M410 139H526"/>
+<path d="M615 172V188"/>
+</g>
+<text x="188" y="116" text-anchor="middle" font-size="11" fill="#c5221f">public</text>
+<text x="468" y="131" text-anchor="middle" font-size="11" fill="#188038">private</text>
+</svg>
+<figcaption>Only the web VM has an external IP. The database VM is reachable only on its internal IP, and uses Cloud NAT if it needs outbound internet access.</figcaption>
+</figure>
+
+<h2 id="gip-int" class="int"><span class="num">2</span>Internal IP Address (Private)</h2>
+<p>An <strong>internal IP</strong> is a private address assigned to a VM instance, internal load balancer or GKE node <strong>within a VPC network</strong>. It's used for <strong>private communication</strong> between GCP resources <strong>without exposing them to the internet</strong>.</p>
+
+<h3>Use cases</h3>
+<ul>
+<li>Backend services (database servers, APIs)</li>
+<li>GKE nodes communicating internally</li>
+<li>VM-to-VM or VM-to-database traffic</li>
+<li>Connections over VPC peering, Cloud VPN or Interconnect</li>
+</ul>
+
+<h3>How internal IPs are assigned</h3>
+<ul>
+<li><strong>Automatically</strong> by GCP from the subnet's range (e.g. <code>10.0.0.0/24</code>), or</li>
+<li>As a <strong>static reservation</strong>, so the VM keeps the same address even if it's stopped or recreated.</li>
+</ul>
+
+<h3>Reserve a static internal IP — Console</h3>
+<ol>
+<li>Go to <strong>VPC network → IP addresses</strong>.</li>
+<li>Click <strong>Reserve internal static IP address</strong>.</li>
+<li>Select the <strong>network, region and subnet</strong>, and optionally choose the exact address.</li>
+<li>Click <strong>Reserve</strong>, then select it as the primary internal IP when you create the VM.</li>
+</ol>
+
+<h3>Reserve a static internal IP — gcloud</h3>
+<div class="code"><span class="lbl">GCLOUD</span><pre><code>gcloud compute addresses create my-internal-ip \
+  --region=us-central1 \
+  --subnet=custom-subnet \
+  --addresses=10.0.0.100 \
+  --purpose=GCE_ENDPOINT</code></pre></div>
+<p>Passing <code>--subnet</code> makes it an internal address. Omit <code>--addresses</code> to let GCP pick a free IP from the subnet.</p>
+
+<h2 id="gip-ext" class="ext"><span class="num">3</span>External IP Address (Public)</h2>
+<p>An <strong>external IP</strong> is a <strong>public IP address</strong> assigned to a VM, load balancer or other resource that needs to communicate with — or be reached from — the <strong>public internet</strong>.</p>
+
+<h3>Use cases</h3>
+<ul>
+<li>Web servers and APIs accessed over the internet</li>
+<li>Remote SSH/RDP access to VMs (though IAP is a safer option — see below)</li>
+<li>Inbound and outbound communication with external systems</li>
+</ul>
+
+<div class="warn"><strong>Security warning:</strong> a public IP exposes the resource to the internet. Always protect it with:
+<ul>
+<li>Firewall rules that allow only the ports and sources you need</li>
+<li>Identity-Aware Proxy (IAP) for admin access</li>
+<li>A secure VPN or bastion host</li>
+</ul></div>
+
+<h3>Types of external IP</h3>
+<table>
+<tr><th>Type</th><th>Description</th></tr>
+<tr><td><strong>Ephemeral</strong></td><td>Assigned automatically. Released when the VM is <em>stopped</em> or deleted (it survives a reboot/reset), so it may change the next time the VM starts.</td></tr>
+<tr><td><strong>Static</strong></td><td>Reserved and fixed until you release it — ideal for DNS records and long-lived services.</td></tr>
+</table>
+<div class="note">You can promote an ephemeral external IP to static without changing it: <strong>VPC network → IP addresses</strong>, select the address, then <strong>Promote to static IP address</strong>.</div>
+
+<h3>Reserve a static external IP — Console</h3>
+<ol>
+<li>Go to <strong>VPC network → IP addresses</strong>.</li>
+<li>Click <strong>Reserve external static IP address</strong>.</li>
+<li>Choose the <strong>Type: Regional or Global</strong> (global addresses are for global external load balancers).</li>
+<li>Use the address during VM or load-balancer setup.</li>
+</ol>
+
+<h3>Reserve a static external IP — gcloud</h3>
+<div class="code"><span class="lbl">GCLOUD</span><pre><code><span class="cm"># Regional — for VMs and regional load balancers</span>
+gcloud compute addresses create my-external-ip \
+  --region=us-central1
+
+<span class="cm"># Global — for global external load balancers</span>
+gcloud compute addresses create my-global-ip \
+  --global</code></pre></div>
+
+<h2 id="gip-best"><span class="num">4</span>Best Practices</h2>
+<div class="pair">
+<div class="i">
+<h3>Internal IPs</h3>
+<ul>
+<li>Use internal IPs <strong>by default</strong> for all internal communication.</li>
+<li>Enable <strong>Private Google Access</strong> to reach Google APIs without public IPs.</li>
+<li>Use <strong>Cloud NAT</strong> for outbound internet access without public IPs.</li>
+</ul>
+</div>
+<div class="e">
+<h3>External IPs</h3>
+<ul>
+<li><strong>Avoid exposing VMs directly</strong> — put an HTTPS load balancer with Cloud Armor in front.</li>
+<li><strong>Use static IPs</strong> for DNS mapping and consistency.</li>
+<li><strong>Restrict access</strong> with firewall rules, service accounts and IAP.</li>
+</ul>
+</div>
+</div>
+
+<h2 id="gip-sum"><span class="num">5</span>Summary: Internal vs External IPs in GCP</h2>
+<table>
+<tr><th>Feature</th><th class="i">Internal IP</th><th class="e">External IP</th></tr>
+<tr><td>Visibility</td><td>Private (inside the VPC)</td><td>Public (internet-facing)</td></tr>
+<tr><td>Scope</td><td>Regional (tied to a subnet)</td><td>Regional or global</td></tr>
+<tr><td>Use case</td><td>VM communication, backends</td><td>Web access, SSH, public APIs</td></tr>
+<tr><td>Security</td><td>Not reachable from the internet</td><td>Needs strict controls</td></tr>
+<tr><td>Cost</td><td>No charge for the address</td><td>External IPv4 addresses are billed hourly, and a reserved static address that isn't attached to anything costs more</td></tr>
+</table>
+<div class="note">Pricing changes over time — check the current <a href="https://cloud.google.com/vpc/network-pricing#ipaddress" target="_blank" rel="noopener">IP address pricing</a> before you plan around it.</div>
+
+<h2>Final Thoughts</h2>
+<p>IP address management in GCP isn't just about connectivity — it's about <strong>security, availability and cost efficiency</strong>. Default to <strong>internal IPs</strong>, use <strong>external IPs only when needed</strong>, and always follow GCP's network security best practices.</p>
+
+<h3>Further reading</h3>
+<ul>
+<li><a href="https://cloud.google.com/compute/docs/ip-addresses" target="_blank" rel="noopener">GCP IP address documentation</a></li>
+<li><a href="https://cloud.google.com/vpc/docs/private-google-access" target="_blank" rel="noopener">Private Google Access</a></li>
+<li><a href="https://cloud.google.com/nat/docs/overview" target="_blank" rel="noopener">Cloud NAT overview</a></li>
+</ul>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>
