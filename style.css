@@ -639,3 +639,15 @@ article hr {
 @media (prefers-color-scheme: dark) {
   .callout-warn { background: #2a1416; }
 }
+
+/* Filename label above a code block */
+.filename {
+  margin: 1.5rem 0 .4rem;
+  font-size: .85rem;
+  color: var(--muted);
+}
+
+.filename code {
+  font-weight: 650;
+  color: var(--fg);
+}

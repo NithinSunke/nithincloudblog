@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Replication Controllers and ReplicaSets in Kubernetes: A Detailed Overview — Nithin Cloud Blog</title>
+<meta name="description" content="What Replication Controllers and ReplicaSets do in Kubernetes, how they differ, and why ReplicaSets with Deployments are the modern choice.">
+<meta name="author" content="Sunke Nithin">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="Replication Controllers and ReplicaSets in Kubernetes: A Detailed Overview">
+<meta property="og:description" content="What Replication Controllers and ReplicaSets do in Kubernetes, how they differ, and why ReplicaSets with Deployments are the modern choice.">
+<meta property="article:published_time" content="2025-09-07">
+
+<!-- Relative, so the site works both opened from disk and served over HTTP. -->
+<link rel="stylesheet" href="../style.css">
+</head>
+
+<body>
+
+<header class="site">
+  <div class="wrap narrow">
+    <p class="brand"><a href="../index.html">Nithin Cloud Blog</a></p>
+    <p class="tagline">Notes on Oracle Cloud Infrastructure, networking, and homelab infrastructure.</p>
+  </div>
+</header>
+
+<div class="wrap narrow">
+<article>
+
+  <div class="post-header">
+    <h1>Replication Controllers and ReplicaSets in Kubernetes: A Detailed Overview</h1>
+    <p class="meta">
+      <time datetime="2025-09-07">7 September 2025</time>
+      <span class="dot">&bull;</span>
+      <span>Sunke Nithin</span>
+      <span class="dot">&bull;</span>
+      <span>~4 min read</span>
+    </p>
+    <ul class="chips">
+      <li class="cat">kubernetes</li>
+      <li class="tag">devops</li>
+    </ul>
+  </div>
+
+  <p>Kubernetes, the open-source container orchestration platform, is widely used for
+  managing containerized applications at scale. Among its many features,
+  <strong>Replication Controllers</strong> and <strong>ReplicaSets</strong> are essential
+  components that help ensure high availability, scalability, and fault tolerance of
+  applications. In this blog post, we’ll dive into what these components are, how they
+  differ, and their role in the Kubernetes ecosystem.</p>
+
+  <h2>What is a Replication Controller in Kubernetes?</h2>
+
+  <p>A <strong>Replication Controller (RC)</strong> is a Kubernetes resource that ensures a
+  specified number of pod replicas are running at any given time. If a pod fails or is
+  terminated, the replication controller ensures that a new pod is started to maintain the
+  desired number of replicas. It’s essentially responsible for maintaining the
+  <strong>desired state</strong> of the application.</p>
+
+  <p>The main responsibilities of a Replication Controller are:</p>
+
+  <ul>
+    <li>Ensuring the desired number of replicas of a pod are running at all times.</li>
+    <li>Replacing pods that have been terminated, failed, or are unhealthy.</li>
+    <li>Scaling applications by adjusting the number of replicas.</li>
+  </ul>
+
+  <p class="filename"><code>ngnix_pod_rc.yaml</code></p>
+
+<pre><code>apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: nginx-rc
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  template:
+    metadata:
+      name: ngnix
+      labels:
+        app: nginx
+        tier: frontend
+    spec:
+      containers:
+      - name: ngnix
+        image: docker.io/library/nginx:latest</code></pre>
+
+  <p>In this example, the replication controller ensures that 3 replicas of the
+  <code>nginx</code> pod are always running.</p>
+
+  <p>Create the replication controller:</p>
+
+<pre><code>kubectl create -f ngnix_pod_rc.yaml
+kubectl get replicationcontroller -o wide
+kubectl get pods</code></pre>
+
+  <h2>What is a ReplicaSet in Kubernetes?</h2>
+
+  <p><strong>ReplicaSets</strong> are a newer, more flexible, and more powerful version of
+  the Replication Controller. A ReplicaSet ensures that a specified number of pod replicas
+  are running at any given time, similar to a Replication Controller. However, it provides
+  additional benefits, such as being more extensible and more closely integrated with
+  Kubernetes’ <strong>Deployments</strong>.</p>
+
+  <p>In fact, ReplicaSets are typically managed by <strong>Deployments</strong>, which
+  provide a higher-level abstraction to manage the lifecycle of pods and their replicas.
+  While a ReplicaSet can be used independently, it's often used alongside a Deployment to
+  manage updates and rolling deployments more efficiently.</p>
+
+  <h3>Key features of ReplicaSets</h3>
+
+  <ul>
+    <li>Ensures that a specified number of pod replicas are always running.</li>
+    <li>Can be scaled up or down easily.</li>
+    <li>Supports the use of label selectors to manage the pods.</li>
+    <li>Typically used with Deployments for better management of pod life cycles.</li>
+  </ul>
+
+  <p class="filename"><code>ngnix_pod_rs.yaml</code></p>
+
+<pre><code>apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: nginx-rs
+  labels:
+    app: nginx
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: ngnix-pod
+  template:
+    metadata:
+      name: ngnix
+      labels:
+        app: ngnix-pod
+        tier: frontend
+    spec:
+      containers:
+      - name: ngnix
+        image: docker.io/library/nginx:latest</code></pre>
+
+  <p>Create the ReplicaSet:</p>
+
+<pre><code>kubectl create -f ngnix_pod_rs.yaml
+kubectl get replicaset
+kubectl get pods</code></pre>
+
+  <p>Try deleting one pod and watch it provision a new one:</p>
+
+<pre><code>kubectl delete pod nginx-rc-97md6     # pod name
+kubectl get pods
+kubectl describe replicaset nginx-rs  # describe the replicaset</code></pre>
+
+  <p>Scale the ReplicaSet up or down:</p>
+
+<pre><code>kubectl edit replicaset nginx-rs
+# modify the replicas value up or down</code></pre>
+
+  <h2>Key differences between Replication Controllers and ReplicaSets</h2>
+
+  <p>Although Replication Controllers and ReplicaSets perform similar functions, there are a
+  few key differences that make ReplicaSets a better option in most modern Kubernetes
+  setups:</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th>Replication Controller</th>
+          <th>ReplicaSet</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Version</strong></td>
+          <td>Older resource type in Kubernetes.</td>
+          <td>Newer and more advanced resource type.</td>
+        </tr>
+        <tr>
+          <td><strong>Pod Selector</strong></td>
+          <td>Uses a <strong>label selector</strong> to manage pods.</td>
+          <td>Uses <strong>label selectors</strong> but also supports
+            <strong>set-based selectors</strong>.</td>
+        </tr>
+        <tr>
+          <td><strong>Support for Deployments</strong></td>
+          <td>Standalone resource.</td>
+          <td>Primarily used with <strong>Deployments</strong> for managing updates.</td>
+        </tr>
+        <tr>
+          <td><strong>Rolling Updates</strong></td>
+          <td>Cannot perform rolling updates.</td>
+          <td>Supports rolling updates when used with Deployments.</td>
+        </tr>
+        <tr>
+          <td><strong>Flexibility</strong></td>
+          <td>Limited flexibility compared to ReplicaSets.</td>
+          <td>More flexible, especially with deployments.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Conclusion</h2>
+
+  <p><strong>Replication Controllers</strong> and <strong>ReplicaSets</strong> serve similar
+  functions in managing pod replicas, but <strong>ReplicaSets</strong> offer more flexibility
+  and are typically the better option for modern Kubernetes clusters. While Replication
+  Controllers are still used in legacy systems, <strong>ReplicaSets</strong> are often used
+  in conjunction with <strong>Deployments</strong> to handle pod lifecycle management and
+  rolling updates, making them more suited to dynamic, cloud-native applications.</p>
+
+  <p>For most use cases, it is recommended to use <strong>ReplicaSets</strong> alongside
+  <strong>Deployments</strong> to manage application updates and scaling more efficiently.
+  Replication Controllers, while still functional, have been largely superseded by the more
+  powerful and extensible <strong>ReplicaSet</strong> in Kubernetes.</p>
+
+  <a class="back" href="../index.html">← All posts</a>
+
+</article>
+</div>
+
+<footer class="site">
+  <div class="wrap narrow">
+    <p>&copy; 2026 Sunke Nithin</p>
+  </div>
+</footer>
+
+</body>
+</html>
