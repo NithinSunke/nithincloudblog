@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vagrant Installation & Configuration</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#0f766e;--accent-soft:#e6f4f2;--accent-ink:#0b5e57;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.04em;margin:1.4em 0 .4em}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.86em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post table{width:100%;border-collapse:collapse;margin:.8em 0;font-size:.95em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.35em 0}
+.tsn-post .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:.8em 0}
+.tsn-post .flow span{background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:.88em;font-family:Consolas,monospace}
+.tsn-post .flow b{color:var(--accent)}
+.tsn-post a{color:var(--accent-ink)}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
+</style>
+
+<h1>Vagrant Installation &amp; Configuration</h1>
+<div class="meta">By Sunke Nithin · May 20, 2024 &nbsp; <span class="tag">Automation</span><span class="tag">vagrant</span></div>
+
+<p class="lead">Vagrant builds and manages reproducible virtual machines from a single configuration file, which makes it a quick way to spin up lab servers. This post covers installing Vagrant on Windows, verifying it, and the basic workflow: add a box, create a VM, connect to it, and tear it down.</p>
+
+<h2>Prerequisites</h2>
+<ul>
+<li>A Windows machine with administrator rights.</li>
+<li>A virtualization provider for Vagrant to drive — most commonly <a href="https://www.virtualbox.org/wiki/Downloads" target="_blank" rel="noopener">Oracle VirtualBox</a>. Install it before running <code>vagrant up</code>.</li>
+</ul>
+
+<h2><span class="num">1</span>Download Vagrant</h2>
+<p>Download the Windows installer from the official page: <a href="https://developer.hashicorp.com/vagrant/install" target="_blank" rel="noopener">developer.hashicorp.com/vagrant/install</a> (the older <code>vagrantup.com/downloads</code> address redirects there).</p>
+
+<h2><span class="num">2</span>Install Vagrant on Windows</h2>
+<p>Run the downloaded <code>.msi</code> and work through the setup wizard:</p>
+<ol>
+<li>On the welcome screen, click <strong>Next</strong>.</li>
+<li>Accept the license agreement and click <strong>Next</strong>.</li>
+<li>Keep the default destination folder (or choose another) and click <strong>Next</strong>.</li>
+<li>Click <strong>Install</strong> and approve the Windows administrator prompt.</li>
+<li>Click <strong>Finish</strong>, and restart Windows when the installer asks — Vagrant is added to your <code>PATH</code> during the install.</li>
+</ol>
+
+<h2><span class="num">3</span>Verify Vagrant</h2>
+<p>Open a new Command Prompt or PowerShell window and check the installation:</p>
+<div class="code"><span class="lbl">SHELL</span><pre><code>vagrant --version
+vagrant --help</code></pre></div>
+<p><code>vagrant --version</code> prints the installed version; <code>vagrant --help</code> lists the available commands.</p>
+
+<h2><span class="num">4</span>Basic Workflow in Vagrant</h2>
+<div class="flow"><span>box add</span><b>→</b><span>init</span><b>→</b><span>up</span><b>→</b><span>ssh</span><b>→</b><span>halt</span><b>→</b><span>destroy</span></div>
+
+<p>Create a working folder for your VMs:</p>
+<div class="code"><span class="lbl">SHELL</span><pre><code>mkdir vagrant-vms
+cd vagrant-vms</code></pre></div>
+
+<p>Add a box (a base VM image) under a local name, then list your boxes:</p>
+<div class="code"><span class="lbl">SHELL</span><pre><code>vagrant box add centos-min https://github.com/tommy-muehle/puppet-vagrant-boxes/releases/download/1.1.0/centos-7.0-x86_64.box
+vagrant box --help
+vagrant box list</code></pre></div>
+<div class="warn">CentOS 7 reached end of life in June 2024 and this box is no longer maintained. For a current lab, add a maintained box from <a href="https://portal.cloud.hashicorp.com/vagrant/discover" target="_blank" rel="noopener">HashiCorp's box catalog</a> instead — for example <code>vagrant box add bento/oraclelinux-8</code> — and use that name in <code>vagrant init</code>.</div>
+
+<p>Create a <code>Vagrantfile</code> for the box, start the VM, and connect to it:</p>
+<div class="code"><span class="lbl">SHELL</span><pre><code>vagrant init centos-min   <span class="cm"># writes a Vagrantfile in the current folder</span>
+vagrant up                <span class="cm"># creates and boots the VM</span>
+vagrant ssh               <span class="cm"># opens an SSH session into the VM</span></code></pre></div>
+
+<p>When you're done, stop or remove the VM:</p>
+<div class="code"><span class="lbl">SHELL</span><pre><code>vagrant halt              <span class="cm"># shuts the VM down (keeps it)</span>
+vagrant destroy           <span class="cm"># deletes the VM entirely</span></code></pre></div>
+
+<h3>Command reference</h3>
+<table>
+<tr><th>Command</th><th>What it does</th></tr>
+<tr><td><code>vagrant box add &lt;name&gt; &lt;url&gt;</code></td><td>Downloads a box and stores it under a local name.</td></tr>
+<tr><td><code>vagrant box list</code></td><td>Lists the boxes installed on this machine.</td></tr>
+<tr><td><code>vagrant init &lt;box&gt;</code></td><td>Creates a <code>Vagrantfile</code> that uses the box.</td></tr>
+<tr><td><code>vagrant up</code></td><td>Creates and starts the VM described by the <code>Vagrantfile</code>.</td></tr>
+<tr><td><code>vagrant ssh</code></td><td>Opens an SSH session into the running VM.</td></tr>
+<tr><td><code>vagrant halt</code></td><td>Gracefully shuts the VM down.</td></tr>
+<tr><td><code>vagrant destroy</code></td><td>Stops and deletes the VM and its disks (the box stays installed).</td></tr>
+</table>
+<div class="note">Run these commands from the folder that contains the <code>Vagrantfile</code> — Vagrant uses that file to know which VM you mean.</div>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>
