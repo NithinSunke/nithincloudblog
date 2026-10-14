@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Understanding Kubernetes Architecture: A Comprehensive Guide to Container Orchestration — Nithin Cloud Blog</title>
+<meta name="description" content="How a Kubernetes cluster is put together: the Control Plane components that decide, the Worker Node components that run workloads, and the networking and HA that hold it together.">
+<meta name="author" content="Sunke Nithin">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="Understanding Kubernetes Architecture: A Comprehensive Guide to Container Orchestration">
+<meta property="og:description" content="How a Kubernetes cluster is put together: the Control Plane components that decide, the Worker Node components that run workloads, and the networking and HA that hold it together.">
+<meta property="article:published_time" content="2025-09-06">
+
+<!-- Relative, so the site works both opened from disk and served over HTTP. -->
+<link rel="stylesheet" href="../style.css">
+</head>
+
+<body>
+
+<header class="site">
+  <div class="wrap narrow">
+    <p class="brand"><a href="../index.html">Nithin Cloud Blog</a></p>
+    <p class="tagline">Notes on Oracle Cloud Infrastructure, networking, and homelab infrastructure.</p>
+  </div>
+</header>
+
+<div class="wrap narrow">
+<article>
+
+  <div class="post-header">
+    <h1>Understanding Kubernetes Architecture: A Comprehensive Guide to Container Orchestration</h1>
+    <p class="meta">
+      <time datetime="2025-09-06">6 September 2025</time>
+      <span class="dot">&bull;</span>
+      <span>Sunke Nithin</span>
+      <span class="dot">&bull;</span>
+      <span>~3 min read</span>
+    </p>
+    <ul class="chips">
+      <li class="cat">Kubernetes</li>
+      <li class="tag">Devops</li>
+    </ul>
+  </div>
+
+  <p>Kubernetes architecture is a distributed system designed to automate container
+  orchestration, including deployment, scaling, and management of containerized applications.
+  It comprises two main layers: the Control Plane and the Worker Nodes (data plane). The
+  Control Plane manages the cluster state and decision-making, while the Worker Nodes run the
+  application workloads inside containers arranged as pods.</p>
+
+  <h2>Core Kubernetes architecture components</h2>
+
+  <h3>Control Plane</h3>
+
+  <p>The Control Plane acts as the brain of the Kubernetes cluster, responsible for
+  cluster-wide management and orchestration. Its key components are:</p>
+
+  <ul>
+    <li><strong>API Server (kube-apiserver):</strong> The main entry point for all
+      administrative commands and API requests. It performs authentication, authorization,
+      and acts as the gateway for communication between users, controllers, and worker
+      nodes.</li>
+    <li><strong>etcd:</strong> A distributed key-value store that persists the entire
+      cluster's state and configuration, serving as the single source of truth.</li>
+    <li><strong>Scheduler (kube-scheduler):</strong> Assigns newly created pods to worker
+      nodes based on resource availability, policies, and constraints.</li>
+    <li><strong>Controller Manager (kube-controller-manager):</strong> Runs background
+      controllers that maintain desired cluster states like node status, replication, and
+      endpoints.</li>
+    <li><strong>Cloud Controller Manager:</strong> Handles cloud provider-specific control
+      logic such as managing instances, load balancers, and storage in cloud
+      environments.</li>
+  </ul>
+
+  <h3>Worker Nodes</h3>
+
+  <p>Worker Nodes host the running application workloads encapsulated in pods. The main
+  components include:</p>
+
+  <ul>
+    <li><strong>Kubelet:</strong> Agent on each node that communicates with the Control
+      Plane, ensures containers in pods are running and healthy as per specifications.</li>
+    <li><strong>Kube Proxy:</strong> Manages network routing for services in the cluster to
+      facilitate communication between pods and external endpoints.</li>
+    <li><strong>Container Runtime:</strong> Software like containerd, CRI-O, or Docker
+      responsible for downloading container images and running containers on the node.</li>
+  </ul>
+
+  <h2>Kubernetes networking</h2>
+
+  <p>Kubernetes abstracts networking to ensure pods can communicate seamlessly across nodes.
+  This is facilitated by Container Networking Interfaces (CNIs) like Calico, Cilium, and
+  Flannel, which implement network policies, routing, and secure communication. CoreDNS
+  provides service discovery, translating service names to pod IPs.</p>
+
+  <h2>High availability and scalability</h2>
+
+  <p>Kubernetes supports high availability (HA) by running multiple Control Plane nodes and
+  replicated etcd instances, ensuring cluster reliability even if some components fail. The
+  system is highly scalable, automatically distributing workloads across nodes and dynamically
+  adjusting resources based on load.</p>
+
+  <h2>Summary</h2>
+
+  <p>Kubernetes architecture is designed for resilient, scalable, and automated management of
+  containerized applications across distributed environments. Its separation between the
+  Control Plane and Worker Nodes allows efficient orchestration, while networking and storage
+  abstraction simplify complex infrastructure management for developers and operators.</p>
+
+  <p>This architecture has become a backbone technology for modern cloud-native applications,
+  enabling organizations to deploy and scale services reliably at a global scale.</p>
+
+  <a class="back" href="../index.html">← All posts</a>
+
+</article>
+</div>
+
+<footer class="site">
+  <div class="wrap narrow">
+    <p>&copy; 2026 Sunke Nithin</p>
+  </div>
+</footer>
+
+</body>
+</html>
