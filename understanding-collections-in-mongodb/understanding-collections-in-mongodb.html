@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Understanding MongoDB Collections</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#13aa52;--accent-soft:#eaf7ef;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.08em;margin:1.6em 0 .4em}
+.tsn-post h4{font-size:1em;margin:1.1em 0 .3em;color:#0b7a3a}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:#0b7a3a;border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.86em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post .diff{color:#ffd479}
+.tsn-post table{width:100%;border-collapse:collapse;margin:.8em 0;font-size:.95em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.35em 0}
+.tsn-post .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:.8em 0}
+.tsn-post .card{border:1px solid var(--line);border-radius:8px;padding:10px 14px;background:#fff}
+.tsn-post .card strong{display:block;color:#0b7a3a;margin-bottom:2px}
+.tsn-post figure{margin:1em 0;text-align:center}
+.tsn-post figure img{max-width:100%;height:auto;border:1px solid var(--line);border-radius:8px}
+.tsn-post figcaption{color:var(--muted);font-size:.85em;margin-top:4px}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:#0b7a3a}
+.tsn-post .end{background:var(--accent-soft);border-radius:8px;padding:14px 18px;margin-top:1em}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
+</style>
+
+<h1>Understanding Collections in MongoDB</h1>
+<div class="meta">By Sunke Nithin · August 25, 2025 &nbsp; <span class="tag">Database</span><span class="tag">MongoDB</span></div>
+
+<p class="lead">MongoDB, a leading NoSQL database, stores data in a flexible, JSON-like format called BSON (Binary JSON). At the core of its data organization are <strong>collections</strong>, the primary structure for storing documents. This post explores what collections are, their characteristics, and how to work with them effectively.</p>
+
+<div class="toc"><strong>Contents</strong>
+<ol>
+<li><a href="#col-what">What is a Collection?</a></li>
+<li><a href="#col-traits">Key Characteristics</a></li>
+<li><a href="#col-manage">Creating and Managing Collections</a></li>
+<li><a href="#col-best">Best Practices</a></li>
+<li><a href="#col-use">Common Use Cases</a></li>
+</ol></div>
+
+<h2 id="col-what"><span class="num">1</span>What is a Collection in MongoDB?</h2>
+<p>A <strong>collection</strong> is a group of documents, analogous to a table in a relational database. Unlike tables, collections are schema-less: documents in the same collection can have different structures, fields and data types. This flexibility makes MongoDB well suited to dynamic, unstructured or semi-structured data.</p>
+<p>For example, a collection named <code>users</code> might contain documents like:</p>
+<div class="code"><span class="lbl">JSON</span><pre><code>{
+  "_id": 1,
+  "name": "Alice",
+  <span class="diff">"age": 30,
+  "city": "New York"</span>
+}
+{
+  "_id": 2,
+  "name": "Bob",
+  <span class="diff">"email": "bob@example.com"</span>
+}</code></pre></div>
+<p>The two documents have different fields (<code>age</code> and <code>city</code> vs. <code>email</code>), yet they coexist in the same collection.</p>
+
+<table>
+<tr><th>Relational database</th><th>MongoDB</th></tr>
+<tr><td>Database</td><td>Database</td></tr>
+<tr><td>Table</td><td>Collection</td></tr>
+<tr><td>Row</td><td>Document</td></tr>
+<tr><td>Column</td><td>Field</td></tr>
+</table>
+
+<h2 id="col-traits"><span class="num">2</span>Key Characteristics of Collections</h2>
+<div class="grid">
+<div class="card"><strong>Schema-less Design</strong>Documents can have varying structures, allowing flexible data modeling.</div>
+<div class="card"><strong>Dynamic Creation</strong>A collection is created automatically when you first insert a document into it.</div>
+<div class="card"><strong>No Fixed Size</strong>Collections grow as documents are added, limited only by system resources.</div>
+<div class="card"><strong>Hierarchical Organization</strong>Collections live inside a database; one MongoDB instance can host many databases, each with many collections.</div>
+</div>
+
+<h2 id="col-manage"><span class="num">3</span>Creating and Managing Collections</h2>
+
+<h3>Creating a Collection</h3>
+<p>You can create a collection <strong>explicitly</strong> with <code>createCollection()</code>, or <strong>implicitly</strong> by inserting a document.</p>
+
+<h4>Explicit creation</h4>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.createCollection("admusers")</code></pre></div>
+
+<h4>Implicit creation</h4>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.users.insertOne({
+  name: "Alice",
+  age: 30
+})</code></pre></div>
+<p>This creates the <code>users</code> collection if it doesn't already exist, and inserts the document.</p>
+<figure>
+<img src="images/image-378.png" alt="mongosh output: createCollection admusers returns ok 1, insertOne into users returns an insertedId, and show collections lists admusers and users" loading="lazy">
+<figcaption>Both collections created — one explicitly, one by inserting a document.</figcaption>
+</figure>
+
+<h3>Viewing Collections</h3>
+<p>To list all collections in the current database:</p>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.getCollectionNames()
+show collections</code></pre></div>
+<figure>
+<img src="images/image-380.png" alt="mongosh output: getCollectionNames returns [ 'admusers', 'users' ] and show collections lists the same two names" loading="lazy">
+<figcaption><code>getCollectionNames()</code> returns an array; <code>show collections</code> prints one name per line.</figcaption>
+</figure>
+
+<h3>Dropping a Collection</h3>
+<p>To remove a collection and all its documents:</p>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.users.drop()</code></pre></div>
+<div class="warn"><code>drop()</code> deletes every document in the collection, and its indexes, permanently. Take a backup first if you might need the data.</div>
+
+<h2 id="col-best"><span class="num">4</span>Best Practices for Using Collections</h2>
+<ul>
+<li><strong>Logical grouping:</strong> use collections to group related documents, such as users, orders or products, to keep the data model clear.</li>
+<li><strong>Naming conventions:</strong> use clear, descriptive names (e.g. <code>users</code> instead of <code>u</code>). Avoid spaces and special characters.</li>
+<li><strong>Capped collections:</strong> for use cases like logging, consider capped collections. They have a fixed size and automatically overwrite the oldest data:</li>
+</ul>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.createCollection("logs", { capped: true, size: 5242880, max: 1000 })</code></pre></div>
+<div class="note"><code>size</code> is the maximum size in bytes (5242880 = 5 MB) and <code>max</code> is the maximum number of documents. Whichever limit is reached first triggers overwriting of the oldest documents.</div>
+
+<h2 id="col-use"><span class="num">5</span>Common Use Cases</h2>
+<div class="grid">
+<div class="card"><strong>User Data</strong>User profiles with varying attributes.</div>
+<div class="card"><strong>E-commerce</strong>Product catalogs with diverse attributes like size, color or price.</div>
+<div class="card"><strong>Analytics</strong>Time-series data or event logs.</div>
+<div class="card"><strong>Content Management</strong>Articles, posts or comments with flexible schemas.</div>
+</div>
+
+<h2>Conclusion</h2>
+<div class="end">Collections give MongoDB a flexible and powerful way to organize data. Their schema-less nature lets you adapt to changing requirements without rigid constraints, and MongoDB's query language makes the data easy to work with. Understand collections and follow these practices, and you can build scalable, robust applications. To dive deeper, explore the <a href="https://www.mongodb.com/docs/manual/core/databases-and-collections/" target="_blank" rel="noopener">MongoDB documentation on databases and collections</a>, or experiment in a local or cloud MongoDB instance.</div>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>
