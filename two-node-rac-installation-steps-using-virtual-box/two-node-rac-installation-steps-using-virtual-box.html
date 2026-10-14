@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Two-Node RAC on VirtualBox</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#c74634;--accent-soft:#fdf1ef;--accent-ink:#a3372a;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2.2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.04em;margin:1.5em 0 .4em}
+.tsn-post h3 .where{display:inline-block;font-size:.72em;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-radius:4px;padding:1px 7px;margin-right:.5em;vertical-align:2px;background:#eef2f5;color:#4b5563}
+.tsn-post h3 .n1{background:#e8f0fe;color:#1d4ed8}
+.tsn-post h3 .n2{background:#e6f4ea;color:#188038}
+.tsn-post h3 .all{background:var(--accent-soft);color:var(--accent-ink)}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.84em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post .ok{color:#7ee2a8}
+.tsn-post table{width:100%;border-collapse:collapse;margin:.8em 0;font-size:.93em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.3em 0}
+.tsn-post details{margin:.2em 0 1.2em}
+.tsn-post summary{cursor:pointer;color:var(--muted);font-size:.88em}
+.tsn-post summary:hover{color:var(--accent-ink)}
+.tsn-post .wiz{list-style:none;padding:0;margin:.8em 0;counter-reset:w}
+.tsn-post .wiz > li{position:relative;padding:3px 0 8px 2.4em;border-left:2px solid var(--line);margin-left:.9em}
+.tsn-post .wiz > li:last-child{border-left-color:transparent}
+.tsn-post .wiz > li::before{counter-increment:w;content:counter(w);position:absolute;left:-.9em;top:2px;width:1.8em;height:1.8em;line-height:1.8em;text-align:center;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:.8em}
+.tsn-post .wiz ul{margin:.15em 0 0;font-size:.95em}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:var(--accent-ink)}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}.tsn-post table{display:block;overflow-x:auto;font-size:.88em}}
+</style>
+
+<h1>Two-Node Oracle RAC Installation Steps Using VirtualBox</h1>
+<div class="meta">By Sunke Nithin · June 26, 2019 &nbsp; <span class="tag">Database</span><span class="tag">Oracle</span><span class="tag">Rac</span><span class="tag">Virtualbox</span></div>
+
+<p class="lead">A complete lab build of a two-node <strong>Oracle 11g Release 2 RAC</strong> cluster on VirtualBox: install Oracle Linux 5 on the first node, configure DNS (including the SCAN name), prepare shared ASM disks with udev, clone the VM to make the second node, then install Grid Infrastructure and the RAC database.</p>
+
+<div class="warn"><strong>A 2019 lab guide on old releases.</strong> Oracle Linux 5 and Database 11g R2 are long out of support, and the old <code>public-yum.oracle.com</code> repository has moved to <a href="https://yum.oracle.com" target="_blank" rel="noopener">yum.oracle.com</a>. The overall approach — DNS for SCAN, shared disks, udev rules, cloning, Grid then DB — still applies to newer releases, but commands and package names differ.</div>
+
+<h2>Lab layout</h2>
+<table>
+<tr><th>Name</th><th>rac1</th><th>rac2</th><th>Purpose</th></tr>
+<tr><td>Public (eth0)</td><td><code>192.168.1.11</code></td><td><code>192.168.1.12</code></td><td>Host IPs</td></tr>
+<tr><td>Private (eth1)</td><td><code>192.168.2.11</code></td><td><code>192.168.2.12</code></td><td>Cluster interconnect</td></tr>
+<tr><td>VIP</td><td><code>192.168.1.41</code></td><td><code>192.168.1.42</code></td><td>Node virtual IPs</td></tr>
+<tr><td>SCAN</td><td colspan="2"><code>rac-scan</code> → <code>192.168.1.31</code>, <code>.32</code>, <code>.33</code></td><td>Single client access name</td></tr>
+<tr><td>DNS</td><td>master</td><td>slave</td><td>Domain <code>oracle.com</code></td></tr>
+</table>
+
+<table>
+<tr><th>Shared disk</th><th>udev name</th><th>Size</th><th>Use</th></tr>
+<tr><td><code>/dev/sdb</code></td><td><code>/dev/asm-disk1</code></td><td>8 GB</td><td>ASM disk group DATA (data files)</td></tr>
+<tr><td><code>/dev/sdc</code></td><td><code>/dev/asm-disk2</code></td><td>8 GB</td><td>ASM disk group FRA (recovery files)</td></tr>
+</table>
+
+<div class="toc"><strong>Contents</strong>
+<ol>
+<li><a href="#rac-os">Install Oracle Linux 5 on rac1</a></li>
+<li><a href="#rac-post">Post-installation and packages</a></li>
+<li><a href="#rac-dns">Configure DNS on rac1 (master)</a></li>
+<li><a href="#rac-user">Network, PAM and the oracle user</a></li>
+<li><a href="#rac-disk">Shared storage and udev rules</a></li>
+<li><a href="#rac-clone">Clone rac1 to rac2</a></li>
+<li><a href="#rac-dns2">Configure DNS on rac2 (slave)</a></li>
+<li><a href="#rac-grid">Install Grid Infrastructure</a></li>
+<li><a href="#rac-db">Install the RAC database</a></li>
+</ol></div>
+
+<h2 id="rac-os"><span class="num">1</span>Install Oracle Linux 5.6 on rac1</h2>
+<p>Boot the VM from installation media #1 and choose:</p>
+<table>
+<tr><th>Screen</th><th>Choice</th></tr>
+<tr><td>Testing the CD media</td><td>Skip</td></tr>
+<tr><td>Language / keyboard</td><td>English / U.S. English</td></tr>
+<tr><td>Partitioning</td><td>Remove all partitions on selected drives and create default layout</td></tr>
+<tr><td>Boot loader</td><td>GRUB installed on <code>/dev/sda</code></td></tr>
+<tr><td>Hostname</td><td>Manually: <code>rac1.oracle.com</code> (ignore both warning messages)</td></tr>
+<tr><td>Time zone</td><td>America/New York, system clock uses UTC</td></tr>
+<tr><td>Root password</td><td>Set a root password</td></tr>
+<tr><td>Additional tasks</td><td>Software Development and Web Server; <strong>Customize now</strong></td></tr>
+</table>
+
+<p><strong>Network devices</strong> (both active on boot, IPv6 disabled):</p>
+<table>
+<tr><th>Device</th><th>IPv4 / netmask</th></tr>
+<tr><td><code>eth0</code></td><td><code>192.168.1.11 / 255.255.255.0</code></td></tr>
+<tr><td><code>eth1</code></td><td><code>192.168.2.11 / 255.255.255.0</code></td></tr>
+</table>
+
+<p><strong>Package selection</strong> on top of the defaults:</p>
+<ul>
+<li>Applications → Authoring and Publishing</li>
+<li>Development → Development Libraries → <code>libstdc++44-devel</code>; Java Development; Legacy Software Development</li>
+<li>Servers → all servers; Legacy Network Server → <code>bootparamd, rsh-server, rusers, rusers-server, telnet-server</code>; Network Servers → <code>dhcp, dhcpv6, dnsmasq, ypserv</code>; Server Configuration Tools → all</li>
+<li>Base System → Administration Tools → all; Base → <code>device-mapper-multipath, iscsi-initiator-utils</code>; Legacy Software Support → <code>openmotif22</code>; System Tools → <code>OpenIPMI-gui, lsscsi, oracle*, sysstat, tsclient</code></li>
+</ul>
+
+<h2 id="rac-post"><span class="num">2</span>Post-Installation Steps and Packages</h2>
+<p>On first boot: accept the license, <strong>disable the firewall</strong>, <strong>disable SELinux</strong>, disable kdump, set the clock, then finish and reboot. After the restart, log in as root and confirm:</p>
+<div class="code"><span class="lbl">BASH · ROOT</span><pre><code>service iptables stop
+chkconfig iptables off
+chkconfig --list iptables
+
+vi /etc/selinux/config        <span class="cm"># SELINUX=disabled</span></code></pre></div>
+
+<h3>Configure yum and install prerequisites</h3>
+<div class="code"><span class="lbl">BASH · ROOT</span><pre><code>cd /etc/yum.repos.d
+wget http://public-yum.oracle.com/public-yum-el5.repo   <span class="cm"># now yum.oracle.com</span>
+
+yum install -y oracle-rdbms-server-11gR2-preinstall
+yum install -y man parted unzip xterm lsof bind xorg-x11-twm
+yum remove -y ntp</code></pre></div>
+<div class="note">The original post downloaded <code>public-yum-ol6.repo</code>, which is for Oracle Linux 6. On Oracle Linux 5 use the EL5 repo file. Removing <code>ntp</code> lets Oracle's Cluster Time Synchronization Service (CTSS) manage time across the nodes.</div>
+
+<h2 id="rac-dns"><span class="num">3</span>Configure DNS on rac1 (Master)</h2>
+<p>RAC needs DNS to resolve the SCAN name to three addresses in round-robin. In this lab rac1 is the master DNS server.</p>
+
+<h3><span class="where n1">rac1</span>Install the BIND packages</h3>
+<p>Check whether each package is installed with <code>rpm -qa | grep bind</code>, then install any that are missing from the installation media:</p>
+<div class="code"><span class="lbl">BASH · ROOT</span><pre><code>rpm -Uvh bind-9*
+rpm -Uvh bind-chroot*
+rpm -Uvh bind-devel-9.*
+rpm -Uvh bind-libbind-*
+rpm -Uvh bind-libs-*
+rpm -Uvh bind-sdb-9.*
+rpm -Uvh system-config-bind-*
+rpm -Uvh caching-nameserver-*
+rpm -Uvh postgresql-libs-*</code></pre></div>
+
+<h3><span class="where n1">rac1</span>Confirm the server's IP address</h3>
+<div class="code"><span class="lbl">BASH</span><pre><code>ifconfig eth0     <span class="cm"># expect inet addr:192.168.1.11  Mask:255.255.255.0</span></code></pre></div>
+
+<h3><span class="where n1">rac1</span>Create and edit named.conf</h3>
+<div class="code"><span class="lbl">BASH</span><pre><code>cd /var/named/chroot/etc/
+cp named.caching-nameserver.conf named.conf</code></pre></div>
+<div class="code"><span class="lbl">/var/named/chroot/etc/named.conf</span><pre><code>options {
+    listen-on port 53 { 192.168.1.11; };
+    # listen-on-v6 port 53 { ::1; };
+    directory           "/var/named";
+    dump-file           "/var/named/data/cache_dump.db";
+    statistics-file     "/var/named/data/named_stats.txt";
+    memstatistics-file  "/var/named/data/named_mem_stats.txt";
+    allow-query         { any; };
+    allow-query-cache   { localhost; };
+};
+
+logging {
+    channel default_debug {
+        file "data/named.run";
+        severity dynamic;
+    };
+};
+
+view localhost_resolver {
+    match-clients      { any; };
+    match-destinations { 192.168.1.11; };
+    recursion yes;
+    include "/etc/named.rfc1912.zones";
+};</code></pre></div>
+
+<h3><span class="where n1">rac1</span>Define the zones in named.rfc1912.zones</h3>
+<div class="code"><span class="lbl">/var/named/chroot/etc/named.rfc1912.zones</span><pre><code>zone "." IN {
+    type hint;
+    file "named.ca";
+};
+
+zone "oracle.com" IN {
+    type master;
+    file "forward.zone";
+    allow-update { none; };
+};
+
+zone "localhost" IN {
+    type master;
+    file "localhost.zone";
+    allow-update { none; };
+};
+
+zone "1.168.192.in-addr.arpa" IN {
+    type master;
+    file "reverse.zone";
+    allow-update { none; };
+};</code></pre></div>
+<div class="code"><span class="lbl">BASH</span><pre><code>chgrp named named.conf named.rfc1912.zones</code></pre></div>
+
+<h3><span class="where n1">rac1</span>Create the forward and reverse zone files</h3>
+<div class="code"><span class="lbl">BASH</span><pre><code>cd /var/named/chroot/var/named
+cp localdomain.zone forward.zone
+cp named.local reverse.zone</code></pre></div>
+<div class="code"><span class="lbl">forward.zone</span><pre><code>$TTL 86400
+@   IN  SOA  rac1.oracle.com. root.rac1.oracle.com. (
+        42   ; serial
+        3H   ; refresh
+        15M  ; retry
+        1W   ; expiry
+        1D ) ; minimum
+    IN  NS   rac1.oracle.com.
+
+rac1      IN  A  192.168.1.11
+rac2      IN  A  192.168.1.12
+rac1-vip  IN  A  192.168.1.41
+rac2-vip  IN  A  192.168.1.42
+rac-scan  IN  A  192.168.1.31
+rac-scan  IN  A  192.168.1.32
+rac-scan  IN  A  192.168.1.33</code></pre></div>
+<div class="code"><span class="lbl">reverse.zone</span><pre><code>$TTL 86400
+@   IN  SOA  rac1.oracle.com. root.rac1.oracle.com. (
+        1997022700 ; serial
+        28800      ; refresh
+        14400      ; retry
+        3600000    ; expire
+        86400 )    ; minimum
+    IN  NS   rac1.oracle.com.
+
+11  IN  PTR  rac1.oracle.com.
+12  IN  PTR  rac2.oracle.com.
+41  IN  PTR  rac1-vip.oracle.com.
+42  IN  PTR  rac2-vip.oracle.com.
+31  IN  PTR  rac-scan.oracle.com.
+32  IN  PTR  rac-scan.oracle.com.
+33  IN  PTR  rac-scan.oracle.com.</code></pre></div>
+<div class="code"><span class="lbl">BASH</span><pre><code>chgrp named forward.zone reverse.zone</code></pre></div>
+
+<h3><span class="where all">Both nodes</span>/etc/hosts and /etc/resolv.conf</h3>
+<p>The SCAN entries stay commented out in <code>/etc/hosts</code> — the SCAN must resolve through DNS so it returns all three addresses.</p>
+<div class="code"><span class="lbl">/etc/hosts</span><pre><code>192.168.1.11   rac1.oracle.com       rac1
+192.168.1.12   rac2.oracle.com       rac2
+192.168.2.11   rac1-priv.oracle.com  rac1-priv
+192.168.2.12   rac2-priv.oracle.com  rac2-priv
+192.168.1.41   rac1-vip.oracle.com   rac1-vip
+192.168.1.42   rac2-vip.oracle.com   rac2-vip
+#192.168.1.31  rac-scan.oracle.com   rac-scan
+#192.168.1.32  rac-scan.oracle.com   rac-scan
+#192.168.1.33  rac-scan.oracle.com   rac-scan</code></pre></div>
+<div class="code"><span class="lbl">/etc/resolv.conf</span><pre><code>search oracle.com
+nameserver 192.168.1.11
+nameserver 192.168.1.12</code></pre></div>
+
+<h3><span class="where n1">rac1</span>Start named and test</h3>
+<div class="code"><span class="lbl">BASH</span><pre><code>service named restart
+chkconfig named on
+
+<span class="cm"># Forward lookups</span>
+dig rac1.oracle.com
+dig rac2.oracle.com
+dig rac1-vip.oracle.com
+dig rac2-vip.oracle.com
+dig rac-scan.oracle.com
+
+<span class="cm"># Reverse lookup</span>
+dig -x 192.168.1.11
+
+<span class="cm"># nslookup check, including the SCAN</span>
+nslookup rac1.oracle.com
+nslookup rac-scan</code></pre></div>
+<details><summary>Show expected output</summary>
+<div class="code"><span class="lbl">OUTPUT</span><pre><code>$ dig rac1.oracle.com
+;; ANSWER SECTION:
+rac1.oracle.com.          86400  IN  A    192.168.1.11
+;; SERVER: 192.168.1.11#53(192.168.1.11)
+
+$ dig -x 192.168.1.11
+;; ANSWER SECTION:
+11.1.168.192.in-addr.arpa. 86400 IN  PTR  rac1.oracle.com.
+
+$ nslookup rac-scan
+Server:   192.168.1.11
+Address:  192.168.1.11#53
+
+Name:     rac-scan.oracle.com
+Address:  192.168.1.31
+Name:     rac-scan.oracle.com
+Address:  192.168.1.32
+Name:     rac-scan.oracle.com
+Address:  192.168.1.33</code></pre></div></details>
+<p>When <code>rac-scan</code> returns all three addresses, DNS is ready for the 11gR2 RAC installation.</p>
+
+<h2 id="rac-user"><span class="num">4</span>Network, PAM and the oracle User</h2>
+<p>Stop the network service from overwriting <code>/etc/resolv.conf</code>: in <code>/etc/sysconfig/network-scripts/ifcfg-eth1</code> (and <code>ifcfg-eth0</code> if present) set <code>PEERDNS=no</code>, then:</p>
+<div class="code"><span class="lbl">BASH · ROOT</span><pre><code>service network restart
+cat /etc/resolv.conf      <span class="cm"># your entries should still be there</span></code></pre></div>
+
+<p>Check these lines are present in <code>/etc/pam.d/login</code>:</p>
+<div class="code"><span class="lbl">/etc/pam.d/login</span><pre><code>session    required     pam_selinux.so open
+session    required     pam_limits.so</code></pre></div>
+
+<p>Create the groups, the <code>oracle</code> user and the base directory:</p>
+<div class="code"><span class="lbl">BASH · ROOT</span><pre><code>groupadd oinstall
+groupadd dba
+groupadd oper
+useradd -g oinstall -G dba,oper oracle
+passwd oracle
+
+mkdir -p /u01/app
+chown -R oracle:oinstall /u01/app
+chmod -R 775 /u01/app</code></pre></div>
+<div class="note">The <code>oracle-rdbms-server-11gR2-preinstall</code> package may already have created the <code>oracle</code> user and groups — check with <code>id oracle</code> first. Use <code>775</code> rather than <code>777</code> on <code>/u01/app</code>.</div>
+
+<h2 id="rac-disk"><span class="num">5</span>Shared Storage and udev Rules</h2>
+<p>Shut rac1 down (<code>shutdown -h now</code>) and, in VirtualBox, create the two 8 GB disks as <strong>fixed-size, shareable</strong> virtual disks attached to rac1. ASM will use them for both Clusterware and database storage.</p>
+
+<h3><span class="where n1">rac1</span>Partition the shared disks (one node only)</h3>
+<p>Create a single whole-disk partition on each disk. Starting at sector 2048 gives the recommended 1 MB alignment offset.</p>
+<div class="code"><span class="lbl">BASH · ROOT</span><pre><code>fdisk /dev/sdb
+  u         <span class="cm"># switch units to sectors</span>
+  n         <span class="cm"># new partition</span>
+  p         <span class="cm"># primary</span>
+  1         <span class="cm"># partition number</span>
+  2048      <span class="cm"># first sector (1 MB offset)</span>
+  &lt;Enter&gt;   <span class="cm"># last sector: use the default (whole disk)</span>
+  w         <span class="cm"># write and exit</span>
+
+<span class="cm"># Repeat for /dev/sdc</span></code></pre></div>
+
+<h3><span class="where n1">rac1</span>Identify the disks</h3>
+<div class="code"><span class="lbl">BASH · ROOT</span><pre><code>/sbin/scsi_id -g -u -s /block/sdb
+SATA_VBOX_HARDDISK_VBd306dbe0-df3367e3_
+
+/sbin/scsi_id -g -u -s /block/sdc
+SATA_VBOX_HARDDISK_VB46dec7e0-192e8000_</code></pre></div>
+<p>Make SCSI devices trusted by adding this line to <code>/etc/scsi_id.config</code> (create the file if it doesn't exist):</p>
+<div class="code"><span class="lbl">/etc/scsi_id.config</span><pre><code>options=-g</code></pre></div>
+
+<h3><span class="where n1">rac1</span>Create the udev rules file</h3>
+<p>The <code>PROGRAM</code> value must match the command you used to get the SCSI ID, and <code>RESULT</code> must match the ID returned for each disk.</p>
+<div class="code"><span class="lbl">/etc/udev/rules.d/99-oracle-asmdevices.rules</span><pre><code>KERNEL=="sd?1", BUS=="scsi", PROGRAM=="/sbin/scsi_id -g -u -s /block/$parent", RESULT=="SATA_VBOX_HARDDISK_VBd306dbe0-df3367e3_", NAME="asm-disk1", OWNER="oracle", GROUP="dba", MODE="0660"
+KERNEL=="sd?1", BUS=="scsi", PROGRAM=="/sbin/scsi_id -g -u -s /block/$parent", RESULT=="SATA_VBOX_HARDDISK_VB46dec7e0-192e8000_", NAME="asm-disk2", OWNER="oracle", GROUP="dba", MODE="0660"</code></pre></div>
+
+<h3><span class="where n1">rac1</span>Load the partitions, test the rules and check permissions</h3>
+<div class="code"><span class="lbl">BASH · ROOT</span><pre><code>/sbin/partprobe /dev/sdb1
+/sbin/partprobe /dev/sdc1
+
+udevtest /block/sdb/sdb1      <span class="cm"># OL5</span>
+udevtest /block/sdc/sdc1
+
+ls -al /dev/asm-disk*</code></pre></div>
+<details><summary>Show expected output</summary>
+<div class="code"><span class="lbl">OUTPUT</span><pre><code>brw-rw---- 1 oracle dba 8, 17 Apr  8 22:47 /dev/asm-disk1
+brw-rw---- 1 oracle dba 8, 33 Apr  8 22:47 /dev/asm-disk2</code></pre></div></details>
+<div class="note">Detach the shared ASM disks from rac1 before cloning, and attach them to both VMs again afterwards — otherwise the clone gets its own private copies of the disks.</div>
+
+<h2 id="rac-clone"><span class="num">6</span>Clone rac1 to rac2</h2>
+<ol>
+<li>Shut rac1 down: <code>shutdown -h now</code>.</li>
+<li>In VirtualBox, clone the rac1 VM as <strong>rac2</strong> (reinitialize the MAC addresses).</li>
+<li>Re-attach the two shared disks to both VMs.</li>
+<li>Start rac2 and change its IP addresses with <code>system-config-network</code>:</li>
+</ol>
+<table>
+<tr><th>Device</th><th>IPv4 / netmask</th></tr>
+<tr><td><code>eth0</code></td><td><code>192.168.1.12 / 255.255.255.0</code></td></tr>
+<tr><td><code>eth1</code></td><td><code>192.168.2.12 / 255.255.255.0</code></td></tr>
+</table>
+<p>Set the hostname to <code>rac2.oracle.com</code>, then clear the cloned NIC identities and reboot:</p>
+<div class="code"><span class="lbl">BASH · ROOT ON RAC2</span><pre><code>rm -f /etc/udev/rules.d/70-persistent-net.rules
+sed -i -e '/HWADDR/d' -e '/UUID/d' /etc/sysconfig/network-scripts/ifcfg-eth[0-1]
+reboot
+
+<span class="cm"># After the reboot</span>
+ip l                    <span class="cm"># check eth0 and eth1 are present</span>
+ls -l /dev/asm*         <span class="cm"># the shared disks should appear here too</span>
+service named stop      <span class="cm"># reconfigure DNS as a slave next</span></code></pre></div>
+
+<h2 id="rac-dns2"><span class="num">7</span>Configure DNS on rac2 (Slave)</h2>
+<p>rac2 runs a slave copy of the zones so name resolution keeps working if rac1 is down.</p>
+<h3><span class="where n2">rac2</span>named.conf</h3>
+<p>Same as on rac1, but listening on rac2's address:</p>
+<div class="code"><span class="lbl">/var/named/chroot/etc/named.conf (changes)</span><pre><code>listen-on port 53 { 192.168.1.12; };
+...
+match-destinations { 192.168.1.12; };</code></pre></div>
+
+<h3><span class="where n2">rac2</span>named.rfc1912.zones as slave zones</h3>
+<div class="code"><span class="lbl">/var/named/chroot/etc/named.rfc1912.zones</span><pre><code>zone "." IN {
+    type hint;
+    file "named.ca";
+};
+
+zone "oracle.com" IN {
+    type slave;
+    file "slaves/forward.zone";
+    masters { 192.168.1.11; };
+};
+
+zone "localhost" IN {
+    type master;
+    file "localhost.zone";
+    allow-update { none; };
+};
+
+zone "1.168.192.in-addr.arpa" IN {
+    type slave;
+    file "slaves/reverse.zone";
+    masters { 192.168.1.11; };
+};</code></pre></div>
+<div class="note">Keeping slave zone files under <code>slaves/</code> (which <code>named</code> can write to) lets rac2 save the transferred zones. Check the transfer worked with <code>ls /var/named/chroot/var/named/slaves/</code>.</div>
+
+<h3><span class="where n2">rac2</span>Restart and verify</h3>
+<div class="code"><span class="lbl">BASH</span><pre><code>service named restart
+chkconfig named on
+
+dig @192.168.1.12 rac1.oracle.com
+dig @192.168.1.12 -x 192.168.1.11
+nslookup rac-scan 192.168.1.12</code></pre></div>
+<p>The answers should match rac1's. Now both nodes are ready for the installation.</p>
+
+<h2 id="rac-grid"><span class="num">8</span>Install Grid Infrastructure</h2>
+<h3><span class="where n1">rac1 · oracle</span>Unpack the software and set up SSH</h3>
+<div class="code"><span class="lbl">BASH</span><pre><code>su - oracle
+cd /opt                                  <span class="cm"># where the software was downloaded</span>
+unzip '*.zip'
+cd grid
+
+<span class="cm"># As root, on both nodes: install cvuqdisk from grid/rpm</span>
+rpm -Uvh rpm/cvuqdisk-*.rpm
+
+<span class="cm"># Passwordless SSH between the nodes for the oracle user</span>
+cd sshsetup
+./sshUserSetup.sh -user oracle -hosts "rac1 rac2" -noPromptPassphrase -confirm -advanced</code></pre></div>
+
+<h3><span class="where n1">rac1 · oracle</span>Run the pre-installation checks</h3>
+<div class="code"><span class="lbl">BASH</span><pre><code>cd /opt/grid
+./runcluvfy.sh stage -pre crsinst -n rac1,rac2 -fixup -verbose</code></pre></div>
+<p>Fix anything reported as failed (run the generated fixup script as root if offered), then start the installer:</p>
+<div class="code"><span class="lbl">BASH</span><pre><code>./runInstaller</code></pre></div>
+
+<ol class="wiz">
+<li><strong>Software updates:</strong> skip.</li>
+<li><strong>Installation option:</strong> Install and Configure Grid Infrastructure for a Cluster.</li>
+<li><strong>Installation type:</strong> Typical.</li>
+<li><strong>Cluster configuration:</strong>
+<ul><li>SCAN name: <code>rac-scan</code></li><li>Add <code>rac2</code> to the node list</li><li>SSH connectivity: enter the <code>oracle</code> password, then <strong>Setup</strong> and <strong>Test</strong></li></ul></li>
+<li><strong>Create ASM disk group:</strong>
+<ul><li>Disk group name: <code>DATA</code></li><li>Redundancy: External</li><li>Candidate disks: <code>/dev/asm-disk1</code> (set the discovery path to <code>/dev/asm*</code> if it isn't listed)</li></ul></li>
+<li><strong>Create inventory</strong> → Next.</li>
+<li><strong>Prerequisite checks</strong> → Next.</li>
+<li><strong>Summary</strong> → Install.</li>
+<li><strong>Run the root scripts</strong> as root when prompted — <code>orainstRoot.sh</code> and <code>root.sh</code>, on rac1 first and then rac2, one node at a time.</li>
+<li><strong>Finish.</strong></li>
+</ol>
+<div class="code"><span class="lbl">BASH</span><pre><code><span class="cm"># Check the cluster afterwards (as oracle, with the grid home on PATH)</span>
+crsctl check cluster -all
+crsctl stat res -t</code></pre></div>
+
+<h2 id="rac-db"><span class="num">9</span>Install the RAC Database</h2>
+<p>Run <code>./runInstaller</code> from the unpacked <code>database</code> directory as <code>oracle</code> and work through the wizard:</p>
+<ol class="wiz">
+<li><strong>Configure security updates:</strong> uncheck the box → Next.</li>
+<li><strong>Installation option:</strong> Create and configure a database.</li>
+<li><strong>System class:</strong> Server class.</li>
+<li><strong>Node selection:</strong> Real Application Clusters database installation, with both <code>rac1</code> and <code>rac2</code> selected.</li>
+<li><strong>Install type:</strong> Typical install.</li>
+<li><strong>Typical install configuration:</strong>
+<ul><li>Oracle base and software location (defaults under <code>/u01/app</code>)</li><li>Storage type: Automatic Storage Management</li><li>Database file location: <code>DATA</code></li><li>ASMSNMP password</li><li>OSDBA group: <code>dba</code></li><li>Global database name: <code>racdb</code></li></ul></li>
+<li><strong>Prerequisite checks</strong> → Next.</li>
+<li><strong>Run <code>root.sh</code></strong> as root on each node when prompted.</li>
+</ol>
+<div class="code"><span class="lbl">BASH</span><pre><code><span class="cm"># Confirm both instances are running</span>
+srvctl status database -d racdb</code></pre></div>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>
