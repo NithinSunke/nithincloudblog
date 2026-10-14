@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dropping a MongoDB Database</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#13aa52;--accent-soft:#eaf7ef;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;--danger-bg:#fdecea;--danger-line:#c62828;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.08em;margin:1.6em 0 .4em}
+.tsn-post h3 .step{display:inline-block;color:#0b7a3a;background:var(--accent-soft);border-radius:4px;padding:0 .4em;margin-right:.4em;font-size:.85em}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:#0b7a3a;border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.86em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post .err{color:#ff8a80}
+.tsn-post .ok{color:#7ee2a8}
+.tsn-post table{width:100%;border-collapse:collapse;margin:.8em 0;font-size:.95em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post .note,.tsn-post .warn,.tsn-post .danger{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post .danger{background:var(--danger-bg);border-color:var(--danger-line)}
+.tsn-post .danger strong:first-child{color:var(--danger-line)}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.35em 0}
+.tsn-post figure{margin:1em 0;text-align:center}
+.tsn-post figure img{max-width:100%;height:auto;border:1px solid var(--line);border-radius:8px}
+.tsn-post figcaption{color:var(--muted);font-size:.85em;margin-top:4px}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:#0b7a3a}
+.tsn-post .end{background:var(--accent-soft);border-radius:8px;padding:14px 18px;margin-top:1em}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
+</style>
+
+<h1>Dropping a Database in MongoDB</h1>
+<div class="meta">By Sunke Nithin · August 25, 2025 &nbsp; <span class="tag">Database</span><span class="tag">MongoDB</span></div>
+
+<p class="lead">This guide explains how to drop (delete) a MongoDB database using the <code>mongosh</code> shell. We'll use the <code>myDatabase</code> database created previously and the <code>mongoadmin</code> user for authentication. Dropping a database is a destructive action, so proceed with caution.</p>
+
+<div class="toc"><strong>Contents</strong>
+<ol>
+<li><a href="#drop-pre">Prerequisites</a></li>
+<li><a href="#drop-backup">Back Up First</a></li>
+<li><a href="#drop-steps">Dropping a Database with mongosh</a></li>
+<li><a href="#drop-trouble">Troubleshooting</a></li>
+<li><a href="#drop-best">Best Practices</a></li>
+</ol></div>
+
+<h2 id="drop-pre"><span class="num">1</span>Prerequisites</h2>
+<ul>
+<li>MongoDB 8.0 Community Edition installed.</li>
+<li>An admin user (<code>mongoadmin</code>) with the <code>readWriteAnyDatabase</code> and <code>userAdminAnyDatabase</code> roles.</li>
+<li>The MongoDB service running (<code>sudo systemctl status mongod</code>).</li>
+<li><code>mongosh</code> installed (included with <code>mongodb-org</code>).</li>
+<li>MongoDB Compass installed (optional, for a GUI).</li>
+<li>For remote access: <code>bindIp</code> set in <code>/etc/mongod.conf</code> (e.g. <code>0.0.0.0</code>) and port <code>27017</code> open.</li>
+<li>A backup of any critical data before you drop anything (e.g. with <code>mongodump</code>).</li>
+</ul>
+
+<h2 id="drop-backup"><span class="num">2</span>Important Warning: Back Up First</h2>
+<div class="danger"><strong>Irreversible.</strong> Dropping a database permanently deletes it along with all its collections and documents. There is no undo.</div>
+<p>Always create a backup before proceeding:</p>
+<div class="code"><span class="lbl">BASH</span><pre><code>mongodump -u mongoadmin --authenticationDatabase admin --db myDatabase --out /path-to-backup</code></pre></div>
+<figure>
+<img src="images/image-373.png" alt="Terminal output: mongodump writes myDatabase.myCollection to /opt/myDatabase/myCollection.bson and reports done dumping 2 documents" loading="lazy">
+<figcaption>Backing up <code>myDatabase</code> with <code>mongodump</code> before dropping it.</figcaption>
+</figure>
+
+<h2 id="drop-steps"><span class="num">3</span>Dropping a Database Using mongosh</h2>
+<p>The <code>mongosh</code> shell provides a straightforward command to drop a database.</p>
+
+<h3><span class="step">Step 1</span>Connect to MongoDB</h3>
+<p>Connect as the <code>mongoadmin</code> user:</p>
+<div class="code"><span class="lbl">BASH</span><pre><code>mongosh -u mongoadmin -p --authenticationDatabase admin</code></pre></div>
+<p>Enter the password when prompted. You'll see the <code>admin&gt;</code> prompt.</p>
+
+<h3><span class="step">Step 2</span>Verify the Database Exists</h3>
+<p>List the available databases to confirm the target database exists:</p>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>show databases</code></pre></div>
+
+<h3><span class="step">Step 3</span>Drop the Database</h3>
+<p>Switch to the database you want to delete (e.g. <code>myDatabase</code>):</p>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>use myDatabase</code></pre></div>
+<p>Drop the database:</p>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.dropDatabase()</code></pre></div>
+<p>This deletes <code>myDatabase</code> and all its collections.</p>
+<figure>
+<img src="images/image-375.png" alt="mongosh output: use myDatabase, then db.dropDatabase() returns { ok: 1, dropped: 'myDatabase' }" loading="lazy">
+<figcaption><code>{ ok: 1, dropped: 'myDatabase' }</code> confirms the drop.</figcaption>
+</figure>
+<div class="warn"><code>db.dropDatabase()</code> drops whichever database you are <em>currently</em> in. Check the prompt shows the right name (here <code>myDatabase&gt;</code>) before you press Enter.</div>
+
+<h3><span class="step">Step 4</span>Confirm Deletion</h3>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>show databases</code></pre></div>
+<p><code>myDatabase</code> should no longer appear.</p>
+<figure>
+<img src="images/image-377.png" alt="mongosh output: show databases lists admin, config, inventorydb, local and testdb — myDatabase is gone" loading="lazy">
+</figure>
+
+<h3><span class="step">Step 5</span>Exit the Shell</h3>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>exit</code></pre></div>
+
+<h2 id="drop-trouble"><span class="num">4</span>Troubleshooting</h2>
+<h3>Permission denied (Unauthorized)</h3>
+<p>If <code>dropDatabase()</code> fails like this:</p>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>test&gt; use myDatabase
+switched to db myDatabase
+myDatabase&gt; db.dropDatabase()
+<span class="err">MongoServerError[Unauthorized]: not authorized on myDatabase to execute command { dropDatabase: 1, lsid: { id: UUID("c0782ad2-d8d6-40f4-b661-dc8478569459") }, $db: "myDatabase" }</span></code></pre></div>
+
+<p>Check the user's existing privileges:</p>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>myDatabase&gt; db.runCommand({ connectionStatus: 1 })
+{
+  authInfo: {
+    authenticatedUsers: [ { user: 'mongoadmin', db: 'admin' } ],
+    authenticatedUserRoles: [
+      { role: 'readWriteAnyDatabase', db: 'admin' },
+      { role: 'userAdminAnyDatabase', db: 'admin' }
+    ]
+  },
+  ok: 1
+}</code></pre></div>
+<div class="note"><strong>Why it fails:</strong> <code>readWriteAnyDatabase</code> lets a user read and write data in any database, but it does <strong>not</strong> include the <code>dropDatabase</code> action. That action comes from <code>dbAdmin</code> (or <code>dbAdminAnyDatabase</code>, <code>dbOwner</code>, <code>root</code>).</div>
+
+<h3>Grant the right role</h3>
+<p>Switch to the <code>admin</code> database and grant your user the required privilege:</p>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>use admin
+db.grantRolesToUser(
+  "mongoadmin",
+  [ { role: "dbAdmin", db: "myDatabase" } ]
+)</code></pre></div>
+<p>Or, if you want full access to that database:</p>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.grantRolesToUser(
+  "mongoadmin",
+  [ { role: "readWrite", db: "myDatabase" }, { role: "dbAdmin", db: "myDatabase" } ]
+)</code></pre></div>
+<p>Then run <code>use myDatabase</code> and <code>db.dropDatabase()</code> again.</p>
+
+<h2 id="drop-best"><span class="num">5</span>Best Practices</h2>
+<ul>
+<li><strong>Back up first:</strong> always back up critical databases with <code>mongodump</code> before dropping:
+<div class="code"><span class="lbl">BASH</span><pre><code>mongodump -u mongoadmin --authenticationDatabase admin --db myDatabase --out /path/to/backup</code></pre></div></li>
+<li><strong>Double-check the database name:</strong> make sure you're dropping the correct database — the action is irreversible.</li>
+<li><strong>Restrict access:</strong> use specific users with limited roles for non-admin tasks, to prevent accidental deletions.</li>
+<li><strong>Audit logs:</strong> enable auditing to track database operations for accountability (built in to MongoDB Enterprise and Atlas; not available in Community Edition).</li>
+</ul>
+
+<h2>Conclusion</h2>
+<div class="end">You've learned how to drop a MongoDB database (<code>myDatabase</code>) using <code>mongosh</code>. This is a critical operation, so always verify the database name and back up the data beforehand. For further details, see the <a href="https://www.mongodb.com/docs/manual/reference/method/db.dropDatabase/" target="_blank" rel="noopener">MongoDB documentation for db.dropDatabase()</a>.</div>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>
