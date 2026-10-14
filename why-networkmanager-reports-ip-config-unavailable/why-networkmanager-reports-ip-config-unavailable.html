@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NetworkManager ip-config-unavailable</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#2563eb;--accent-soft:#eaf1fe;--accent-ink:#1d4ed8;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;--err-bg:#fdecea;--err-line:#c62828;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.04em;margin:1.4em 0 .4em}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.86em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .code.err .lbl{background:var(--err-line)}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post .bad{color:#ff8a80;font-weight:600}
+.tsn-post .ok{color:#7ee2a8;font-weight:600}
+.tsn-post table{width:100%;border-collapse:collapse;margin:.8em 0;font-size:.95em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post .note,.tsn-post .warn,.tsn-post .cause{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post .cause{background:var(--err-bg);border-color:var(--err-line)}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.35em 0}
+.tsn-post .methods{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;margin:.8em 0}
+.tsn-post .methods > div{border:1px solid var(--line);border-top:4px solid var(--accent);border-radius:8px;padding:6px 14px 2px;background:#fff}
+.tsn-post .methods h3{margin:.5em 0 .2em;color:var(--accent-ink)}
+.tsn-post a{color:var(--accent-ink)}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
+</style>
+
+<h1>Why NetworkManager Reports ip-config-unavailable</h1>
+<div class="meta">By Sunke Nithin · May 20, 2024 &nbsp; <span class="tag">Linux</span><span class="tag">Network</span></div>
+
+<p class="lead">While deploying an Oracle Linux 7 VM with Terraform in my lab, I hit an issue that stopped the network device <code>eth0</code> from coming up. NetworkManager kept failing the device with the reason <code>ip-config-unavailable</code>. The steps below, from Red Hat's guidance, were the fix.</p>
+
+<h2><span class="num">1</span>Environment</h2>
+<ul>
+<li>Red Hat Enterprise Linux 7 and above (and compatible distributions such as Oracle Linux)</li>
+<li>NetworkManager</li>
+</ul>
+
+<h2><span class="num">2</span>Issue</h2>
+<p>The interface won't come up, and adding an IP address to it fails. The NetworkManager log (<code>journalctl -u NetworkManager</code> or <code>/var/log/messages</code>) shows messages like these:</p>
+<div class="code err"><span class="lbl">LOG</span><pre><code>May 14 09:11:14 servera NetworkManager[675]: &lt;info&gt;  (ens8): device state change: ip-config -&gt; secondaries (reason <span class="bad">'ip-config-unavailable'</span>) [70 90 5]
+
+May 14 09:03:27 serverb NetworkManager[695]: &lt;info&gt;  [1684047807.5263] device (ens9): state change: ip-config -&gt; failed (reason <span class="bad">'ip-config-unavailable'</span>, sys-iface-state: 'managed')</code></pre></div>
+
+<h2><span class="num">3</span>Root Cause</h2>
+<div class="cause">The connection's <code>ipv4.method</code> is set to <code>disabled</code>, so <strong>no IPv4 configuration is available</strong> for the interface. NetworkManager therefore can't complete the <code>ip-config</code> stage, and it won't let you add an IP address. Once <code>ipv4.method</code> is changed to <code>auto</code> or <code>manual</code>, you can configure the address again.</div>
+
+<p>To confirm, find the connection name and check its method:</p>
+<div class="code"><span class="lbl">BASH</span><pre><code><span class="cm"># List connections and the devices they use</span>
+nmcli connection show
+
+<span class="cm"># Show the IPv4 method for one connection</span>
+nmcli -g ipv4.method connection show &lt;con-name&gt;     <span class="cm"># prints "disabled" when affected</span></code></pre></div>
+
+<h2><span class="num">4</span>Resolution</h2>
+<p>Change <code>ipv4.method</code> to <code>auto</code> (DHCP) or give the NIC a static IP address with <code>manual</code>, then bring the connection back up. Replace <code>&lt;con-name&gt;</code> with the name from <code>nmcli connection show</code>.</p>
+
+<div class="methods">
+<div>
+<h3>Method 1 — DHCP (auto)</h3>
+<div class="code"><span class="lbl">BASH</span><pre><code>nmcli connection modify &lt;con-name&gt; ipv4.method auto
+nmcli connection up &lt;con-name&gt;</code></pre></div>
+</div>
+<div>
+<h3>Method 2 — Static IP (manual)</h3>
+<div class="code"><span class="lbl">BASH</span><pre><code>nmcli connection modify &lt;con-name&gt; \
+  ipv4.method manual \
+  ipv4.addresses &lt;IP&gt;/&lt;prefix&gt;
+nmcli connection up &lt;con-name&gt;</code></pre></div>
+</div>
+</div>
+
+<div class="note"><strong>Static IP tip:</strong> with <code>manual</code> you'll usually also want a gateway and DNS, for example:
+<code>nmcli connection modify &lt;con-name&gt; ipv4.gateway 192.168.1.1 ipv4.dns 192.168.1.1</code>. With <code>manual</code>, NetworkManager requires at least one address in <code>ipv4.addresses</code>, so set it in the same command as the method (as above).</div>
+
+<h3>Verify</h3>
+<div class="code"><span class="lbl">BASH</span><pre><code>nmcli device status          <span class="cm"># the device should show "connected"</span>
+ip addr show &lt;device&gt;        <span class="cm"># the IPv4 address should now be present</span></code></pre></div>
+
+<div class="warn">If the VM is built by Terraform or cloud-init, the disabled IPv4 method may come from the image or the provisioning config. Fix it there too, or the next VM you deploy will hit the same problem.</div>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>
