@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Connecting to MongoDB on OEL 8</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#13aa52;--accent-soft:#eaf7ef;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.08em;margin:1.6em 0 .4em}
+.tsn-post h3 .step{display:inline-block;color:#0b7a3a;background:var(--accent-soft);border-radius:4px;padding:0 .4em;margin-right:.4em;font-size:.85em}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:#0b7a3a;border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.86em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post table{width:100%;border-collapse:collapse;margin:.8em 0;font-size:.95em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.35em 0}
+.tsn-post .methods{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin:.8em 0}
+.tsn-post .methods div{border:1px solid var(--line);border-top:4px solid var(--accent);border-radius:8px;padding:10px 14px;background:#fff}
+.tsn-post .methods strong{display:block;color:#0b7a3a}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:#0b7a3a}
+.tsn-post .end{background:var(--accent-soft);border-radius:8px;padding:14px 18px;margin-top:1em}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
+</style>
+
+<h1>Connecting to MongoDB on Oracle Enterprise Linux 8: Shell and GUI Methods</h1>
+<div class="meta">By Sunke Nithin · August 25, 2025 &nbsp; <span class="tag">Database</span><span class="tag">MongoDB</span><span class="tag">Linux</span></div>
+
+<p class="lead">Following the earlier post on installing MongoDB on Oracle Enterprise Linux 8 (OEL 8) and creating an admin user, this guide shows how to connect to your MongoDB database using both the command-line shell (<code>mongosh</code>) and a graphical tool, MongoDB Compass. We'll use the admin user (<code>mongoadmin</code>) to demonstrate secure connections. It assumes MongoDB 8.0 is installed on OEL 8 with the Red Hat Compatible Kernel (RHCK) and authentication enabled.</p>
+
+<div class="methods">
+<div><strong>Method 1 — mongosh</strong>Command-line shell. Best for scripting, automation and quick operations.</div>
+<div><strong>Method 2 — MongoDB Compass</strong>Graphical interface. Best for browsing data and visual database management.</div>
+</div>
+
+<div class="toc"><strong>Contents</strong>
+<ol>
+<li><a href="#conn-pre">Prerequisites</a></li>
+<li><a href="#conn-shell">Method 1: MongoDB Shell (mongosh)</a></li>
+<li><a href="#conn-gui">Method 2: MongoDB Compass (GUI)</a></li>
+<li><a href="#conn-trouble">Troubleshooting</a></li>
+<li><a href="#conn-sec">Security Notes</a></li>
+</ol></div>
+
+<h2 id="conn-pre"><span class="num">1</span>Prerequisites</h2>
+<ul>
+<li>MongoDB 8.0 Community Edition installed on OEL 8.</li>
+<li>An admin user (<code>mongoadmin</code>) created with a secure password.</li>
+<li>The MongoDB service running (<code>sudo systemctl status mongod</code>).</li>
+<li>An internet connection to download MongoDB Compass (for the GUI method).</li>
+<li>For remote connections: <code>bindIp</code> set in <code>/etc/mongod.conf</code> (e.g. <code>0.0.0.0</code>) and port <code>27017</code> open in the firewall.</li>
+<li>Administrative privileges (root or sudo) to install tools.</li>
+</ul>
+
+<h2 id="conn-shell"><span class="num">2</span>Method 1: Connecting Using the MongoDB Shell (mongosh)</h2>
+<p><code>mongosh</code> is a powerful command-line interface for MongoDB. Follow these steps to connect as the admin user.</p>
+
+<h3><span class="step">Step 1</span>Verify the MongoDB Service</h3>
+<p>Make sure MongoDB is running:</p>
+<div class="code"><span class="lbl">BASH</span><pre><code>sudo systemctl status mongod</code></pre></div>
+<p>If it's inactive, start it:</p>
+<div class="code"><span class="lbl">BASH</span><pre><code>sudo systemctl start mongod</code></pre></div>
+
+<h3><span class="step">Step 2</span>Connect to MongoDB</h3>
+<p>Use <code>mongosh</code> to connect as <code>mongoadmin</code>:</p>
+<div class="code"><span class="lbl">BASH</span><pre><code>mongosh -u mongoadmin -p --authenticationDatabase admin</code></pre></div>
+<table>
+<tr><th>Option</th><th>Meaning</th></tr>
+<tr><td><code>-u mongoadmin</code></td><td>The admin username.</td></tr>
+<tr><td><code>-p</code></td><td>Prompts for the password (the one set when the user was created).</td></tr>
+<tr><td><code>--authenticationDatabase admin</code></td><td>The database where the user is defined.</td></tr>
+</table>
+
+<h3><span class="step">Step 3</span>Verify the Connection</h3>
+<p>Run these commands to confirm you're connected:</p>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.version()   <span class="cm">// MongoDB server version, e.g. 8.0.13</span>
+db             <span class="cm">// current database, e.g. admin</span></code></pre></div>
+
+<h3><span class="step">Step 4</span>Perform a Test Operation</h3>
+<p>Switch to a new database and insert a document:</p>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>use myDatabase
+db.myCollection.insertOne({ name: "Test User", role: "Admin" })</code></pre></div>
+<p>The <code>mongoadmin</code> user has <code>readWriteAnyDatabase</code> privileges, so it can work in any database. To view the inserted document:</p>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.myCollection.find().pretty()</code></pre></div>
+
+<h3><span class="step">Step 5</span>Exit the Shell</h3>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>exit</code></pre></div>
+
+<h3>Remote Connection (Optional)</h3>
+<p>If MongoDB is configured for remote access (check <code>bindIp</code> in <code>/etc/mongod.conf</code> and that port <code>27017</code> is open), connect from another machine:</p>
+<div class="code"><span class="lbl">BASH</span><pre><code>mongosh -u mongoadmin -p --host &lt;OEL8_SERVER_IP&gt; --port 27017 --authenticationDatabase admin</code></pre></div>
+<p>Replace <code>&lt;OEL8_SERVER_IP&gt;</code> with your server's IP address.</p>
+
+<h2 id="conn-gui"><span class="num">3</span>Method 2: Connecting Using MongoDB Compass (GUI)</h2>
+<p>MongoDB Compass is a graphical tool for managing MongoDB databases, ideal if you prefer a visual interface.</p>
+
+<h3><span class="step">Step 1</span>Download and Install MongoDB Compass</h3>
+<ol>
+<li><strong>Download:</strong> visit the <a href="https://www.mongodb.com/try/download/compass" target="_blank" rel="noopener">MongoDB Compass download page</a> and pick the build for your operating system — Linux for a local OEL 8 machine, or Windows/Mac for remote management. For OEL 8, download the <code>.rpm</code> package (e.g. <code>mongodb-compass-1.44.6-x86_64.rpm</code> as of August 2025).</li>
+<li><strong>Install on OEL 8:</strong> copy the <code>.rpm</code> to your server (e.g. with <code>scp</code>), then install it, accepting any GPG key prompts:
+<div class="code"><span class="lbl">BASH</span><pre><code>sudo yum install -y ./mongodb-compass-1.44.6-x86_64.rpm</code></pre></div></li>
+<li><strong>Launch:</strong> if OEL 8 has a desktop environment, start Compass:
+<div class="code"><span class="lbl">BASH</span><pre><code>mongodb-compass</code></pre></div>
+If you're managing the server remotely, install Compass on your own machine (Windows, Mac or Linux) instead.</li>
+</ol>
+
+<h3><span class="step">Step 2</span>Connect to MongoDB</h3>
+<ol>
+<li>Open MongoDB Compass.</li>
+<li>In the <strong>New Connection</strong> window, enter the connection string:
+<div class="code"><span class="lbl">URI</span><pre><code>mongodb://mongoadmin:&lt;password&gt;@&lt;OEL8_SERVER_IP&gt;:27017/?authSource=admin</code></pre></div>
+Alternatively, open <strong>Advanced Connection Options → Authentication</strong>, choose <em>Username/Password</em>, and enter <code>mongoadmin</code>, the password and <code>admin</code> as the authentication database.</li>
+<li>Click <strong>Connect</strong>. If it succeeds, Compass shows the instance with databases such as <code>admin</code>, <code>config</code> and <code>local</code>.</li>
+</ol>
+
+<h3><span class="step">Step 3</span>Explore and Manage Databases</h3>
+<ul>
+<li>Use the Compass interface to browse databases, collections and documents.</li>
+<li>Test it by creating a new database (e.g. <code>myDatabase</code>) and collection (e.g. <code>myCollection</code>) from the GUI, then inserting a document:</li>
+</ul>
+<div class="code"><span class="lbl">JSON</span><pre><code>{ "name": "GUI Test", "role": "User" }</code></pre></div>
+
+<h2 id="conn-trouble"><span class="num">4</span>Troubleshooting</h2>
+<h3>Shell connection issues</h3>
+<table>
+<tr><th>Problem</th><th>What to do</th></tr>
+<tr><td>Authentication failed</td><td>Check the username (<code>mongoadmin</code>), the password and <code>--authenticationDatabase admin</code>. If the password is forgotten: temporarily remove <code>security.authorization</code> from <code>/etc/mongod.conf</code>, restart MongoDB, reset the password, then re-enable authentication.</td></tr>
+<tr><td>Connection refused</td><td>Make sure MongoDB is running (<code>sudo systemctl status mongod</code>) and, for remote connections, that port 27017 is open (commands below).</td></tr>
+</table>
+<div class="code"><span class="lbl">BASH</span><pre><code><span class="cm"># Check which ports are open</span>
+sudo firewall-cmd --list-ports
+
+<span class="cm"># Open port 27017 if needed</span>
+sudo firewall-cmd --add-port=27017/tcp --permanent
+sudo firewall-cmd --reload
+
+<span class="cm"># Check the MongoDB log for errors</span>
+sudo tail -n 50 /var/log/mongodb/mongod.log</code></pre></div>
+<div class="warn">While authentication is disabled for a password reset, anyone who can reach the port has full access. Do it with remote access blocked, and switch authentication back on straight away.</div>
+
+<h3>Compass connection issues</h3>
+<ul>
+<li>Make sure the connection string includes <code>?authSource=admin</code>.</li>
+<li>For remote connections, verify <code>bindIp</code> in <code>/etc/mongod.conf</code> and that port <code>27017</code> is reachable.</li>
+<li>If Compass won't launch on OEL 8, install the common GUI dependency: <code>sudo yum install -y libXScrnSaver</code>.</li>
+</ul>
+
+<h2 id="conn-sec"><span class="num">5</span>Security Notes</h2>
+<ul>
+<li>Always use a strong password for the <code>mongoadmin</code> user.</li>
+<li>For production, enable TLS/SSL for encrypted connections (see the MongoDB documentation).</li>
+<li>Limit remote access with firewall rules that allow only specific IP addresses.</li>
+</ul>
+
+<h2>Conclusion</h2>
+<div class="end">You've now connected to MongoDB on OEL 8 with both the <code>mongosh</code> shell and the MongoDB Compass GUI. The shell is ideal for scripting and quick operations, while Compass offers a friendly interface for visual database management. For advanced tasks like replica sets or sharding, see the <a href="https://www.mongodb.com/docs/manual/" target="_blank" rel="noopener">MongoDB documentation</a>.</div>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>
