@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Understanding Kubernetes Pods — Nithin Cloud Blog</title>
+<meta name="description" content="What a Kubernetes Pod is, how containers inside one share network and storage, and how to create a Pod both imperatively with kubectl and declaratively with YAML.">
+<meta name="author" content="Sunke Nithin">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="Understanding Kubernetes Pods">
+<meta property="og:description" content="What a Kubernetes Pod is, how containers inside one share network and storage, and how to create a Pod both imperatively with kubectl and declaratively with YAML.">
+<meta property="article:published_time" content="2025-09-06">
+
+<!-- Relative, so the site works both opened from disk and served over HTTP. -->
+<link rel="stylesheet" href="../style.css">
+</head>
+
+<body>
+
+<header class="site">
+  <div class="wrap narrow">
+    <p class="brand"><a href="../index.html">Nithin Cloud Blog</a></p>
+    <p class="tagline">Notes on Oracle Cloud Infrastructure, networking, and homelab infrastructure.</p>
+  </div>
+</header>
+
+<div class="wrap narrow">
+<article>
+
+  <div class="post-header">
+    <h1>Understanding Kubernetes Pods</h1>
+    <p class="meta">
+      <time datetime="2025-09-06">6 September 2025</time>
+      <span class="dot">&bull;</span>
+      <span>Sunke Nithin</span>
+      <span class="dot">&bull;</span>
+      <span>~2 min read</span>
+    </p>
+    <ul class="chips">
+      <li class="cat">Kubernetes</li>
+      <li class="tag">Devops</li>
+    </ul>
+  </div>
+
+  <p>Kubernetes Pods are the smallest deployable units in the Kubernetes ecosystem. A Pod
+  represents one or more containers that share storage, network, and a specification defining
+  how to run the containers. Pods are fundamental building blocks for running containerized
+  applications in Kubernetes.</p>
+
+  <h2>What is a Kubernetes Pod?</h2>
+
+  <p>A Pod can be thought of as a logical host for containers that are tightly coupled and
+  need to share resources. Each Pod runs on a node in the cluster and provides an isolated
+  environment with a shared IP address and storage volumes for all containers included.</p>
+
+  <p>There are two common Pod usage scenarios:</p>
+
+  <ul>
+    <li>Running a single container in a Pod (most typical case).</li>
+    <li>Running multiple cooperating containers that work together closely (such as a web
+      server container paired with a content updater container).</li>
+  </ul>
+
+  <p>Each Pod has its own network namespace, so containers within the Pod communicate easily,
+  but Pods are isolated from each other.</p>
+
+  <h2>Creating a Kubernetes Pod: a simple demo</h2>
+
+  <h3>Create a Pod using the kubectl command</h3>
+
+  <p>You can quickly create a Pod with a single container using the <code>kubectl run</code>
+  command. Here is an example to deploy an NGINX web server Pod:</p>
+
+<pre><code>kubectl run ngnix --image=docker.io/library/nginx:latest
+kubectl get pods
+kubectl describe pod ngnix
+kubectl get pods -o wide</code></pre>
+
+  <h3>Use YAML for Pods</h3>
+
+  <p><strong>YAML</strong> (Yet Another Markup Language) is the configuration format for
+  Kubernetes resources. Writing pod specifications in YAML makes deployments reproducible,
+  scalable, and easily managed with version control systems.</p>
+
+  <p>A basic pod YAML file consists of:</p>
+
+  <ul>
+    <li><strong>spec:</strong> Describes the pod’s container configuration, including image
+      and port.<a class="cite" href="#src-1" id="ref-1">[1]</a></li>
+    <li><strong>apiVersion:</strong> Specifies the Kubernetes API version to use
+      (“v1” for Pods).</li>
+    <li><strong>kind:</strong> Identifies the resource type (“Pod”).</li>
+    <li><strong>metadata:</strong> Includes pod name and labels.</li>
+  </ul>
+
+  <h4>Example YAML manifest</h4>
+
+  <p class="filename"><code>ngnix_pod.yml</code></p>
+
+<pre><code>apiVersion: v1
+kind: Pod
+metadata:
+  name: ngnix
+  labels:
+    app: ngnix-pod
+    tier: frontend
+spec:
+  containers:
+  - name: ngnix
+    image: docker.io/library/nginx:latest</code></pre>
+
+  <h4>Step-by-step deployment</h4>
+
+  <p>Apply the manifest:</p>
+
+<pre><code>kubectl apply -f ngnix_pod.yml</code></pre>
+
+  <p>Kubernetes reads your YAML and creates the pod as specified.</p>
+
+  <p>Check the pod status:</p>
+
+<pre><code>kubectl get pods
+kubectl get pods -o wide</code></pre>
+
+  <h2>Summary</h2>
+
+  <p>Kubernetes Pods are the fundamental deployable units that encapsulate one or more
+  containers, shared resources, and network. Creating Pods can be done imperatively with the
+  <code>kubectl run</code> command, or declaratively through YAML manifests.</p>
+
+  <p>Pods enable running containerized applications with ease, providing networking, storage
+  sharing, and lifecycle management. This demo showed how to deploy a simple NGINX Pod.</p>
+
+  <h2>Sources</h2>
+
+  <ol class="sources">
+    <li id="src-1"><a href="https://www.cncf.io/blog/2022/03/03/how-to-write-yaml-file-for-kubernetes/" rel="noopener">CNCF — How to write a YAML file for Kubernetes</a></li>
+  </ol>
+
+  <a class="back" href="../index.html">← All posts</a>
+
+</article>
+</div>
+
+<footer class="site">
+  <div class="wrap narrow">
+    <p>&copy; 2026 Sunke Nithin</p>
+  </div>
+</footer>
+
+</body>
+</html>
