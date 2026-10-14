@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Setting Up MongoDB Replication: A Step-by-Step Guide — Nithin Cloud Blog</title>
+<meta name="description" content="Building a three-node MongoDB replica set: keyfile auth, rs.initiate(), verifying replication, forcing a failover with rs.stepDown(), and monitoring lag.">
+<meta name="author" content="Sunke Nithin">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="Setting Up MongoDB Replication: A Step-by-Step Guide">
+<meta property="og:description" content="Building a three-node MongoDB replica set: keyfile auth, rs.initiate(), verifying replication, forcing a failover with rs.stepDown(), and monitoring lag.">
+<meta property="article:published_time" content="2025-08-28">
+
+<!-- Relative, so the site works both opened from disk and served over HTTP. -->
+<link rel="stylesheet" href="../style.css">
+</head>
+
+<body>
+
+<header class="site">
+  <div class="wrap narrow">
+    <p class="brand"><a href="../index.html">Nithin Cloud Blog</a></p>
+    <p class="tagline">Notes on Oracle Cloud Infrastructure, networking, and homelab infrastructure.</p>
+  </div>
+</header>
+
+<div class="wrap narrow">
+<article>
+
+  <div class="post-header">
+    <h1>Setting Up MongoDB Replication: A Step-by-Step Guide</h1>
+    <p class="meta">
+      <time datetime="2025-08-28">28 August 2025</time>
+      <span class="dot">&bull;</span>
+      <span>Sunke Nithin</span>
+      <span class="dot">&bull;</span>
+      <span>~7 min read</span>
+    </p>
+    <ul class="chips">
+      <li class="cat">Database</li>
+      <li class="tag">MongoDB</li>
+    </ul>
+  </div>
+
+  <p>MongoDB replication is a powerful feature that ensures high availability and data
+  redundancy by maintaining multiple copies of your data across different servers. By
+  configuring a <strong>replica set</strong>, you can achieve fault tolerance, enable read
+  scaling, and simplify disaster recovery. In this blog post, we’ll walk you through the
+  process of setting up MongoDB replication with clear, actionable steps.</p>
+
+  <h2>What is MongoDB replication?</h2>
+
+  <p>MongoDB replication involves creating a <strong>replica set</strong>, a group of MongoDB
+  instances that store the same data. One node acts as the <strong>primary</strong>, handling
+  all write operations, while <strong>secondaries</strong> replicate the data and can serve
+  read operations. An optional <strong>arbiter</strong> can participate in elections without
+  storing data. Replication ensures that if the primary node fails, a secondary can take over,
+  minimizing downtime.</p>
+
+  <p>Let’s dive into the steps to set up a MongoDB replica set.</p>
+
+  <h2>Step 1: Plan your replica set</h2>
+
+  <p>Before you begin, plan your replica set architecture:</p>
+
+  <ul>
+    <li><strong>Number of nodes:</strong> A typical replica set has at least three nodes (one
+      primary, two secondaries). You can use an arbiter for voting if you need an odd number
+      of members.</li>
+    <li><strong>Hardware:</strong> Ensure each node has adequate CPU, memory, and disk space
+      (SSDs are recommended for performance).</li>
+    <li><strong>Network:</strong> Verify low-latency connectivity between nodes and open the
+      default MongoDB port (27017) in your firewall.</li>
+    <li><strong>Roles:</strong> Decide which nodes will be primary, secondary, or
+      arbiter.</li>
+  </ul>
+
+  <div class="callout">
+    <p><strong>Pro tip:</strong> Use separate servers, VMs or Docker containers for nodes to
+    ensure fault tolerance.</p>
+  </div>
+
+  <h2>Step 2: Install MongoDB on all nodes</h2>
+
+  <p>Install the same version of MongoDB on each server, then validate the installed
+  version:</p>
+
+<pre><code>mongod --version</code></pre>
+
+  <h2>Step 3: Configure MongoDB instances</h2>
+
+  <p>Edit the MongoDB configuration file (usually <code>/etc/mongod.conf</code>) on each node
+  to enable replication and define the replica set name.</p>
+
+<pre><code>replication:
+  replSetName: "rs0"  # Use the same name for all nodes
+net:
+  bindIp: 0.0.0.0    # Allow connections from other nodes
+  port: 27017        # Default port</code></pre>
+
+  <p>Create a <strong>keyfile</strong> for replica set communication:</p>
+
+<pre><code>openssl rand -base64 756 &gt; /opt/mongod/keyfile
+sudo chmod 400 /opt/mongod/keyfile
+sudo chown mongod:mongod /opt/mongod/keyfile</code></pre>
+
+  <p>Add the keyfile to the configuration:</p>
+
+<pre><code>security:
+  keyFile: /path/to/keyfile</code></pre>
+
+  <figure>
+    <img src="images/image-418.png" loading="lazy"
+         alt="The mongod.conf file showing the replication, net and security sections configured with the rs0 replica set name and the keyfile path.">
+  </figure>
+
+  <h2>Step 4: Restart MongoDB on all nodes</h2>
+
+<pre><code>sudo systemctl restart mongod
+sudo systemctl status mongod</code></pre>
+
+  <h2>Step 5: Initialize the replica set</h2>
+
+  <p>Connect to one node using the MongoDB shell (mongosh):</p>
+
+<pre><code>mongosh -u mongoadm -p --authenticationDatabase admin</code></pre>
+
+  <p>Initialize the replica set with all nodes:</p>
+
+<pre><code>admin&gt; rs.initiate({
+...   _id: "rs0",
+...   members: [
+...     { _id: 0, host: "192.168.1.15:27017" },
+...     { _id: 1, host: "192.168.1.16:27017" },
+...     { _id: 2, host: "192.168.1.17:27017" }
+...   ]
+... })
+{ ok: 1 }</code></pre>
+
+  <figure>
+    <img src="images/image-420.png" loading="lazy"
+         alt="mongosh output showing rs.initiate() returning ok: 1 and the prompt changing to indicate the node is now primary of the rs0 replica set.">
+  </figure>
+
+  <p>Replace the host IPs with your node addresses. After initialization, one node becomes the
+  primary, and others become secondaries. Check the status:</p>
+
+<pre><code>rs.status()</code></pre>
+
+  <p>Output:</p>
+
+<pre><code>rs0 [direct: primary] test&gt; rs.status()
+{
+  set: 'rs0',
+  date: ISODate('2025-08-28T05:00:52.678Z'),
+  myState: 1,
+  term: Long('1'),
+  syncSourceHost: '',
+  syncSourceId: -1,
+  heartbeatIntervalMillis: Long('2000'),
+  majorityVoteCount: 2,
+  writeMajorityCount: 2,
+  votingMembersCount: 3,
+  writableVotingMembersCount: 3,
+  optimes: {
+    lastCommittedOpTime: { ts: Timestamp({ t: 1756357252, i: 1 }), t: Long('1') },
+    lastCommittedWallTime: ISODate('2025-08-28T05:00:52.535Z'),
+    readConcernMajorityOpTime: { ts: Timestamp({ t: 1756357252, i: 1 }), t: Long('1') },
+    appliedOpTime: { ts: Timestamp({ t: 1756357252, i: 1 }), t: Long('1') },
+    durableOpTime: { ts: Timestamp({ t: 1756357252, i: 1 }), t: Long('1') },
+    writtenOpTime: { ts: Timestamp({ t: 1756357252, i: 1 }), t: Long('1') },
+    lastAppliedWallTime: ISODate('2025-08-28T05:00:52.535Z'),
+    lastDurableWallTime: ISODate('2025-08-28T05:00:52.535Z'),
+    lastWrittenWallTime: ISODate('2025-08-28T05:00:52.535Z')
+  },
+  lastStableRecoveryTimestamp: Timestamp({ t: 1756357212, i: 1 }),
+  electionCandidateMetrics: {
+    lastElectionReason: 'electionTimeout',
+    lastElectionDate: ISODate('2025-08-28T04:59:32.082Z'),
+    electionTerm: Long('1'),
+    lastCommittedOpTimeAtElection: { ts: Timestamp({ t: 1756357161, i: 1 }), t: Long('-1') },
+    lastSeenWrittenOpTimeAtElection: { ts: Timestamp({ t: 1756357161, i: 1 }), t: Long('-1') },
+    lastSeenOpTimeAtElection: { ts: Timestamp({ t: 1756357161, i: 1 }), t: Long('-1') },
+    numVotesNeeded: 2,
+    priorityAtElection: 1,
+    electionTimeoutMillis: Long('10000'),
+    numCatchUpOps: Long('0'),
+    newTermStartDate: ISODate('2025-08-28T04:59:32.483Z'),
+    wMajorityWriteAvailabilityDate: ISODate('2025-08-28T04:59:46.127Z')
+  },
+  members: [
+    {
+      _id: 0,
+      name: '192.168.1.15:27017',
+      health: 1,
+      state: 1,
+      stateStr: 'PRIMARY',
+      uptime: 727,
+      optime: { ts: Timestamp({ t: 1756357252, i: 1 }), t: Long('1') },
+      optimeDate: ISODate('2025-08-28T05:00:52.000Z'),
+      optimeWritten: { ts: Timestamp({ t: 1756357252, i: 1 }), t: Long('1') },
+      optimeWrittenDate: ISODate('2025-08-28T05:00:52.000Z'),
+      lastAppliedWallTime: ISODate('2025-08-28T05:00:52.535Z'),
+      lastDurableWallTime: ISODate('2025-08-28T05:00:52.535Z'),
+      lastWrittenWallTime: ISODate('2025-08-28T05:00:52.535Z'),
+      syncSourceHost: '',
+      syncSourceId: -1,
+      infoMessage: 'Could not find member to sync from',
+      electionTime: Timestamp({ t: 1756357172, i: 1 }),
+      electionDate: ISODate('2025-08-28T04:59:32.000Z'),
+      configVersion: 1,
+      configTerm: 1,
+      self: true,
+      lastHeartbeatMessage: ''
+    },
+    {
+      _id: 1,
+      name: '192.168.1.16:27017',
+      health: 1,
+      state: 2,
+      stateStr: 'SECONDARY',
+      uptime: 90,
+      optime: { ts: Timestamp({ t: 1756357242, i: 1 }), t: Long('1') },
+      optimeDurable: { ts: Timestamp({ t: 1756357242, i: 1 }), t: Long('1') },
+      optimeWritten: { ts: Timestamp({ t: 1756357242, i: 1 }), t: Long('1') },
+      optimeDate: ISODate('2025-08-28T05:00:42.000Z'),
+      optimeDurableDate: ISODate('2025-08-28T05:00:42.000Z'),
+      optimeWrittenDate: ISODate('2025-08-28T05:00:42.000Z'),
+      lastAppliedWallTime: ISODate('2025-08-28T05:00:52.535Z'),
+      lastDurableWallTime: ISODate('2025-08-28T05:00:52.535Z'),
+      lastWrittenWallTime: ISODate('2025-08-28T05:00:52.535Z'),
+      lastHeartbeat: ISODate('2025-08-28T05:00:52.242Z'),
+      lastHeartbeatRecv: ISODate('2025-08-28T05:00:51.343Z'),
+      pingMs: Long('0'),
+      lastHeartbeatMessage: '',
+      syncSourceHost: '192.168.1.15:27017',
+      syncSourceId: 0,
+      infoMessage: '',
+      configVersion: 1,
+      configTerm: 1
+    },
+    {
+      _id: 2,
+      name: '192.168.1.17:27017',
+      health: 1,
+      state: 2,
+      stateStr: 'SECONDARY',
+      uptime: 90,
+      optime: { ts: Timestamp({ t: 1756357242, i: 1 }), t: Long('1') },
+      optimeDurable: { ts: Timestamp({ t: 1756357242, i: 1 }), t: Long('1') },
+      optimeWritten: { ts: Timestamp({ t: 1756357242, i: 1 }), t: Long('1') },
+      optimeDate: ISODate('2025-08-28T05:00:42.000Z'),
+      optimeDurableDate: ISODate('2025-08-28T05:00:42.000Z'),
+      optimeWrittenDate: ISODate('2025-08-28T05:00:42.000Z'),
+      lastAppliedWallTime: ISODate('2025-08-28T05:00:52.535Z'),
+      lastDurableWallTime: ISODate('2025-08-28T05:00:52.535Z'),
+      lastWrittenWallTime: ISODate('2025-08-28T05:00:52.535Z'),
+      lastHeartbeat: ISODate('2025-08-28T05:00:52.242Z'),
+      lastHeartbeatRecv: ISODate('2025-08-28T05:00:51.342Z'),
+      pingMs: Long('1'),
+      lastHeartbeatMessage: '',
+      syncSourceHost: '192.168.1.15:27017',
+      syncSourceId: 0,
+      infoMessage: '',
+      configVersion: 1,
+      configTerm: 1
+    }
+  ],
+  ok: 1,
+  '$clusterTime': {
+    clusterTime: Timestamp({ t: 1756357252, i: 1 }),
+    signature: {
+      hash: Binary.createFromBase64('p8FQ9Wv+szpdzjl9nxWBWak53k0=', 0),
+      keyId: Long('7543496613835046918')
+    }
+  },
+  operationTime: Timestamp({ t: 1756357252, i: 1 })
+}</code></pre>
+
+  <h2>Step 7: Verify replication</h2>
+
+  <p>Test replication by inserting data on the primary and checking the secondaries.</p>
+
+  <p>On the primary replica:</p>
+
+<pre><code>db.mycollection.insertOne({ name: "test" })</code></pre>
+
+  <figure>
+    <img src="images/image-422.png" loading="lazy"
+         alt="mongosh on the primary inserting a test document and returning the acknowledged insert result.">
+  </figure>
+
+  <p>Connect to a secondary replica:</p>
+
+<pre><code>mongosh --host mngdb02 --port 27017 -u mongoadm -p --authenticationDatabase admin</code></pre>
+
+  <figure>
+    <img src="images/image-424.png" loading="lazy"
+         alt="mongosh connected to a secondary node, showing the replicated test document present there.">
+  </figure>
+
+  <h2>Step 8: Configure optional settings</h2>
+
+  <p>Add an arbiter (if needed):</p>
+
+<pre><code>rs.addArbiter("192.168.1.18:27017")</code></pre>
+
+  <ul>
+    <li><strong>Set read preferences:</strong> Configure your application to read from
+      secondaries for load balancing (e.g. <code>readPreference=secondaryPreferred</code>).</li>
+    <li><strong>Adjust write concern:</strong> Ensure writes are replicated to a majority of
+      nodes:</li>
+  </ul>
+
+<pre><code>db.mycollection.insertOne({ name: "test" }, { writeConcern: { w: "majority" } })</code></pre>
+
+  <h2>Step 9: Monitor and maintain the replica set</h2>
+
+  <ul>
+    <li><strong>Monitor health:</strong> Use <code>rs.status()</code> or tools like MongoDB
+      Atlas or Prometheus.</li>
+    <li><strong>Check replication lag:</strong> Monitor <code>optimeDate</code> in
+      <code>rs.status()</code> to ensure secondaries are up to date.</li>
+    <li><strong>Backups:</strong> Schedule regular backups with <code>mongodump</code>.</li>
+    <li><strong>Failover testing:</strong> Simulate primary node failure to verify automatic
+      failover.</li>
+  </ul>
+
+  <h2>Step 10: Ways to check which node is PRIMARY</h2>
+
+  <h3>Method 1: Using <code>rs.status()</code></h3>
+
+<pre><code>rs.status()</code></pre>
+
+  <h3>Method 2: Using <code>rs.isMaster()</code></h3>
+
+  <p>Deprecated in newer versions — use <code>hello</code> instead.</p>
+
+<pre><code>rs.isMaster()</code></pre>
+
+  <figure>
+    <img src="images/image-426.png" loading="lazy"
+         alt="mongosh output of rs.isMaster() showing the ismaster flag and the primary host for the replica set.">
+  </figure>
+
+  <h3>Method 3: Using <code>db.hello()</code> (MongoDB 5.0+ recommended)</h3>
+
+<pre><code>db.hello()</code></pre>
+
+  <figure>
+    <img src="images/image-428.png" loading="lazy"
+         alt="mongosh output of db.hello() reporting the replica set name, the current primary and the member hosts.">
+  </figure>
+
+  <h2>Ways to switch roles (force primary to change)</h2>
+
+  <h3>1. Step down the current primary</h3>
+
+  <p>Connect to the current <strong>PRIMARY</strong> and run:</p>
+
+<pre><code>rs.stepDown(60)</code></pre>
+
+  <ul>
+    <li>This forces the primary to step down for <strong>60 seconds</strong>.</li>
+    <li>An election happens, and one of the <strong>secondaries</strong> is elected as the new
+      <strong>primary</strong>.</li>
+    <li>The old primary rejoins as a <strong>secondary</strong> once it can sync again.</li>
+  </ul>
+
+  <p>👉 Useful when you want to test failover or move writes to another node.</p>
+
+  <figure>
+    <img src="images/image-430.png" loading="lazy"
+         alt="mongosh output of rs.stepDown(60) on the primary, returning ok: 1 with the cluster time and signature.">
+  </figure>
+
+<pre><code>rs.status()</code></pre>
+
+  <p>Other options include shutting down the node where the database is primary.</p>
+
+  <h3>Monitor the lag</h3>
+
+<pre><code>rs.printSecondaryReplicationInfo()</code></pre>
+
+  <figure>
+    <img src="images/image-432.png" loading="lazy"
+         alt="mongosh output of rs.printSecondaryReplicationInfo() showing both secondaries at 192.168.1.16 and 192.168.1.17 synced to the same timestamp with 0 secs replication lag behind the primary.">
+  </figure>
+
+  <hr>
+
+  <h2>Best practices</h2>
+
+  <ul>
+    <li><strong>Use DNS names:</strong> Use hostnames instead of IPs for easier
+      reconfiguration.</li>
+    <li><strong>Enable SSL/TLS:</strong> Secure data in transit with SSL in the
+      configuration.</li>
+    <li><strong>Restrict access:</strong> Use firewall rules to limit MongoDB port
+      access.</li>
+    <li><strong>Document everything:</strong> Maintain records of your configuration and
+      credentials (stored securely).</li>
+    <li><strong>Test failovers:</strong> Periodically test failover to ensure high
+      availability.</li>
+    <li>Use <code>rs.stepDown()</code> for a controlled role switch.</li>
+    <li>Use <strong>priority settings</strong> to influence the <em>long-term preferred
+      primary</em>.</li>
+    <li>Avoid frequent manual switching — let MongoDB handle elections automatically.</li>
+  </ul>
+
+  <hr>
+
+  <h2>Common issues and fixes</h2>
+
+  <ul>
+    <li><strong>Node not reachable:</strong> Check network connectivity and
+      <code>bindIp</code> settings.</li>
+    <li><strong>Authentication errors:</strong> Ensure the keyfile is identical across nodes
+      and has <code>chmod 400</code> permissions.</li>
+    <li><strong>Replication lag:</strong> Optimize queries or increase hardware
+      resources.</li>
+  </ul>
+
+  <hr>
+
+  <h2>Conclusion</h2>
+
+  <p>Setting up MongoDB replication is straightforward with proper planning. By following
+  these steps, you can create a robust replica set that ensures data availability and
+  resilience. Whether you’re running a small application or a large-scale system, MongoDB
+  replication is a critical feature for production environments.</p>
+
+  <p>Happy replicating!</p>
+
+  <a class="back" href="../index.html">← All posts</a>
+
+</article>
+</div>
+
+<footer class="site">
+  <div class="wrap narrow">
+    <p>&copy; 2026 Sunke Nithin</p>
+  </div>
+</footer>
+
+</body>
+</html>
