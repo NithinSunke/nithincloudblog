@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MongoDB CRUD Operations</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#13aa52;--accent-soft:#eaf7ef;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.08em;margin:1.6em 0 .4em}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:#0b7a3a;border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.86em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post table{width:100%;border-collapse:collapse;margin:.8em 0;font-size:.95em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post .note ul,.tsn-post .warn ul{margin:.3em 0}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.35em 0}
+.tsn-post .crud{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:.8em 0}
+.tsn-post .crud div{border:1px solid var(--line);border-radius:8px;padding:10px 14px;background:#fff}
+.tsn-post .crud b{display:inline-block;width:1.7em;height:1.7em;line-height:1.7em;text-align:center;border-radius:50%;background:var(--accent);color:#fff;margin-right:6px}
+.tsn-post .crud strong{color:#0b7a3a}
+.tsn-post .crud small{display:block;color:var(--muted);margin-top:4px}
+.tsn-post .out{color:var(--muted);font-size:.93em}
+.tsn-post .out strong{color:var(--ink)}
+.tsn-post figure{margin:1em 0;text-align:center}
+.tsn-post figure img{max-width:100%;height:auto;border:1px solid var(--line);border-radius:8px}
+.tsn-post figcaption{color:var(--muted);font-size:.85em;margin-top:4px}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:#0b7a3a}
+.tsn-post .end{background:var(--accent-soft);border-radius:8px;padding:14px 18px;margin-top:1em}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
+</style>
+
+<h1>Mastering CRUD Operations in MongoDB</h1>
+<div class="meta">By Sunke Nithin · August 25, 2025 &nbsp; <span class="tag">Database</span><span class="tag">MongoDB</span></div>
+
+<p class="lead">MongoDB, a popular NoSQL database, is known for its flexibility in handling unstructured or semi-structured data. At the heart of working with MongoDB collections are <strong>CRUD operations</strong>: Create, Read, Update and Delete. This post walks through each operation with examples and best practices to help you master data manipulation in MongoDB.</p>
+
+<div class="toc"><strong>Contents</strong>
+<ol>
+<li><a href="#crud-what">What are CRUD Operations?</a></li>
+<li><a href="#crud-setup">Setting Up a Sample Collection</a></li>
+<li><a href="#crud-c">Create Operations</a></li>
+<li><a href="#crud-r">Read Operations</a></li>
+<li><a href="#crud-u">Update Operations</a></li>
+<li><a href="#crud-d">Delete Operations</a></li>
+<li><a href="#crud-best">Best Practices</a></li>
+<li><a href="#crud-use">Common Use Cases</a></li>
+</ol></div>
+
+<h2 id="crud-what">What are CRUD Operations?</h2>
+<div class="crud">
+<div><b>C</b><strong>Create</strong><small>Add new documents — <code>insertOne()</code>, <code>insertMany()</code></small></div>
+<div><b>R</b><strong>Read</strong><small>Retrieve documents — <code>findOne()</code>, <code>find()</code></small></div>
+<div><b>U</b><strong>Update</strong><small>Modify documents — <code>updateOne()</code>, <code>updateMany()</code>, <code>replaceOne()</code></small></div>
+<div><b>D</b><strong>Delete</strong><small>Remove documents — <code>deleteOne()</code>, <code>deleteMany()</code></small></div>
+</div>
+<p>These operations are fundamental to any database system, and MongoDB provides a straightforward, powerful syntax for them. Let's explore each one with examples in the MongoDB shell.</p>
+
+<h2 id="crud-setup">Setting Up a Sample Collection</h2>
+<p>For the demonstration we'll use a <code>users</code> collection in a database named <code>mydb</code>. If you're following along, create the sample collection with a few documents:</p>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>use mydb
+db.users.insertMany([
+  { _id: 1, name: "Alice",   age: 30, city: "New York" },
+  { _id: 2, name: "Bob",     age: 25, city: "London" },
+  { _id: 3, name: "Charlie", age: 35, city: "Paris" }
+])</code></pre></div>
+<figure>
+<img src="images/image-382.png" alt="mongosh output: insertMany into mydb.users is acknowledged with insertedIds 1, 2 and 3" loading="lazy">
+<figcaption>The three sample documents inserted.</figcaption>
+</figure>
+
+<h2 id="crud-c"><span class="num">1</span>Create Operations</h2>
+<p>Create operations add new documents to a collection, using <code>insertOne()</code> and <code>insertMany()</code>.</p>
+
+<h3>Inserting a Single Document</h3>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.users.insertOne({
+  _id: 4,
+  name: "Diana",
+  age: 28,
+  city: "Tokyo"
+})</code></pre></div>
+<p class="out"><strong>Output:</strong> confirms the insertion with the document's <code>_id</code>.</p>
+
+<h3>Inserting Multiple Documents</h3>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.users.insertMany([
+  { _id: 5, name: "Eve",   age: 22, city: "Sydney" },
+  { _id: 6, name: "Frank", age: 40, city: "Berlin" }
+])</code></pre></div>
+<p class="out"><strong>Output:</strong> returns the inserted <code>_id</code> values.</p>
+
+<div class="note"><strong>Notes</strong>
+<ul>
+<li>If you don't specify an <code>_id</code>, MongoDB generates a unique <code>ObjectId</code> automatically.</li>
+<li>Use <code>insertOne()</code> for single insertions and <code>insertMany()</code> for bulk operations to optimize performance.</li>
+</ul></div>
+
+<h2 id="crud-r"><span class="num">2</span>Read Operations</h2>
+<p>Read operations retrieve documents with <code>findOne()</code> and <code>find()</code>.</p>
+<div class="note">The screenshots in this section also show an extra document — <code>{ _id: 7, name: "Alice", age: 33, city: "London" }</code> — that was added in my test collection. If you only ran the inserts above, you won't see it in your results.</div>
+
+<h3>Finding a Single Document</h3>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.users.findOne({ name: "Alice" })</code></pre></div>
+<figure>
+<img src="images/image-384.png" alt="mongosh output: findOne name Alice returns { _id: 1, name: 'Alice', age: 30, city: 'New York' }" loading="lazy">
+</figure>
+<p class="out"><strong>Output:</strong> the first matching document, e.g. <code>{ _id: 1, name: "Alice", age: 30, city: "New York" }</code>.</p>
+
+<h3>Finding Multiple Documents</h3>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.users.find({ city: "London" })</code></pre></div>
+<figure>
+<img src="images/image-386.png" alt="mongosh output: find city London returns Bob (_id 2) and Alice (_id 7)" loading="lazy">
+</figure>
+<p class="out"><strong>Output:</strong> a cursor over all matching documents.</p>
+
+<p>To make the output more readable, use <code>pretty()</code>:</p>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.users.find().pretty()</code></pre></div>
+<figure>
+<img src="images/image-388.png" alt="mongosh output: find().pretty() lists all seven user documents" loading="lazy">
+</figure>
+<div class="note">In the modern <code>mongosh</code> shell, results are already formatted, so <code>pretty()</code> makes no visible difference. It mattered in the legacy <code>mongo</code> shell.</div>
+
+<h3>Query Operators</h3>
+<p>MongoDB supports operators for more complex queries.</p>
+<p><strong>Comparison:</strong> <code>$eq</code>, <code>$gt</code>, <code>$gte</code>, <code>$lt</code>, <code>$lte</code>, <code>$ne</code>, <code>$in</code></p>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.users.find({ age: { $gt: 30 } })   <span class="cm">// Users older than 30</span></code></pre></div>
+<figure>
+<img src="images/image-390.png" alt="mongosh output: age greater than 30 returns Charlie (35), Frank (40) and Alice (33)" loading="lazy">
+<figcaption>Alice with <code>_id: 1</code> (age 30) is excluded — <code>$gt</code> is strictly greater than.</figcaption>
+</figure>
+
+<p><strong>Logical:</strong> <code>$and</code>, <code>$or</code>, <code>$not</code>, <code>$nor</code></p>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.users.find({ $or: [{ city: "Tokyo" }, { city: "Sydney" }] })</code></pre></div>
+<figure>
+<img src="images/image-392.png" alt="mongosh output: Tokyo or Sydney returns Diana and Eve" loading="lazy">
+</figure>
+
+<div class="note"><strong>Notes</strong>
+<ul>
+<li>Use <code>findOne()</code> for single-document retrieval and <code>find()</code> for multiple documents.</li>
+<li>Indexes on frequently queried fields (e.g. <code>name</code> or <code>city</code>) improve read performance.</li>
+</ul></div>
+
+<h2 id="crud-u"><span class="num">3</span>Update Operations</h2>
+<p>Update operations modify existing documents using <code>updateOne()</code>, <code>updateMany()</code> or <code>replaceOne()</code>.</p>
+
+<h3>Updating a Single Document</h3>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.users.updateOne(
+  { name: "Bob" },
+  { $set: { age: 26, city: "Manchester" } }
+)</code></pre></div>
+<figure>
+<img src="images/image-394.png" alt="mongosh output: updateOne for Bob is acknowledged with matchedCount 1, modifiedCount 1, upsertedCount 0" loading="lazy">
+</figure>
+<p class="out"><strong>Output:</strong> the number of documents matched and modified.</p>
+
+<h3>Updating Multiple Documents</h3>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.users.updateMany(
+  { city: "New York" },
+  { $set: { country: "USA" } }
+)</code></pre></div>
+
+<h3>Replacing a Document</h3>
+<p>To replace an entire document (everything except <code>_id</code>):</p>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.users.replaceOne(
+  { name: "Diana" },
+  { name: "Diana", age: 29, city: "Osaka", country: "Japan" }
+)</code></pre></div>
+<div class="warn">With <code>replaceOne()</code>, any field you leave out of the new document is removed. Use <code>$set</code> when you only want to change some fields.</div>
+
+<h3>Update Operators</h3>
+<table>
+<tr><th>Operator</th><th>What it does</th><th>Example</th></tr>
+<tr><td><code>$set</code></td><td>Sets specific fields</td><td><code>{ $set: { city: "Leeds" } }</code></td></tr>
+<tr><td><code>$inc</code></td><td>Increments a numeric field</td><td><code>{ $inc: { age: 1 } }</code></td></tr>
+<tr><td><code>$push</code></td><td>Adds an element to an array</td><td><code>{ $push: { hobbies: "reading" } }</code></td></tr>
+</table>
+
+<div class="note"><strong>Notes</strong>
+<ul>
+<li>Use <code>$set</code> to avoid overwriting fields unintentionally.</li>
+<li>Make sure indexes exist for the fields used in update filters, to optimize performance.</li>
+</ul></div>
+
+<h2 id="crud-d"><span class="num">4</span>Delete Operations</h2>
+<p>Delete operations remove documents using <code>deleteOne()</code> or <code>deleteMany()</code>.</p>
+
+<h3>Deleting a Single Document</h3>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.users.deleteOne({ name: "Frank" })</code></pre></div>
+<p class="out"><strong>Output:</strong> the number of documents deleted.</p>
+
+<h3>Deleting Multiple Documents</h3>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.users.deleteMany({ city: "Paris" })</code></pre></div>
+
+<div class="warn"><strong>Be careful</strong>
+<ul>
+<li><code>deleteMany()</code> can remove large numbers of documents — and <code>deleteMany({})</code> removes every document in the collection.</li>
+<li>Deleted documents cannot be recovered unless you have a backup, or the delete ran inside a transaction that you abort before committing.</li>
+</ul>
+Tip: run the same filter with <code>find()</code> first to see exactly what will be deleted.</div>
+
+<h2 id="crud-best">Best Practices for CRUD Operations</h2>
+<ul>
+<li><strong>Use indexes:</strong> create indexes on fields used in queries to speed up finds, updates and deletes.
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.users.createIndex({ name: 1 })</code></pre></div></li>
+<li><strong>Validate data:</strong> use MongoDB's schema validation to enforce data integrity on inserts and updates.</li>
+<li><strong>Batch operations:</strong> for bulk inserts or updates, use <code>insertMany()</code> or <code>updateMany()</code> to reduce network overhead.</li>
+<li><strong>Check results:</strong> inspect the output of each operation (e.g. <code>matchedCount</code>, <code>modifiedCount</code>) to confirm it did what you expected.</li>
+<li><strong>Use transactions:</strong> for multi-document operations that must stay consistent, use transactions.</li>
+<li><strong>Test queries:</strong> use <code>explain()</code> to analyze query performance and confirm indexes are used:
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.users.find({ city: "Tokyo" }).explain("executionStats")</code></pre></div></li>
+</ul>
+
+<h2 id="crud-use">Common Use Cases</h2>
+<table>
+<tr><th>Area</th><th>CRUD in practice</th></tr>
+<tr><td>User management</td><td>Inserting user profiles, updating preferences, deleting inactive accounts</td></tr>
+<tr><td>E-commerce</td><td>Adding products, querying inventory, updating prices, removing discontinued items</td></tr>
+<tr><td>Real-time analytics</td><td>Storing and retrieving event data, updating counters, deleting expired logs</td></tr>
+<tr><td>Content management</td><td>Managing blog posts or comments with flexible schemas</td></tr>
+</table>
+
+<h2>Conclusion</h2>
+<div class="end">CRUD operations are the backbone of working with MongoDB, letting you create, read, update and delete data efficiently. Master them and follow the best practices above, and you can build robust, performant applications. Try the examples in a MongoDB shell or an Atlas cluster, and see the <a href="https://www.mongodb.com/docs/manual/crud/" target="_blank" rel="noopener">MongoDB CRUD documentation</a> for advanced features like aggregation pipelines and change streams.</div>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>
