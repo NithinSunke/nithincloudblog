@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IAM in Google Cloud</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#1a73e8;--accent-soft:#e8f0fe;--accent-ink:#1557b0;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.06em;margin:1.5em 0 .4em}
+.tsn-post h4{font-size:.98em;margin:1.1em 0 .3em;color:var(--accent-ink)}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.86em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em;overflow-wrap:normal}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post table{width:100%;border-collapse:collapse;margin:.8em 0;font-size:.95em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.35em 0}
+.tsn-post .who{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:1em 0;text-align:center}
+.tsn-post .who div{border:1px solid var(--line);border-top:4px solid var(--accent);border-radius:8px;padding:10px 8px;background:#fff}
+.tsn-post .who b{display:block;font-size:1.05em;color:var(--accent-ink)}
+.tsn-post .who span{font-size:.86em;color:var(--muted)}
+.tsn-post .diagram{margin:1em 0}
+.tsn-post .diagram svg{display:block;max-width:100%;height:auto;margin:0 auto}
+.tsn-post .diagram figcaption{text-align:center;color:var(--muted);font-size:.85em;margin-top:4px}
+.tsn-post .tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:.8em 0}
+.tsn-post .tools div{border:1px solid var(--line);border-radius:8px;padding:10px 14px;background:#fff}
+.tsn-post .tools strong{display:block;color:var(--accent-ink)}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:var(--accent-ink)}
+.tsn-post .end{background:var(--accent-soft);border-radius:8px;padding:14px 18px;margin-top:1em}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}.tsn-post .who{grid-template-columns:1fr}}
+</style>
+
+<h1>Understanding IAM in Google Cloud Platform: A Complete Guide</h1>
+<div class="meta">By Sunke Nithin · August 9, 2025 &nbsp; <span class="tag">Cloud</span><span class="tag">GCP</span></div>
+
+<p class="lead">In cloud computing, controlling <strong>who can access what</strong> is foundational to security and governance. <strong>Google Cloud IAM (Identity and Access Management)</strong> provides a flexible, powerful system for managing access to your cloud resources. Whether you're running a small proof of concept or managing enterprise workloads, understanding IAM is essential to operating securely in GCP.</p>
+
+<div class="toc"><strong>Contents</strong>
+<ol>
+<li><a href="#iam-what">What is IAM in GCP?</a></li>
+<li><a href="#iam-core">Core Components of IAM</a></li>
+<li><a href="#iam-hier">IAM Policy Hierarchy</a></li>
+<li><a href="#iam-manage">How to Manage IAM</a></li>
+<li><a href="#iam-use">Common Use Cases and a Scenario</a></li>
+<li><a href="#iam-best">Best Practices and Governance Tools</a></li>
+<li><a href="#iam-org">IAM vs Organization Policies</a></li>
+</ol></div>
+
+<h2 id="iam-what"><span class="num">1</span>What is IAM in GCP?</h2>
+<p>IAM in Google Cloud is a framework that defines:</p>
+<div class="who">
+<div><b>Who</b><span>the identity (principal)</span></div>
+<div><b>can do what</b><span>the role and its permissions</span></div>
+<div><b>on which resource</b><span>project, bucket, VM…</span></div>
+</div>
+<p>IAM controls access across all GCP services, such as Compute Engine, Cloud Storage, BigQuery, Cloud Functions and more.</p>
+
+<h2 id="iam-core"><span class="num">2</span>Core Components of IAM</h2>
+
+<h3>1. Identities (who is accessing?)</h3>
+<p>Identities — also called <em>principals</em> — are the entities that interact with GCP.</p>
+<table>
+<tr><th>Identity type</th><th>Description</th><th>Example</th></tr>
+<tr><td>Google Account</td><td>An individual user account</td><td><code>user:john@example.com</code></td></tr>
+<tr><td>Google Group</td><td>A group of users</td><td><code>group:devs@example.com</code></td></tr>
+<tr><td>Service account</td><td>Used by applications and services</td><td><code>serviceAccount:my-app@project.iam.gserviceaccount.com</code></td></tr>
+<tr><td>Google Workspace / Cloud Identity domain</td><td>Every user in a domain</td><td><code>domain:example.com</code></td></tr>
+<tr><td>All users</td><td>Anyone on the internet</td><td><code>allUsers</code></td></tr>
+<tr><td>All authenticated users</td><td>Anyone signed in with a Google account</td><td><code>allAuthenticatedUsers</code></td></tr>
+</table>
+<div class="warn"><code>allUsers</code> and <code>allAuthenticatedUsers</code> make a resource public. Grant them only when that's truly intended (for example a public website bucket).</div>
+
+<h3>2. Resources (what is being accessed?)</h3>
+<p>Resources are GCP services and components such as:</p>
+<ul>
+<li>Projects</li>
+<li>Virtual machines (Compute Engine)</li>
+<li>Cloud Storage buckets</li>
+<li>BigQuery datasets</li>
+<li>Pub/Sub topics</li>
+<li>APIs</li>
+</ul>
+
+<h3>3. Roles (what access is granted?)</h3>
+<p>A role is a collection of <strong>permissions</strong>. There are three kinds:</p>
+
+<h4>🔹 Predefined roles</h4>
+<p>Google provides fine-grained, service-specific roles, for example:</p>
+<ul>
+<li><code>roles/storage.objectViewer</code> — read-only access to Cloud Storage objects</li>
+<li><code>roles/compute.admin</code> — full control of Compute Engine resources</li>
+<li><code>roles/bigquery.dataViewer</code> — read BigQuery data and metadata</li>
+</ul>
+
+<h4>🔹 Custom roles</h4>
+<p>You can create custom roles containing only the permissions your team needs.</p>
+
+<h4>⚠️ Basic roles <em>(not recommended for production)</em></h4>
+<ul>
+<li><code>roles/owner</code> — full access, including managing IAM and billing (dangerous!)</li>
+<li><code>roles/editor</code> — create, change and delete most resources, but not manage IAM</li>
+<li><code>roles/viewer</code> — read-only access to most resources</li>
+</ul>
+<div class="note"><strong>Use predefined or custom roles instead of basic roles</strong> to follow the principle of least privilege. Basic roles cover almost every service in the project, so they grant far more than most people need.</div>
+
+<h3>4. Policy</h3>
+<p>An IAM <strong>allow policy</strong> is a collection of <strong>bindings</strong>; each binding attaches a list of <strong>members</strong> (principals) to a <strong>role</strong>.</p>
+<div class="code"><span class="lbl">JSON</span><pre><code>{
+  "bindings": [
+    {
+      "role": "roles/storage.admin",
+      "members": [
+        "user:alice@example.com",
+        "group:devops@example.com"
+      ]
+    }
+  ]
+}</code></pre></div>
+
+<h2 id="iam-hier"><span class="num">3</span>IAM Policy Hierarchy</h2>
+<p>IAM policies are <strong>hierarchical</strong> and can be set at each of these levels:</p>
+<figure class="diagram">
+<svg viewBox="0 0 640 220" role="img" aria-labelledby="iam-h-t" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
+<title id="iam-h-t">Resource hierarchy: Organization, then Folders, then Projects, then Resources; policies are inherited downwards</title>
+<defs><marker id="iam-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#1a73e8"/></marker></defs>
+<rect x="40" y="10" width="200" height="40" rx="8" fill="#1a73e8"/><text x="140" y="35" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">Organization</text>
+<text x="252" y="35" font-size="12" fill="#5b6672">optional · example.com</text>
+<rect x="90" y="62" width="200" height="40" rx="8" fill="#4a8ff0"/><text x="190" y="87" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">Folders</text>
+<text x="302" y="87" font-size="12" fill="#5b6672">optional · e.g. Prod, Dev</text>
+<rect x="140" y="114" width="200" height="40" rx="8" fill="#8cb7f5"/><text x="240" y="139" text-anchor="middle" font-size="14" font-weight="700" fill="#0b3d91">Projects</text>
+<text x="352" y="139" font-size="12" fill="#5b6672">billing &amp; API boundary</text>
+<rect x="190" y="166" width="200" height="40" rx="8" fill="#e8f0fe" stroke="#8cb7f5"/><text x="290" y="191" text-anchor="middle" font-size="14" font-weight="700" fill="#1557b0">Resources</text>
+<text x="402" y="191" font-size="12" fill="#5b6672">VMs, buckets, datasets…</text>
+<path d="M20 22V196" stroke="#1a73e8" stroke-width="2.5" fill="none" marker-end="url(#iam-ar)"/>
+<text x="14" y="110" font-size="11" fill="#1557b0" transform="rotate(-90 14 110)" text-anchor="middle">inherited</text>
+</svg>
+<figcaption>A role granted at the organization or folder level applies to every project and resource beneath it.</figcaption>
+</figure>
+<ul>
+<li><strong>Policies are inherited downwards.</strong> A resource's effective access is the union of its own policy and every policy above it.</li>
+<li>This lets you set broad access at the organization or folder level and add more specific grants lower down.</li>
+</ul>
+<div class="warn">Allow policies are <strong>additive</strong>: a lower level can add access but can't take away access granted higher up. To block access that's inherited, use an <strong>IAM deny policy</strong> — or, better, grant it lower in the hierarchy in the first place.</div>
+
+<h2 id="iam-manage"><span class="num">4</span>How to Manage IAM</h2>
+
+<h3>Google Cloud Console</h3>
+<ol>
+<li>Go to <strong>IAM &amp; Admin → IAM</strong>.</li>
+<li>Click <strong>Grant access</strong>.</li>
+<li>Enter the <strong>principal</strong> (user, group or service account).</li>
+<li>Assign a <strong>role</strong>.</li>
+<li>Click <strong>Save</strong>.</li>
+</ol>
+
+<h3>gcloud CLI</h3>
+<div class="code"><span class="lbl">GCLOUD</span><pre><code>gcloud projects add-iam-policy-binding PROJECT_ID \
+  --member="user:john@example.com" \
+  --role="roles/compute.viewer"</code></pre></div>
+
+<h3>Terraform</h3>
+<div class="code"><span class="lbl">TERRAFORM</span><pre><code>resource "google_project_iam_member" "viewer" {
+  project = "my-project-id"
+  role    = "roles/viewer"
+  member  = "user:john@example.com"
+}</code></pre></div>
+<div class="note"><strong>Which Terraform resource?</strong> <code>google_project_iam_member</code> adds one member and leaves everyone else alone. <code>google_project_iam_binding</code> is <em>authoritative</em> for its role — it removes anyone holding that role who isn't in its <code>members</code> list — so use it only when Terraform should own the full membership of that role.</div>
+
+<h2 id="iam-use"><span class="num">5</span>Common Use Cases</h2>
+<table>
+<tr><th>Task</th><th>Recommended role</th></tr>
+<tr><td>Read-only access to a project</td><td><code>roles/viewer</code> (or narrower service-specific viewer roles)</td></tr>
+<tr><td>Deploy code to Cloud Functions</td><td><code>roles/cloudfunctions.developer</code></td></tr>
+<tr><td>Admin access to VMs</td><td><code>roles/compute.admin</code></td></tr>
+<tr><td>Access to a storage bucket</td><td><code>roles/storage.objectViewer</code> (read) or <code>roles/storage.admin</code> (manage)</td></tr>
+<tr><td>Review IAM settings for audits</td><td><code>roles/iam.securityReviewer</code></td></tr>
+</table>
+
+<h3>IAM in action: a scenario</h3>
+<p><strong>Goal:</strong> give a developer read-only access to the BigQuery datasets in a project, with the ability to run queries.</p>
+<ol>
+<li>Go to <strong>IAM &amp; Admin → IAM</strong> and click <strong>Grant access</strong>.</li>
+<li>Add the principal <code>dev@example.com</code>.</li>
+<li>Assign <code>roles/bigquery.dataViewer</code> (read tables) <strong>and</strong> <code>roles/bigquery.jobUser</code> (run query jobs).</li>
+</ol>
+<div class="code"><span class="lbl">GCLOUD</span><pre><code>gcloud projects add-iam-policy-binding PROJECT_ID \
+  --member="user:dev@example.com" --role="roles/bigquery.dataViewer"
+gcloud projects add-iam-policy-binding PROJECT_ID \
+  --member="user:dev@example.com" --role="roles/bigquery.jobUser"</code></pre></div>
+<p>The developer can now read and query the data, but can't modify or delete the datasets. <code>dataViewer</code> on its own would let them see the data but not run queries.</p>
+
+<h2 id="iam-best"><span class="num">6</span>IAM Best Practices</h2>
+<table>
+<tr><th>Practice</th><th>Why it matters</th></tr>
+<tr><td>Use <strong>least privilege</strong></td><td>Minimizes the damage if credentials are compromised</td></tr>
+<tr><td>Prefer <strong>groups over individuals</strong></td><td>Much easier to manage at scale</td></tr>
+<tr><td>Audit IAM policies regularly</td><td>Catches overly broad permissions</td></tr>
+<tr><td>Use <strong>custom roles</strong> for sensitive workflows</td><td>Fine-grained control</td></tr>
+<tr><td>Avoid the <strong>Owner</strong> role</td><td>Too much power, especially in production</td></tr>
+<tr><td>Use <strong>service accounts</strong> for automation</td><td>Secure and traceable — and avoid downloading their keys where you can</td></tr>
+</table>
+
+<h3>Tools for IAM governance</h3>
+<div class="tools">
+<div><strong>IAM role recommendations</strong>Suggests removing permissions a principal hasn't used.</div>
+<div><strong>Policy Analyzer</strong>Answers "who has access to what" across your resources.</div>
+<div><strong>Cloud Audit Logs</strong>Records IAM changes and access activity.</div>
+<div><strong>Cloud Asset Inventory</strong>Searches IAM policies across the organization or project.</div>
+</div>
+
+<h2 id="iam-org"><span class="num">7</span>IAM vs Organization Policies</h2>
+<table>
+<tr><th>Feature</th><th>IAM</th><th>Organization policies</th></tr>
+<tr><td>What it controls</td><td><em>Who</em> can access what</td><td><em>What</em> configurations are allowed, whoever makes them</td></tr>
+<tr><td>Built from</td><td>Roles and permissions</td><td>Constraints on resource behavior</td></tr>
+<tr><td>Example</td><td>Grant <code>roles/compute.admin</code></td><td>Block external IPs on VMs (<code>compute.vmExternalIpAccess</code>)</td></tr>
+</table>
+<p>For more on that example, see <a href="../understanding-internal-vs-external-ip-addresses-in-google-cloud-platform-gcp/understanding-internal-vs-external-ip-addresses-in-google-cloud-platform-gcp.html">Understanding Internal vs External IP Addresses in GCP</a>.</p>
+
+<h2>Final Thoughts</h2>
+<div class="end">IAM is a <strong>cornerstone of security and compliance</strong> in Google Cloud. Mastering it helps you prevent data breaches, enforce the principle of least privilege, simplify user and service-account access, and audit and monitor access effectively. Whether you're building in the free tier or scaling to enterprise workloads, understanding IAM is critical to a secure, manageable cloud foundation.</div>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>
