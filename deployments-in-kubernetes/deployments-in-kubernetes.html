@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deployments in Kubernetes — Nithin Cloud Blog</title>
+<meta name="description" content="How Kubernetes Deployments automate updates, scaling and rollbacks: key components, a worked YAML example, deployment strategies and production best practices.">
+<meta name="author" content="Sunke Nithin">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="Deployments in Kubernetes">
+<meta property="og:description" content="How Kubernetes Deployments automate updates, scaling and rollbacks: key components, a worked YAML example, deployment strategies and production best practices.">
+<meta property="article:published_time" content="2025-09-07">
+
+<!-- Relative, so the site works both opened from disk and served over HTTP. -->
+<link rel="stylesheet" href="../style.css">
+</head>
+
+<body>
+
+<header class="site">
+  <div class="wrap narrow">
+    <p class="brand"><a href="../index.html">Nithin Cloud Blog</a></p>
+    <p class="tagline">Notes on Oracle Cloud Infrastructure, networking, and homelab infrastructure.</p>
+  </div>
+</header>
+
+<div class="wrap narrow">
+<article>
+
+  <div class="post-header">
+    <h1>Deployments in Kubernetes</h1>
+    <p class="meta">
+      <time datetime="2025-09-07">7 September 2025</time>
+      <span class="dot">&bull;</span>
+      <span>Sunke Nithin</span>
+      <span class="dot">&bull;</span>
+      <span>~5 min read</span>
+    </p>
+    <ul class="chips">
+      <li class="cat">Kubernetes</li>
+      <li class="tag">Devops</li>
+    </ul>
+  </div>
+
+  <p>Deployments in <strong>Kubernetes</strong> are core objects that automate updates,
+  scaling, and management of containerized applications. They ensure a desired number of
+  replica pods are running at all times, simplifying the lifecycle and operational burden for
+  application workloads.<a class="cite" href="#src-1" id="ref-1">[1]</a></p>
+
+  <h2>What is a Kubernetes Deployment</h2>
+
+  <p>A <strong>Kubernetes Deployment</strong> is a resource that manages a group of pods (the
+  smallest deployable units) for an application. It defines the application's desired state,
+  automates rolling updates, rollbacks, and allows scaling. Administrators declare the ideal
+  configuration in a Deployment YAML file, and the Kubernetes Deployment Controller adjusts
+  the cluster to match this state.</p>
+
+  <h2>Key components</h2>
+
+  <ul>
+    <li><strong>Pods:</strong> Individual instances of your app, managed together as a
+      group.<a class="cite" href="#src-1">[1]</a></li>
+    <li><strong>ReplicaSets:</strong> Maintain the specified number of pod replicas,
+      controlled by Deployments.<a class="cite" href="#src-1">[1]</a></li>
+    <li><strong>Labels &amp; Selectors:</strong> Organize and select pods to group by
+      Deployments.<a class="cite" href="#src-1">[1]</a></li>
+    <li><strong>Services:</strong> Enable network access to sets of
+      pods.<a class="cite" href="#src-1">[1]</a></li>
+    <li><strong>Strategy:</strong> Dictates update methodology (e.g. RollingUpdate,
+      Recreate).<a class="cite" href="#src-2" id="ref-2">[2]</a></li>
+    <li><strong>Namespace:</strong> Segregate resources (e.g. dev, staging, production)
+      within a cluster.<a class="cite" href="#src-1">[1]</a></li>
+  </ul>
+
+  <h2>How a Deployment works</h2>
+
+  <ol>
+    <li><strong>Define desired state:</strong> Write a YAML file specifying the number of
+      replicas, container images, labels, and update
+      strategy.<a class="cite" href="#src-3" id="ref-3">[3]</a></li>
+    <li><strong>Deploy:</strong> Apply the YAML definition with
+      <code>kubectl apply -f deployment.yaml</code>.</li>
+    <li><strong>Controller operations:</strong> The Deployment controller ensures all running
+      pods match specifications; if pods fail, new ones are automatically
+      started.<a class="cite" href="#src-1">[1]</a></li>
+    <li><strong>Updates and scaling:</strong> Update images or configuration by editing the
+      Deployment and applying changes. Kubernetes rolls out updates progressively. Scale pods
+      with a simple adjustment in the replica count.<a class="cite" href="#src-3">[3]</a></li>
+    <li><strong>Rollbacks:</strong> Easily revert to previous stable states if a deployment
+      fails.<a class="cite" href="#src-1">[1]</a></li>
+  </ol>
+
+  <h2>YAML example and breakdown</h2>
+
+  <p>Here's a basic Deployment YAML:</p>
+
+<pre><code>apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-dp
+  labels:
+    app: nginx-dp
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: ngnix-pod
+  template:
+    metadata:
+      name: ngnix
+      labels:
+        app: ngnix-pod
+        tier: frontend
+    spec:
+      containers:
+      - name: ngnix
+        image: docker.io/library/nginx:latest</code></pre>
+
+  <ul>
+    <li><strong>apiVersion:</strong> The API version (<code>apps/v1</code> recommended).</li>
+    <li><strong>kind:</strong> Specifies the type (Deployment).</li>
+    <li><strong>metadata:</strong> Defines name and optional labels.</li>
+    <li><strong>spec.replicas:</strong> Number of desired pod replicas.</li>
+    <li><strong>spec.selector:</strong> Match pods by label.</li>
+    <li><strong>spec.template:</strong> Pod specification (labels, containers, image to run,
+      ports).</li>
+  </ul>
+
+  <h2>Deployment strategies</h2>
+
+  <ul>
+    <li><strong>Rolling Update:</strong> Default strategy; updates a few pods at a time to
+      avoid downtime.<a class="cite" href="#src-2">[2]</a></li>
+    <li><strong>Recreate:</strong> Stops all old pods before starting new ones — results in
+      downtime, but suited for stateful workloads requiring data sync or environment
+      changes.<a class="cite" href="#src-2">[2]</a></li>
+    <li><strong>Blue/Green and Canary:</strong> Advanced patterns for testing new releases
+      with a subset of traffic before full
+      rollout.<a class="cite" href="#src-4" id="ref-4">[4]</a></li>
+  </ul>
+
+  <h2>Step-by-step guide</h2>
+
+  <ol>
+    <li><strong>Prerequisites:</strong> Install Docker, Minikube or another cluster, and
+      kubectl.<a class="cite" href="#src-5" id="ref-5">[5]</a></li>
+    <li><strong>Verify setup:</strong> Use <code>kubectl get nodes</code> to check cluster
+      health.<a class="cite" href="#src-5">[5]</a></li>
+    <li><strong>Deploy application:</strong> Create and apply the deployment
+      YAML.<a class="cite" href="#src-5">[5]</a></li>
+    <li><strong>Expose deployment:</strong> Use services for network access
+      (<code>kubectl expose deployment ...</code>).<a class="cite" href="#src-6" id="ref-6">[6]</a></li>
+    <li><strong>Monitor &amp; manage:</strong> Scale with <code>kubectl scale</code>, roll out
+      updates with <code>kubectl set image</code>, view rollout status, and rollback if
+      necessary with <code>kubectl rollout undo</code>.<a class="cite" href="#src-7" id="ref-7">[7]</a></li>
+  </ol>
+
+  <h2>Production best practices</h2>
+
+  <h3>Deployment configuration</h3>
+
+  <ul>
+    <li><strong>Resource limits:</strong> Set CPU and memory limits to prevent containers from
+      consuming excessive resources and affecting cluster
+      performance.<a class="cite" href="#src-8" id="ref-8">[8]</a></li>
+    <li><strong>Namespace organization:</strong> Use namespaces to create logical partitions
+      and implement RBAC for access control.<a class="cite" href="#src-9" id="ref-9">[9]</a></li>
+    <li><strong>Labels and annotations:</strong> Use meaningful labels for identification and
+      annotations for additional context.<a class="cite" href="#src-8">[8]</a></li>
+  </ul>
+
+  <h3>Security considerations</h3>
+
+  <ul>
+    <li><strong>Image security:</strong> Implement image scanning to check for vulnerabilities
+      before deployment.<a class="cite" href="#src-8">[8]</a></li>
+    <li><strong>RBAC implementation:</strong> Control access to clusters using Role-Based
+      Access Control.<a class="cite" href="#src-9">[9]</a></li>
+    <li><strong>Network policies:</strong> Define rules to control traffic between pods and
+      external networks.<a class="cite" href="#src-9">[9]</a></li>
+    <li><strong>Principle of least privilege:</strong> Grant minimal necessary permissions to
+      infrastructure components.<a class="cite" href="#src-8">[8]</a></li>
+  </ul>
+
+  <h3>Infrastructure management</h3>
+
+  <ul>
+    <li><strong>Infrastructure as Code (IaC):</strong> Use tools like Terraform and Ansible to
+      manage cluster configurations
+      consistently.<a class="cite" href="#src-10" id="ref-10">[10]</a></li>
+    <li><strong>High availability setup:</strong> Deploy multi-master configurations across
+      different availability zones.<a class="cite" href="#src-7">[7]</a></li>
+    <li><strong>Monitoring and logging:</strong> Implement comprehensive monitoring with tools
+      like Prometheus and centralized logging with solutions like
+      Elasticsearch.<a class="cite" href="#src-10">[10]</a></li>
+  </ul>
+
+  <h2>Troubleshooting steps</h2>
+
+  <ol>
+    <li><strong>Check pod status:</strong> Use <code>kubectl describe pod</code> to examine
+      events and status details.<a class="cite" href="#src-11" id="ref-11">[11]</a></li>
+    <li><strong>Review logs:</strong> Access container logs with <code>kubectl logs</code> for
+      error investigation.<a class="cite" href="#src-12" id="ref-12">[12]</a></li>
+    <li><strong>Validate configuration:</strong> Use dry-run options to test configurations
+      before applying.<a class="cite" href="#src-13" id="ref-13">[13]</a></li>
+    <li><strong>Monitor resources:</strong> Track CPU, memory, and storage usage across the
+      cluster.</li>
+  </ol>
+
+  <h2>Conclusion</h2>
+
+  <p>Kubernetes Deployments represent a foundational technology for modern container
+  orchestration, providing automated management, scaling, and updates for containerized
+  applications. Their declarative approach simplifies complex operational tasks while ensuring
+  high availability and resilience in production
+  environments.<a class="cite" href="#src-14" id="ref-14">[14]</a></p>
+
+  <p><strong>Key takeaways for successful Kubernetes deployments include:</strong></p>
+
+  <p><strong>Strategic implementation:</strong> Choose appropriate deployment strategies based
+  on your application's requirements — rolling updates for minimal downtime, blue-green for
+  quick rollbacks, or canary deployments for risk
+  mitigation.<a class="cite" href="#src-15" id="ref-15">[15]</a></p>
+
+  <p><strong>Production readiness:</strong> Implement comprehensive monitoring, logging, and
+  security practices from the start. Use Infrastructure as Code for consistency and embrace
+  automation through CI/CD pipelines.<a class="cite" href="#src-7">[7]</a></p>
+
+  <p><strong>Continuous learning:</strong> Kubernetes evolves rapidly with new features and
+  best practices emerging regularly. Stay updated with the latest developments, security
+  patches, and community recommendations to maintain robust, secure
+  deployments.<a class="cite" href="#src-8">[8]</a></p>
+
+  <p>By mastering these fundamentals and following established best practices, organizations
+  can harness the full power of Kubernetes Deployments to achieve scalable, reliable, and
+  maintainable containerized applications in production environments.</p>
+
+  <h2>Sources</h2>
+
+  <ol class="sources">
+    <li id="src-1"><a href="https://www.qovery.com/blog/what-is-kubernetes-deployment-guide-how-to-use/" rel="noopener">Qovery — What is Kubernetes Deployment: guide &amp; how to use</a></li>
+    <li id="src-2"><a href="https://konghq.com/blog/learning-center/guide-to-understanding-kubernetes-deployments" rel="noopener">Kong — Guide to understanding Kubernetes Deployments</a></li>
+    <li id="src-3"><a href="https://spacelift.io/blog/kubernetes-deployment-yaml" rel="noopener">Spacelift — Kubernetes Deployment YAML</a></li>
+    <li id="src-4"><a href="https://spot.io/resources/kubernetes-autoscaling/8-kubernetes-deployment-strategies/" rel="noopener">Spot.io — 8 Kubernetes deployment strategies</a></li>
+    <li id="src-5"><a href="https://dev.to/digitalpollution/kubernetes-for-everyone-a-step-by-step-guide-for-beginners-1p3c" rel="noopener">dev.to — Kubernetes for everyone: a step-by-step guide for beginners</a></li>
+    <li id="src-6"><a href="https://octopus.com/devops/kubernetes-deployments/kubernetes-in-production/" rel="noopener">Octopus — Kubernetes in production</a></li>
+    <li id="src-7"><a href="https://spot.io/resources/kubernetes-architecture/kubernetes-in-production-requirements-and-critical-best-practices/" rel="noopener">Spot.io — Kubernetes in production: requirements and critical best practices</a></li>
+    <li id="src-8"><a href="https://octopus.com/devops/kubernetes-deployments/" rel="noopener">Octopus — Kubernetes deployments</a></li>
+    <li id="src-9"><a href="https://spacelift.io/blog/kubernetes-best-practices" rel="noopener">Spacelift — Kubernetes best practices</a></li>
+    <li id="src-10"><a href="https://codefresh.io/learn/kubernetes-deployment/kubernetes-in-production-trends-challenges-and-critical-best-practices/" rel="noopener">Codefresh — Kubernetes in production: trends, challenges and best practices</a></li>
+    <li id="src-11"><a href="https://www.groundcover.com/kubernetes-troubleshooting" rel="noopener">groundcover — Kubernetes troubleshooting</a></li>
+    <li id="src-12"><a href="https://www.spectrocloud.com/blog/troubleshooting-the-top-10-kubernetes-errors" rel="noopener">Spectro Cloud — Troubleshooting the top 10 Kubernetes errors</a></li>
+    <li id="src-13"><a href="https://www.plural.sh/blog/best-practices-for-kubernetes-troubleshooting-with-ai/" rel="noopener">Plural — Best practices for Kubernetes troubleshooting with AI</a></li>
+    <li id="src-14"><a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/" rel="noopener">Kubernetes documentation — Deployments</a></li>
+    <li id="src-15"><a href="https://www.groundcover.com/blog/kubernetes-deployment-strategies" rel="noopener">groundcover — Kubernetes deployment strategies</a></li>
+  </ol>
+
+  <a class="back" href="../index.html">← All posts</a>
+
+</article>
+</div>
+
+<footer class="site">
+  <div class="wrap narrow">
+    <p>&copy; 2026 Sunke Nithin</p>
+  </div>
+</footer>
+
+</body>
+</html>

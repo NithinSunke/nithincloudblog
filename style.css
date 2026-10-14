@@ -651,3 +651,33 @@ article hr {
   font-weight: 650;
   color: var(--fg);
 }
+
+/* ---------------- citations ---------------- */
+
+a.cite {
+  font-size: .72em;
+  vertical-align: super;
+  line-height: 0;
+  margin-left: .12em;
+  text-decoration: none;
+  font-variant-numeric: tabular-nums;
+}
+
+a.cite:hover { text-decoration: underline; }
+
+ol.sources {
+  font-size: .88rem;
+  color: var(--muted);
+  padding-left: 1.4rem;
+}
+
+ol.sources li { margin-bottom: .45rem; }
+
+ol.sources li:target {
+  background: var(--accent-soft);
+  border-radius: 5px;
+  padding: .15rem .35rem;
+  margin-left: -.35rem;
+}
+
+ol.sources a { overflow-wrap: anywhere; }
