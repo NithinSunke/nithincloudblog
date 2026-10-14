@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nithin Cloud Blog</title>
+<meta name="description" content="Notes on Oracle Cloud Infrastructure, networking, and homelab infrastructure.">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="Nithin Cloud Blog">
+<meta property="og:description" content="Notes on Oracle Cloud Infrastructure, networking, and homelab infrastructure.">
+
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1f2328;
+    --muted: #59636e;
+    --accent: #0969da;
+    --accent-soft: #ddf4ff;
+    --border: #d1d9e0;
+    --chip: #f3f5f7;
+    --max: 62rem;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1117;
+      --fg: #e6edf3;
+      --muted: #9198a1;
+      --accent: #4493f8;
+      --accent-soft: #121d2f;
+      --border: #3d444d;
+      --chip: #161b22;
+    }
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font: 17px/1.65 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  .wrap {
+    max-width: var(--max);
+    margin-inline: auto;
+    padding: 0 1rem;
+  }
+
+  header.site {
+    border-bottom: 1px solid var(--border);
+    padding-block: 2.5rem 2rem;
+    margin-bottom: 2rem;
+  }
+
+  header.site h1 {
+    margin: 0 0 .4rem;
+    font-size: clamp(1.6rem, 5vw, 2.1rem);
+    letter-spacing: -.02em;
+  }
+
+  header.site p { margin: 0; color: var(--muted); }
+
+  /* ---- layout: posts + sidebar ---- */
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 15rem;
+    gap: 3rem;
+    align-items: start;
+  }
+
+  @media (max-width: 52rem) {
+    .layout { grid-template-columns: minmax(0, 1fr); gap: 2.5rem; }
+  }
+
+  h2.section {
+    font-size: .8rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--muted);
+    font-weight: 600;
+    margin: 0 0 .25rem;
+  }
+
+  /* ---- post list ---- */
+  ul.posts { list-style: none; margin: 0; padding: 0; }
+
+  .post {
+    padding-block: 1.6rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .post[hidden] { display: none; }
+
+  .post h3 {
+    margin: 0 0 .5rem;
+    font-size: 1.25rem;
+    line-height: 1.35;
+    text-wrap: balance;
+  }
+
+  .post h3 a { color: var(--fg); text-decoration: none; }
+  .post h3 a:hover { color: var(--accent); text-decoration: underline; }
+
+  .meta {
+    margin: 0 0 .6rem;
+    font-size: .85rem;
+    color: var(--muted);
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem .75rem;
+  }
+
+  .excerpt {
+    margin: 0 0 .85rem;
+    color: var(--muted);
+    font-size: .95rem;
+  }
+
+  .chips {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+    padding: 0;
+    margin: 0;
+  }
+
+  .chips li {
+    font-size: .75rem;
+    letter-spacing: .02em;
+    background: var(--chip);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: .15rem .6rem;
+    color: var(--muted);
+  }
+
+  .chips li.cat { text-transform: uppercase; font-weight: 600; }
+
+  .empty {
+    padding: 2rem 0;
+    color: var(--muted);
+  }
+
+  /* ---- taxonomy widget ---- */
+  .widget { margin-bottom: 2rem; }
+  .widget:last-child { margin-bottom: 0; }
+
+  .widget ul { list-style: none; margin: .6rem 0 0; padding: 0; }
+
+  .widget li + li { margin-top: .15rem; }
+
+  .widget button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    background: none;
+    border: 0;
+    border-radius: 6px;
+    padding: .3rem .5rem;
+    font: inherit;
+    font-size: .9rem;
+    color: var(--fg);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .widget button:hover { background: var(--chip); }
+
+  .widget button[aria-pressed="true"] {
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .widget .name { min-width: 0; overflow-wrap: anywhere; }
+
+  .widget .count {
+    flex: none;
+    font-size: .75rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--muted);
+    background: var(--chip);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0 .45rem;
+    line-height: 1.5;
+  }
+
+  .widget button[aria-pressed="true"] .count {
+    color: var(--accent);
+    border-color: currentColor;
+    background: transparent;
+  }
+
+  .widget .cat-name { text-transform: uppercase; font-size: .8rem; letter-spacing: .03em; }
+
+  #reset {
+    margin-top: .75rem;
+    font-size: .8rem;
+    background: none;
+    border: 0;
+    padding: .3rem .5rem;
+    color: var(--accent);
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  #reset:hover { text-decoration: underline; }
+  #reset[hidden] { display: none; }
+
+  /* The widget is built by script; hide the shell when JS is unavailable. */
+  .no-js aside.sidebar { display: none; }
+
+  footer.site {
+    margin-top: 3rem;
+    padding-block: 1.5rem 3rem;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: .85rem;
+  }
+
+  footer.site p { margin: 0; }
+</style>
+</head>
+
+<body class="no-js">
+
+<header class="site">
+  <div class="wrap">
+    <h1>Nithin Cloud Blog</h1>
+    <p>Notes on Oracle Cloud Infrastructure, networking, and homelab infrastructure.</p>
+  </div>
+</header>
+
+<div class="wrap layout">
+
+  <main>
+    <h2 class="section">Posts</h2>
+
+    <!-- To add a post: copy one <li class="post"> block and edit the fields.
+         The sidebar counts update themselves from the chips below. -->
+    <ul class="posts">
+
+      <li class="post">
+        <h3>
+          <a href="2026-06-16-hybrid-dns-between-oci-private-dns-and-homelab-technitium-dns-using-tailscale/2026-06-16-hybrid-dns-between-oci-private-dns-and-homelab-technitium-dns-using-tailscale.md">
+            Hybrid DNS Between OCI Private DNS and Homelab Technitium DNS Using Tailscale
+          </a>
+        </h3>
+
+        <p class="meta">
+          <time datetime="2026-06-16">16 June 2026</time>
+          <span>Sunke Nithin</span>
+          <span>760 words &middot; ~4 min read</span>
+        </p>
+
+        <p class="excerpt">
+          Integrating Oracle Cloud Infrastructure Private DNS with a homelab Technitium
+          DNS server over Tailscale. Technitium stays authoritative for
+          <code>scslabs.in</code>, OCI for <code>ocilabs.in</code>, resolving both
+          directions with no duplicate records &mdash; using an OCI listening endpoint
+          one way and a forwarding endpoint plus resolver rule the other.
+        </p>
+
+        <ul class="chips">
+          <li class="cat">LAB</li>
+          <li class="cat">ORACLE CLOUD</li>
+          <li class="tag">Network</li>
+        </ul>
+      </li>
+
+    </ul>
+
+    <p class="empty" id="empty" hidden>No posts match that filter.</p>
+  </main>
+
+  <aside class="sidebar">
+    <section class="widget">
+      <h2 class="section">Categories</h2>
+      <ul id="cat-list"></ul>
+    </section>
+
+    <section class="widget">
+      <h2 class="section">Tags</h2>
+      <ul id="tag-list"></ul>
+    </section>
+
+    <button type="button" id="reset" hidden>Clear filter</button>
+  </aside>
+
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>&copy; 2026 Sunke Nithin</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  document.body.classList.remove('no-js');
+
+  var posts   = Array.prototype.slice.call(document.querySelectorAll('.post'));
+  var catList = document.getElementById('cat-list');
+  var tagList = document.getElementById('tag-list');
+  var resetBtn = document.getElementById('reset');
+  var emptyMsg = document.getElementById('empty');
+
+  // Read each post's chips once, so the visible chips stay the single
+  // source of truth for both the post list and the sidebar counts.
+  posts.forEach(function (post) {
+    var read = function (sel) {
+      return Array.prototype.map.call(
+        post.querySelectorAll('.chips li.' + sel),
+        function (li) { return li.textContent.trim(); }
+      );
+    };
+    post._cats = read('cat');
+    post._tags = read('tag');
+  });
+
+  function tally(key) {
+    var counts = Object.create(null);
+    posts.forEach(function (post) {
+      post[key].forEach(function (name) {
+        counts[name] = (counts[name] || 0) + 1;
+      });
+    });
+    return Object.keys(counts)
+      .sort(function (a, b) {
+        return counts[b] - counts[a] || a.localeCompare(b);
+      })
+      .map(function (name) { return { name: name, count: counts[name] }; });
+  }
+
+  var active = null; // { kind: 'cat' | 'tag', name: string }
+
+  function render(listEl, items, kind) {
+    listEl.textContent = '';
+    items.forEach(function (item) {
+      var li = document.createElement('li');
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.setAttribute('aria-pressed', 'false');
+
+      var name = document.createElement('span');
+      name.className = 'name' + (kind === 'cat' ? ' cat-name' : '');
+      name.textContent = item.name;
+
+      var count = document.createElement('span');
+      count.className = 'count';
+      count.textContent = item.count;
+
+      btn.appendChild(name);
+      btn.appendChild(count);
+      btn.addEventListener('click', function () {
+        var same = active && active.kind === kind && active.name === item.name;
+        active = same ? null : { kind: kind, name: item.name };
+        apply();
+      });
+
+      li.appendChild(btn);
+      listEl.appendChild(li);
+    });
+  }
+
+  function apply() {
+    var shown = 0;
+
+    posts.forEach(function (post) {
+      var match = !active ||
+        (active.kind === 'cat' ? post._cats : post._tags).indexOf(active.name) !== -1;
+      post.hidden = !match;
+      if (match) shown++;
+    });
+
+    Array.prototype.forEach.call(
+      document.querySelectorAll('.widget button'),
+      function (btn) {
+        var kind = btn.parentNode.parentNode.id === 'cat-list' ? 'cat' : 'tag';
+        var name = btn.querySelector('.name').textContent;
+        var on = !!active && active.kind === kind && active.name === name;
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      }
+    );
+
+    resetBtn.hidden = !active;
+    emptyMsg.hidden = shown !== 0;
+  }
+
+  resetBtn.addEventListener('click', function () {
+    active = null;
+    apply();
+  });
+
+  render(catList, tally('_cats'), 'cat');
+  render(tagList, tally('_tags'), 'tag');
+  apply();
+})();
+</script>
+
+</body>
+</html>
