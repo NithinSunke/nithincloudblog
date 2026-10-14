@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Understanding MongoDB Indexes</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#13aa52;--accent-soft:#eaf7ef;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.08em;margin:1.6em 0 .4em}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:#0b7a3a;border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.86em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post table{width:100%;border-collapse:collapse;margin:.8em 0;font-size:.95em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.35em 0}
+.tsn-post .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:.8em 0}
+.tsn-post .card{border:1px solid var(--line);border-radius:8px;padding:10px 14px;background:#fff}
+.tsn-post .card strong{display:block;color:#0b7a3a;margin-bottom:2px}
+.tsn-post .card.cost strong{color:#b25e00}
+.tsn-post .itype{border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:8px;padding:4px 16px 2px;margin:1em 0;background:#fcfdfc}
+.tsn-post .itype h3{margin:.6em 0 .2em}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:#0b7a3a}
+.tsn-post .end{background:var(--accent-soft);border-radius:8px;padding:14px 18px;margin-top:1em}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
+</style>
+
+<h1>Understanding Indexes in MongoDB</h1>
+<div class="meta">By Sunke Nithin · August 25, 2025 &nbsp; <span class="tag">Database</span><span class="tag">MongoDB</span></div>
+
+<p class="lead">Indexes are critical for query performance in MongoDB. By creating efficient pathways to locate and retrieve data, they significantly reduce the time it takes to execute queries, especially on large datasets. This post explores what indexes are, how they work in MongoDB, the main types, and best practices for using them effectively.</p>
+
+<div class="toc"><strong>Contents</strong>
+<ol>
+<li><a href="#idx-what">What is an Index?</a></li>
+<li><a href="#idx-why">Why Use Indexes?</a></li>
+<li><a href="#idx-types">Types of Indexes</a></li>
+<li><a href="#idx-manage">Creating and Managing Indexes</a></li>
+<li><a href="#idx-best">Best Practices</a></li>
+<li><a href="#idx-pit">Common Pitfalls</a></li>
+<li><a href="#idx-use">Use Cases</a></li>
+</ol></div>
+
+<h2 id="idx-what"><span class="num">1</span>What is an Index in MongoDB?</h2>
+<p>An <strong>index</strong> is a data structure that speeds up data retrieval on a collection. It works much like the index in a book: MongoDB can jump straight to matching documents instead of scanning the whole collection. Indexes are stored separately from the data and map field values to document locations.</p>
+<p>For example, if you frequently query a <code>users</code> collection by <code>email</code>, an index on <code>email</code> makes those queries much faster.</p>
+
+<h2 id="idx-why"><span class="num">2</span>Why Use Indexes?</h2>
+<div class="grid">
+<div class="card"><strong>Improved Query Performance</strong>Fewer documents to scan means faster queries.</div>
+<div class="card"><strong>Efficient Sorting</strong>Sorts on indexed fields can use the index order directly.</div>
+<div class="card"><strong>Optimized Filtering</strong>Filters such as <code>find({ age: 30 })</code> benefit from an index on the filtered field.</div>
+<div class="card"><strong>Reduced Resource Usage</strong>Faster queries mean less CPU and memory.</div>
+</div>
+<p>However, indexes come with trade-offs:</p>
+<div class="grid">
+<div class="card cost"><strong>Storage Overhead</strong>Indexes consume additional disk space and memory.</div>
+<div class="card cost"><strong>Write Performance</strong>Every insert, update or delete must also update the indexes, which slows writes.</div>
+</div>
+
+<h2 id="idx-types"><span class="num">3</span>Types of Indexes in MongoDB</h2>
+<p>MongoDB supports several index types for different use cases. The most popular ones:</p>
+
+<div class="itype">
+<h3>Single Field Index</h3>
+<p>Indexes one field in a collection:</p>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.users.createIndex({ age: 1 })   <span class="cm">// 1 for ascending, -1 for descending</span></code></pre></div>
+<p>Useful for queries that filter or sort on one field.</p>
+</div>
+
+<div class="itype">
+<h3>Compound Index</h3>
+<p>Indexes multiple fields in a specific order:</p>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.users.createIndex({ city: 1, age: -1 })</code></pre></div>
+<p>Supports queries that filter on <code>city</code>, on <code>city</code> and <code>age</code>, or sort by these fields. A query on <code>age</code> alone cannot use it efficiently, because <code>age</code> is not the leading field.</p>
+</div>
+
+<div class="itype">
+<h3>Multikey Index</h3>
+<p>Indexes arrays, allowing efficient queries on array elements:</p>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.products.createIndex({ tags: 1 })</code></pre></div>
+<p>Useful when documents contain arrays, like <code>tags: ["electronics", "gadgets"]</code>. MongoDB creates a multikey index automatically when the indexed field holds an array.</p>
+</div>
+
+<div class="itype">
+<h3>Text Index</h3>
+<p>Enables text search on string fields:</p>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.articles.createIndex({ content: "text" })</code></pre></div>
+<p>Supports full-text search queries like:</p>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.articles.find({ $text: { $search: "MongoDB tutorial" } })</code></pre></div>
+</div>
+
+<div class="itype">
+<h3>Hashed Index</h3>
+<p>Indexes hashed values of a field — useful for sharding or equality-based queries:</p>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.users.createIndex({ userId: "hashed" })</code></pre></div>
+</div>
+
+<h2 id="idx-manage"><span class="num">4</span>Creating and Managing Indexes</h2>
+<table>
+<tr><th>Task</th><th>Command</th></tr>
+<tr><td>Create an index on <code>email</code></td><td><code>db.users.createIndex({ email: 1 })</code></td></tr>
+<tr><td>List all indexes on a collection</td><td><code>db.users.getIndexes()</code></td></tr>
+<tr><td>Drop a specific index</td><td><code>db.users.dropIndex({ email: 1 })</code></td></tr>
+<tr><td>Drop all indexes (except the default <code>_id</code> index)</td><td><code>db.users.dropIndexes()</code></td></tr>
+</table>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code><span class="cm">// Create an index</span>
+db.users.createIndex({ email: 1 })
+
+<span class="cm">// View indexes</span>
+db.users.getIndexes()
+
+<span class="cm">// Drop one index</span>
+db.users.dropIndex({ email: 1 })
+
+<span class="cm">// Drop all indexes except _id</span>
+db.users.dropIndexes()</code></pre></div>
+
+<h2 id="idx-best"><span class="num">5</span>Best Practices for Indexes</h2>
+<ol>
+<li><strong>Index selectively:</strong> only index fields that are frequently queried or sorted, to minimize storage and write overhead.</li>
+<li><strong>Use compound indexes wisely:</strong> order fields to match query patterns — fields used for equality filters first, then sort fields, then range filters.</li>
+<li><strong>Monitor performance:</strong> use <code>explain()</code> to confirm queries use your indexes.
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.users.find({ age: 30 }).explain("executionStats")</code></pre></div>
+Look for <code>IXSCAN</code> (index scan) rather than <code>COLLSCAN</code> (full collection scan), and compare <code>totalDocsExamined</code> with <code>nReturned</code>.</li>
+<li><strong>Prefer selective fields:</strong> an index works best on fields with many distinct values. Indexing low-cardinality fields (for example a boolean <code>status</code>) on its own rarely helps, because each value still matches a large share of the collection.</li>
+<li><strong>Consider the workload:</strong> balance read-heavy against write-heavy workloads. For write-heavy applications, keep the number of indexes small.</li>
+<li><strong>Use covered queries:</strong> design indexes so a query can be answered entirely from the index, without reading the documents.</li>
+</ol>
+
+<h2 id="idx-pit"><span class="num">6</span>Common Pitfalls</h2>
+<table>
+<tr><th>Pitfall</th><th>Why it hurts</th></tr>
+<tr><td>Over-indexing</td><td>Too many indexes degrade write performance and increase storage.</td></tr>
+<tr><td>Unused indexes</td><td>They waste resources. Review them regularly (for example with <code>$indexStats</code>) and remove the ones nothing uses.</td></tr>
+<tr><td>Improper index order</td><td>In compound indexes, field order matters. Make sure it matches your query patterns.</td></tr>
+<tr><td>Text index limitations</td><td>Text indexes are resource-intensive and don't support partial-word matches or complex regex queries.</td></tr>
+</table>
+
+<h2 id="idx-use"><span class="num">7</span>Use Cases for Indexes</h2>
+<ul>
+<li><strong>E-commerce:</strong> index product fields like <code>category</code> or <code>price</code> for fast filtering and sorting.</li>
+<li><strong>Social media:</strong> index user IDs or post timestamps to quickly retrieve a user's posts or the most recent ones.</li>
+<li><strong>Analytics:</strong> use TTL indexes to expire temporary event data, or geospatial indexes for location-based analytics.</li>
+<li><strong>Search applications:</strong> text indexes for full-text search in blogs or articles.</li>
+</ul>
+
+<h2>Conclusion</h2>
+<div class="end">Indexes are a powerful tool for optimizing MongoDB query performance, but they need careful planning to balance speed, storage and write overhead. Choose the right index types, follow the best practices above, use <code>explain()</code> to analyze your queries, and refer to the <a href="https://www.mongodb.com/docs/manual/indexes/" target="_blank" rel="noopener">MongoDB indexes documentation</a> for deeper insights.</div>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>
