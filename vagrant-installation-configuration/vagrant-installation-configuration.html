@@ -40,6 +40,9 @@
 .tsn-post .flow span{background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:.88em;font-family:Consolas,monospace}
 .tsn-post .flow b{color:var(--accent)}
 .tsn-post a{color:var(--accent-ink)}
+.tsn-post .steps figure{margin:.6em 0 1.2em}
+.tsn-post .steps img{display:block;max-width:100%;height:auto;border:1px solid var(--line);border-radius:8px}
+.tsn-post .credit{color:var(--muted);font-size:.85em}
 @media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
 </style>
 
@@ -59,13 +62,19 @@
 
 <h2><span class="num">2</span>Install Vagrant on Windows</h2>
 <p>Run the downloaded <code>.msi</code> and work through the setup wizard:</p>
-<ol>
-<li>On the welcome screen, click <strong>Next</strong>.</li>
-<li>Accept the license agreement and click <strong>Next</strong>.</li>
-<li>Keep the default destination folder (or choose another) and click <strong>Next</strong>.</li>
-<li>Click <strong>Install</strong> and approve the Windows administrator prompt.</li>
-<li>Click <strong>Finish</strong>, and restart Windows when the installer asks — Vagrant is added to your <code>PATH</code> during the install.</li>
+<ol class="steps">
+<li>On the welcome screen, click <strong>Next</strong>.
+<figure><a href="https://www.devopsschool.com/blog/wp-content/uploads/2022/04/vagrant-install-windows-1.jpg" target="_blank" rel="noopener"><img src="https://www.devopsschool.com/blog/wp-content/uploads/2022/04/vagrant-install-windows-1.jpg" alt="Vagrant setup wizard for Windows, step 1" loading="lazy"></a></figure></li>
+<li>Accept the license agreement and click <strong>Next</strong>.
+<figure><a href="https://www.devopsschool.com/blog/wp-content/uploads/2022/04/vagrant-install-windows-2.jpg" target="_blank" rel="noopener"><img src="https://www.devopsschool.com/blog/wp-content/uploads/2022/04/vagrant-install-windows-2.jpg" alt="Vagrant setup wizard for Windows, step 2" loading="lazy"></a></figure></li>
+<li>Keep the default destination folder (or choose another) and click <strong>Next</strong>.
+<figure><a href="https://www.devopsschool.com/blog/wp-content/uploads/2022/04/vagrant-install-windows-3.jpg" target="_blank" rel="noopener"><img src="https://www.devopsschool.com/blog/wp-content/uploads/2022/04/vagrant-install-windows-3.jpg" alt="Vagrant setup wizard for Windows, step 3" loading="lazy"></a></figure></li>
+<li>Click <strong>Install</strong> and approve the Windows administrator prompt.
+<figure><a href="https://www.devopsschool.com/blog/wp-content/uploads/2022/04/vagrant-install-windows-4.jpg" target="_blank" rel="noopener"><img src="https://www.devopsschool.com/blog/wp-content/uploads/2022/04/vagrant-install-windows-4.jpg" alt="Vagrant setup wizard for Windows, step 4" loading="lazy"></a></figure></li>
+<li>Click <strong>Finish</strong>, and restart Windows when the installer asks — Vagrant is added to your <code>PATH</code> during the install.
+<figure><a href="https://www.devopsschool.com/blog/wp-content/uploads/2022/04/vagrant-install-windows-5.jpg" target="_blank" rel="noopener"><img src="https://www.devopsschool.com/blog/wp-content/uploads/2022/04/vagrant-install-windows-5.jpg" alt="Vagrant setup wizard for Windows, step 5" loading="lazy"></a></figure></li>
 </ol>
+<p class="credit">Installer screenshots: <a href="https://www.devopsschool.com/" target="_blank" rel="noopener">devopsschool.com</a>. Click any image to open it full size.</p>
 
 <h2><span class="num">3</span>Verify Vagrant</h2>
 <p>Open a new Command Prompt or PowerShell window and check the installation:</p>
