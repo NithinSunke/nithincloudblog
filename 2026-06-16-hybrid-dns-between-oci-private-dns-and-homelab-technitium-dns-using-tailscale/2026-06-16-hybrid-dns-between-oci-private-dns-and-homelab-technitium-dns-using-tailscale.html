@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hybrid DNS Between OCI Private DNS and Homelab Technitium DNS Using Tailscale — Nithin Cloud Blog</title>
+<meta name="description" content="Integrating OCI Private DNS with a homelab Technitium DNS server over Tailscale, resolving both directions with no duplicate records.">
+<meta name="author" content="Sunke Nithin">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="Hybrid DNS Between OCI Private DNS and Homelab Technitium DNS Using Tailscale">
+<meta property="og:description" content="Integrating OCI Private DNS with a homelab Technitium DNS server over Tailscale, resolving both directions with no duplicate records.">
+<meta property="article:published_time" content="2026-06-16">
+
+<link rel="stylesheet" href="../style.css">
+</head>
+
+<body>
+
+<header class="site">
+  <div class="wrap narrow">
+    <p class="brand"><a href="../">Nithin Cloud Blog</a></p>
+    <p>Notes on Oracle Cloud Infrastructure, networking, and homelab infrastructure.</p>
+  </div>
+</header>
+
+<div class="wrap narrow">
+<article>
+
+  <div class="post-header">
+    <h1>Hybrid DNS Between OCI Private DNS and Homelab Technitium DNS Using Tailscale</h1>
+    <p class="meta">
+      <time datetime="2026-06-16">16 June 2026</time>
+      <span>Sunke Nithin</span>
+    </p>
+    <ul class="chips">
+      <li class="cat">LAB</li>
+      <li class="cat">ORACLE CLOUD</li>
+      <li class="tag">Network</li>
+    </ul>
+  </div>
+
+  <h2>Overview</h2>
+
+  <p>This guide explains how to integrate Oracle Cloud Infrastructure (OCI) Private DNS
+  with a homelab running Technitium DNS over a Tailscale network. The objective is to have:</p>
+
+  <ul>
+    <li><code>*.scslabs.in</code> resolved locally by Technitium</li>
+    <li><code>*.ocilabs.in</code> resolved by OCI Private DNS</li>
+    <li>No duplicate DNS records</li>
+    <li>OCI as the authoritative source for OCI resources</li>
+    <li>Technitium as the central DNS server for the homelab</li>
+  </ul>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Requirement</th><th>OCI Endpoint Type</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Homelab → OCI DNS (<code>ocilabs.in</code>)</strong></td>
+          <td>✅ <strong>Listening Endpoint</strong></td>
+          <td>Accepts DNS queries from external clients (Technitium, homelab, VPN)</td>
+        </tr>
+        <tr>
+          <td><strong>OCI → Homelab DNS (<code>scslabs.in</code>)</strong></td>
+          <td>✅ <strong>Forwarding Endpoint</strong></td>
+          <td>Allows OCI Resolver to forward queries to your Technitium DNS</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Home Lab to OCI DNS</h2>
+
+  <h3>Network Topology</h3>
+
+  <figure>
+    <img src="images/image-1.png"
+         alt="Network topology: an OCI VCN of 12.0.0.0/16 with a public subnet 12.0.0.0/24 and private subnet 12.0.1.0/24, running OCI Private DNS with a listener endpoint at 12.0.1.227 port 53. It connects over a Tailscale VPN to a homelab subnet router advertising 12.0.0.0/16 and a homelab network of 192.168.1.0/24 running Technitium DNS at 192.168.1.37, which serves the client devices.">
+    <figcaption>Figure 1 — OCI and the homelab joined over Tailscale, with a DNS listener on each side.</figcaption>
+  </figure>
+
+  <h2>Environment</h2>
+
+  <h3>Homelab</h3>
+  <ul>
+    <li>Network: <code>192.168.1.0/24</code></li>
+    <li>Domain: <code>scslabs.in</code></li>
+    <li>Technitium DNS</li>
+    <li>Tailscale subnet router</li>
+  </ul>
+
+  <h3>OCI</h3>
+  <ul>
+    <li>VCN: <code>12.0.0.0/16</code></li>
+    <li>Public subnet: <code>12.0.0.0/24</code></li>
+    <li>Private subnet: <code>12.0.1.0/24</code></li>
+    <li>Domain: <code>ocilabs.in</code></li>
+    <li>OCI Private DNS</li>
+  </ul>
+
+  <h2>Step 1: Create OCI Private DNS Zone</h2>
+
+  <p>Navigate to:</p>
+<pre><code>Networking
+→ DNS Management
+→ Private Zones
+→ Create Zone</code></pre>
+
+  <p>Create:</p>
+<pre><code>Zone Name:
+ocilabs.in</code></pre>
+
+  <p>Example records:</p>
+<pre><code>lnxjmpsr    A    12.0.0.5
+ocitss01    A    12.0.1.5</code></pre>
+
+  <h2>Step 2: Associate the Zone</h2>
+
+  <p>Associate the Private Zone with the VCN using a Private View.</p>
+<pre class="diagram"><code>Private View
+    ↓
+Associate with
+LAB-VCN</code></pre>
+
+  <h2>Step 3: Create a DNS Listening Endpoint</h2>
+
+  <p>Navigate:</p>
+<pre><code>Networking
+→ DNS Management
+→ Private Resolver
+→ Endpoints
+→ Create Endpoint</code></pre>
+
+  <p>Choose:</p>
+<pre><code>Listening Endpoint</code></pre>
+
+  <p>Example:</p>
+<pre><code>Name:
+homelab
+
+Subnet:
+Private Subnet
+
+Assigned IP:
+12.0.1.227</code></pre>
+
+  <p>This endpoint becomes the DNS server for <code>ocilabs.in</code>.</p>
+
+  <h2>Step 4: Configure OCI Security</h2>
+
+  <p>Allow DNS access.</p>
+
+  <p>Ingress:</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Source</th><th>Protocol</th><th>Port</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>192.168.1.0/24</code></td><td>UDP</td><td>53</td></tr>
+        <tr><td><code>192.168.1.0/24</code></td><td>TCP</td><td>53</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>Optional, to route using Tailscale DNS:</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Source</th><th>Protocol</th><th>Port</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>100.64.0.0/10</code></td><td>UDP</td><td>53</td></tr>
+        <tr><td><code>100.64.0.0/10</code></td><td>TCP</td><td>53</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Step 5: Verify Connectivity</h2>
+
+  <p>From homelab:</p>
+<pre><code>Test-NetConnection 12.0.1.227 -Port 53</code></pre>
+
+  <p>Expected:</p>
+<pre><code>TcpTestSucceeded : True</code></pre>
+
+  <p>Test DNS:</p>
+<pre><code>nslookup lnxjmpsr.ocilabs.in 12.0.1.227</code></pre>
+
+  <p>Expected:</p>
+<pre><code>Name: lnxjmpsr.ocilabs.in
+Address: 12.0.0.5</code></pre>
+
+  <h2>Step 6: Configure Technitium</h2>
+
+  <p>Go to:</p>
+<pre><code>Zones
+→ Add Zone</code></pre>
+
+  <p>Select:</p>
+<pre><code>Conditional Forwarder Zone</code></pre>
+
+  <p>Configure:</p>
+<pre><code>Zone:
+ocilabs.in</code></pre>
+
+  <p>Forwarder:</p>
+<pre><code>12.0.1.227</code></pre>
+
+  <p>Protocol:</p>
+<pre><code>DNS over UDP</code></pre>
+
+  <p>Disable:</p>
+<pre><code>DNSSEC Validation</code></pre>
+
+  <p>Result:</p>
+<pre class="diagram"><code>ocilabs.in
+        ↓
+12.0.1.227</code></pre>
+
+  <h2>Step 7: Configure Technitium as Primary DNS</h2>
+
+  <p>Point clients to Technitium.</p>
+
+  <p>Example:</p>
+<pre><code>Windows DNS
+127.0.0.1</code></pre>
+
+  <p>or</p>
+<pre><code>192.168.1.37</code></pre>
+
+  <p>Verify:</p>
+<pre><code>nslookup lnxjmpsr.ocilabs.in</code></pre>
+
+  <p>Result:</p>
+<pre><code>12.0.0.5</code></pre>
+
+  <h2>Final DNS Flow</h2>
+
+<pre class="diagram"><code>Client
+    │
+    ▼
+Technitium
+    │
+    ├── scslabs.in
+    │      │
+    │      ▼
+    │   Local Records
+    │
+    └── ocilabs.in
+           │
+           ▼
+     OCI DNS Listener
+           │
+           ▼
+     OCI Private Zone</code></pre>
+
+  <h2>Tailscale Subnet Router Configuration</h2>
+
+  <p>If not already configured:</p>
+
+  <p>OCI router:</p>
+<pre><code>tailscale up \
+  --advertise-routes=12.0.0.0/16</code></pre>
+
+  <p>Homelab router:</p>
+<pre><code>tailscale up \
+  --advertise-routes=192.168.1.0/24</code></pre>
+
+  <p>Approve routes in the Tailscale admin console.</p>
+
+  <p>Verify:</p>
+<pre><code>tailscale status --json</code></pre>
+
+  <p>Expected:</p>
+<pre><code>PrimaryRoutes:
+12.0.0.0/16</code></pre>
+
+  <h2>Common Troubleshooting</h2>
+
+  <h3>1. <code>nslookup</code> returns public IP instead of private IP</h3>
+
+  <p>Symptom:</p>
+<pre><code>91.195.240.94</code></pre>
+
+  <p>Cause:</p>
+  <p>Client is using ISP DNS instead of Technitium.</p>
+
+  <p>Fix:</p>
+<pre><code>Set-DnsClientServerAddress</code></pre>
+
+  <p>Point DNS to Technitium.</p>
+
+  <hr>
+
+  <h3>2. <code>nslookup</code> works with 127.0.0.1 but not normally</h3>
+
+  <p>Example:</p>
+<pre><code>nslookup host 127.0.0.1</code></pre>
+
+  <p>works.</p>
+<pre><code>nslookup host</code></pre>
+
+  <p>fails.</p>
+
+  <p>Cause:</p>
+  <p>Windows is using another DNS server.</p>
+
+  <p>Fix:</p>
+  <p>Configure Wi-Fi adapter DNS to Technitium.</p>
+
+  <hr>
+
+  <h3>3. <code>nslookup 12.0.1.5</code> fails</h3>
+
+<pre><code>*** Non-existent domain</code></pre>
+
+  <p>Reason:</p>
+  <p>Reverse PTR records do not exist.</p>
+
+  <p>Solution:</p>
+  <p>Create reverse zones or PTR records if required.</p>
+
+  <hr>
+
+  <h3>4. <code>ping 12.0.1.5</code> works but <code>ping 12.0.1.227</code> fails</h3>
+
+  <p>Cause:</p>
+  <p>OCI DNS Listener may reject packets sourced from non-VCN addresses when subnet
+  routing is configured without SNAT.</p>
+
+  <p>If using:</p>
+<pre><code>--snat-subnet-routes=false</code></pre>
+
+  <p>the listener sees:</p>
+<pre><code>Source:
+192.168.x.x</code></pre>
+
+  <p>instead of</p>
+<pre><code>12.0.x.x</code></pre>
+
+  <p>Enable SNAT or use Technitium as the single DNS proxy.</p>
+
+  <hr>
+
+  <h3>5. <code>Test-NetConnection</code> succeeds but <code>nslookup</code> times out</h3>
+
+  <p>Check:</p>
+  <ul>
+    <li>Security Lists</li>
+    <li>NSGs</li>
+    <li>UDP 53</li>
+    <li>TCP 53</li>
+    <li>Listener Endpoint configuration</li>
+  </ul>
+
+  <hr>
+
+  <h3>6. Verify subnet routes</h3>
+
+<pre><code>tailscale status --json</code></pre>
+
+  <p>Should contain:</p>
+<pre><code>PrimaryRoutes:
+12.0.0.0/16</code></pre>
+
+  <p>Linux:</p>
+<pre><code>ip route show table 52</code></pre>
+
+  <p>Expected:</p>
+<pre><code>12.0.0.0/16 dev tailscale0</code></pre>
+
+  <hr>
+
+  <h3>7. Verify DNS Listener</h3>
+
+<pre><code>Test-NetConnection 12.0.1.227 -Port 53</code></pre>
+
+<pre><code>nslookup host 12.0.1.227</code></pre>
+
+  <h2>Recommended Architecture</h2>
+
+<pre class="diagram"><code>                   +--------------------+
+                   | Technitium DNS     |
+                   | 192.168.1.37       |
+                   +---------+----------+
+                             |
+          +------------------+------------------+
+          |                                     |
+          ▼                                     ▼
+  Local Zone (scslabs.in)          Conditional Forwarder
+                                           │
+                                           ▼
+                                   OCI DNS Listener
+                                     12.0.1.227
+                                           │
+                                           ▼
+                                  OCI Private Zone
+                                     ocilabs.in</code></pre>
+
+  <p>This design provides:</p>
+  <ul>
+    <li>Single DNS server for all clients</li>
+    <li>No duplicated records</li>
+    <li>OCI remains authoritative for cloud resources</li>
+    <li>Automatic propagation of new OCI records</li>
+    <li>Simple troubleshooting</li>
+    <li>Scalable hybrid DNS architecture</li>
+  </ul>
+
+  <h2>OCI → Homelab DNS</h2>
+
+  <p>To resolve <code>scslabs.in</code> from OCI.</p>
+
+  <h3>Step 1: Create a Forwarding Endpoint</h3>
+
+  <p>Go to:</p>
+<pre><code>Networking
+→ DNS Management
+→ Private Resolver
+→ Endpoints
+→ Create Endpoint</code></pre>
+
+  <p>Select:</p>
+<pre><code>Forwarding</code></pre>
+
+  <p>For example:</p>
+<pre><code>Name: homelab-forwarder
+Subnet: 12.0.1.0/24
+IP: 12.0.1.228</code></pre>
+
+  <p>The IP will be assigned from your subnet.</p>
+
+  <h3>Step 2: Create a Resolver Rule</h3>
+
+  <p>Go to:</p>
+<pre><code>Resolver
+→ Rules
+→ Create Rule</code></pre>
+
+  <p>Configure:</p>
+<pre><code>Rule Type: Forward
+Domain: scslabs.in
+Destination: 192.168.1.37</code></pre>
+
+  <p>(Your Technitium DNS server)</p>
+
+  <p>Port:</p>
+<pre><code>53</code></pre>
+
+  <p>Associate the rule with the <strong>Forwarding Endpoint</strong> you created.</p>
+
+  <h3>Final architecture</h3>
+
+  <figure>
+    <img src="images/image-3.png"
+         alt="Two DNS flows. From the homelab, Technitium DNS at 192.168.1.37 serves the scslabs.in local zone directly and conditionally forwards ocilabs.in to the OCI listening endpoint at 12.0.1.227, which resolves against the OCI private zone. In reverse, an OCI VM queries the OCI resolver, where a forward rule for the scslabs.in domain sends the query to the OCI forwarding endpoint and on to Technitium at 192.168.1.37, which returns the scslabs.in records.">
+    <figcaption>Figure 2 — Both directions: Technitium forwards <code>ocilabs.in</code> to OCI, and the OCI resolver forwards <code>scslabs.in</code> back to Technitium.</figcaption>
+  </figure>
+
+  <h2>End-to-end result</h2>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Query Origin</th><th>Query</th><th>Resolved By</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Homelab</td><td><code>proxmox.scslabs.in</code></td><td>Technitium (local)</td></tr>
+        <tr><td>Homelab</td><td><code>lnxjmpsr.ocilabs.in</code></td><td>Technitium → OCI Listening Endpoint</td></tr>
+        <tr><td>OCI VM</td><td><code>lnxjmpsr.ocilabs.in</code></td><td>OCI Private DNS</td></tr>
+        <tr><td>OCI VM</td><td><code>proxmox.scslabs.in</code></td><td>OCI Resolver → Forwarding Endpoint → Technitium</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Recommended production design</h2>
+
+  <p>For your environment:</p>
+
+  <ul>
+    <li><strong>Technitium (<code>192.168.1.37</code>)</strong> is authoritative for <code>scslabs.in</code>.</li>
+    <li><strong>OCI Private DNS</strong> is authoritative for <code>ocilabs.in</code>.</li>
+    <li><strong>OCI Listening Endpoint (<code>12.0.1.227</code>)</strong> is used by Technitium to resolve <code>ocilabs.in</code>.</li>
+    <li><strong>OCI Forwarding Endpoint + Resolver Rule</strong> forwards <code>scslabs.in</code> queries from OCI to Technitium.</li>
+  </ul>
+
+  <p>This creates a clean bidirectional hybrid DNS setup with no duplicate records and
+  each environment remaining the source of truth for its own domain.</p>
+
+  <a class="back" href="../">← All posts</a>
+
+</article>
+</div>
+
+<footer class="site">
+  <div class="wrap narrow">
+    <p>&copy; 2026 Sunke Nithin</p>
+  </div>
+</footer>
+
+</body>
+</html>
