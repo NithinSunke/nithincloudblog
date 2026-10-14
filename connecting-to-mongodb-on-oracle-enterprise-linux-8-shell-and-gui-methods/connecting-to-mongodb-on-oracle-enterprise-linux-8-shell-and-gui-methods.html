@@ -40,6 +40,9 @@
 .tsn-post .methods{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin:.8em 0}
 .tsn-post .methods div{border:1px solid var(--line);border-top:4px solid var(--accent);border-radius:8px;padding:10px 14px;background:#fff}
 .tsn-post .methods strong{display:block;color:#0b7a3a}
+.tsn-post figure{margin:1em 0;text-align:center}
+.tsn-post figure img{max-width:100%;height:auto;border:1px solid var(--line);border-radius:8px}
+.tsn-post figcaption{color:var(--muted);font-size:.85em;margin-top:4px}
 .tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
 .tsn-post .toc ol{margin:.3em 0}
 .tsn-post a{color:#0b7a3a}
@@ -130,11 +133,23 @@ If you're managing the server remotely, install Compass on your own machine (Win
 
 <h3><span class="step">Step 2</span>Connect to MongoDB</h3>
 <ol>
-<li>Open MongoDB Compass.</li>
+<li>Open MongoDB Compass and click <strong>Add new connection</strong>.
+<figure>
+<img src="images/image-351.png" alt="MongoDB Compass welcome screen with no connections yet and an Add new connection button" loading="lazy">
+<figcaption>Compass on first launch — no deployments connected yet.</figcaption>
+</figure></li>
 <li>In the <strong>New Connection</strong> window, enter the connection string:
 <div class="code"><span class="lbl">URI</span><pre><code>mongodb://mongoadmin:&lt;password&gt;@&lt;OEL8_SERVER_IP&gt;:27017/?authSource=admin</code></pre></div>
-Alternatively, open <strong>Advanced Connection Options → Authentication</strong>, choose <em>Username/Password</em>, and enter <code>mongoadmin</code>, the password and <code>admin</code> as the authentication database.</li>
-<li>Click <strong>Connect</strong>. If it succeeds, Compass shows the instance with databases such as <code>admin</code>, <code>config</code> and <code>local</code>.</li>
+Alternatively, open <strong>Advanced Connection Options → Authentication</strong>, choose <em>Username/Password</em>, and enter <code>mongoadmin</code> and the password (with <code>admin</code> as the authentication database).
+<figure>
+<img src="images/image-354.png" alt="Compass New Connection dialog: URI mongodb://mongoadmin@192.168.1.15:27017, Authentication tab with Username/Password selected, username mongoadmin and a masked password, and a warning that TLS/SSL is disabled" loading="lazy">
+<figcaption>Connecting to <code>192.168.1.15:27017</code> as <code>mongoadmin</code>. Note Compass's warning that TLS/SSL is disabled — see the security notes below.</figcaption>
+</figure></li>
+<li>Click <strong>Connect</strong>. If it succeeds, Compass shows the instance with databases such as <code>admin</code>, <code>config</code> and <code>local</code>.
+<figure>
+<img src="images/image-355.png" alt="Compass connections sidebar showing 192.168.1.15:27017 expanded with databases admin, config, inventorydb, local and myDatabase" loading="lazy">
+<figcaption>Connected — the server's databases appear in the sidebar.</figcaption>
+</figure></li>
 </ol>
 
 <h3><span class="step">Step 3</span>Explore and Manage Databases</h3>
@@ -142,7 +157,19 @@ Alternatively, open <strong>Advanced Connection Options → Authentication</stro
 <li>Use the Compass interface to browse databases, collections and documents.</li>
 <li>Test it by creating a new database (e.g. <code>myDatabase</code>) and collection (e.g. <code>myCollection</code>) from the GUI, then inserting a document:</li>
 </ul>
+<figure>
+<img src="images/image-357.png" alt="Compass myDatabase.myCollection Documents tab with the ADD DATA menu open, showing Import JSON or CSV file and Insert document" loading="lazy">
+<figcaption>Open the collection and choose <strong>ADD DATA → Insert document</strong>.</figcaption>
+</figure>
 <div class="code"><span class="lbl">JSON</span><pre><code>{ "name": "GUI Test", "role": "User" }</code></pre></div>
+<figure>
+<img src="images/image-359.png" alt="Compass Insert Document dialog for myDatabase.myCollection containing { name: GUI Test, role: User } with Cancel and Insert buttons" loading="lazy">
+<figcaption>Paste the document and click <strong>Insert</strong>.</figcaption>
+</figure>
+<figure>
+<img src="images/image-361.png" alt="Compass Documents view of myCollection showing two documents: Test User with role Admin, and GUI Test with role User" loading="lazy">
+<figcaption>The collection now holds both documents — the one inserted from <code>mongosh</code> earlier and the one from Compass.</figcaption>
+</figure>
 
 <h2 id="conn-trouble"><span class="num">4</span>Troubleshooting</h2>
 <h3>Shell connection issues</h3>

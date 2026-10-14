@@ -132,11 +132,11 @@ Step 2: Connect to MongoDB
 - Open MongoDB Compass.
 - In the **New Connection** window, enter the connection string:
 
-![](../images/2025/08/image-351.png)
+![](images/image-351.png)
 
-![](../images/2025/08/image-354.png)
+![](images/image-354.png)
 
-![](../images/2025/08/image-355.png)
+![](images/image-355.png)
 
 - Click **Connect**. If successful, Compass displays the MongoDB instance with databases like admin, config, and local.
 
@@ -149,11 +149,11 @@ Step 2: Connect to MongoDB
 { "name": "GUI Test", "role": "User" }
 ```
 
-![](../images/2025/08/image-357.png)
+![](images/image-357.png)
 
-![](../images/2025/08/image-359.png)
+![](images/image-359.png)
 
-![](../images/2025/08/image-361.png)
+![](images/image-361.png)
 
 ## Troubleshooting
 
