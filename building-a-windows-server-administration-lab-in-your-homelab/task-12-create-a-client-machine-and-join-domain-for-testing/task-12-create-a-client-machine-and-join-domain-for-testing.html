@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Task 12: Create a Client Machine and Join the Domain</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#0067b8;--accent-soft:#e6f0fa;--accent-ink:#00539a;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.85em;line-height:1.25;margin:.5em 0 .3em}
+.tsn-post h1 .tnum{display:block;font-size:.5em;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:.15em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h3{font-size:1.1em;margin:1.8em 0 .5em;padding-left:.6em;border-left:4px solid var(--accent)}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.tsn-post .code{position:relative;margin:.9em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.85em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em;overflow-wrap:normal}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .tw{overflow-x:auto;margin:.8em 0}
+.tsn-post table{width:100%;border-collapse:collapse;font-size:.94em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post .note p,.tsn-post .warn p{margin:.2em 0}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.3em 0}
+.tsn-post figure{margin:.8em 0;text-align:center}
+.tsn-post figure img{max-width:100%;height:auto;border:1px solid var(--line);border-radius:8px;display:block;margin:0 auto;background:#fff}
+.tsn-post .shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;margin:.8em 0 1.2em;align-items:start}
+.tsn-post .shots figure{margin:0}
+.tsn-post .shots img{transition:box-shadow .15s ease}
+.tsn-post .shots a:hover img{box-shadow:0 4px 14px rgba(0,0,0,.14)}
+.tsn-post a{color:var(--accent-ink)}
+.tsn-post .series-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 12px;font-size:.85em;background:var(--accent-soft);border-radius:8px;padding:8px 14px;margin:.4em 0 1em}
+.tsn-post .series-bar a{font-weight:700;text-decoration:none}
+.tsn-post .series-bar span{color:var(--muted)}
+.tsn-post .sb-track{flex-basis:100%;height:5px;border-radius:3px;background:#cfe0f3;overflow:hidden}
+.tsn-post .sb-fill{height:100%;background:var(--accent);border-radius:3px}
+.tsn-post .series-nav{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:2.6em;padding-top:1.4em;border-top:2px solid var(--line)}
+.tsn-post .series-nav a{display:block;border:1px solid var(--line);border-radius:10px;padding:10px 14px;text-decoration:none;color:var(--ink);font-weight:600;line-height:1.4;transition:border-color .15s ease,box-shadow .15s ease}
+.tsn-post .series-nav a:hover{border-color:var(--accent);box-shadow:0 2px 10px rgba(0,103,184,.12)}
+.tsn-post .series-nav span{display:block;font-size:.8em;font-weight:700;color:var(--accent);margin-bottom:2px}
+.tsn-post .series-nav .sn-next{text-align:right}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.45em}.tsn-post .series-nav{grid-template-columns:1fr}.tsn-post .series-nav .sn-next{text-align:left}}
+
+</style>
+
+<div class="series-bar">
+<a href="../building-a-windows-server-administration-lab-in-your-homelab.html">Windows Server Administration Lab</a>
+<span>Task 12 of 17</span>
+<div class="sb-track"><div class="sb-fill" style="width:71%"></div></div>
+</div>
+
+<h1><span class="tnum">Task 12</span>Create a Client Machine and Join the Domain</h1>
+<div class="meta">By Sunke Nithin · May 8, 2025 &nbsp; <span class="tag">Windows</span><span class="tag">Active Directory</span><span class="tag">Homelab</span></div>
+
+<p>Joining a <strong>client machine (e.g., Windows 10/11)</strong> to your domain (scslab.corp) is a core part of testing Active Directory, Group Policy, and login behaviors. Here's a step-by-step guide on <strong>creating a client VM</strong> and <strong>joining it to the domain</strong> in your homelab setup.</p>
+<h3>1. Create the client VM</h3>
+<p>You can use a <strong>Windows 10 or Windows 11</strong> ISO. Here's a recommended setup for Proxmox or VMware Workstation:</p>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>OS version</td>
+<td>Windows 10/11 Pro</td>
+</tr>
+<tr>
+<td>vCPU</td>
+<td>2</td>
+</tr>
+<tr>
+<td>RAM</td>
+<td>4 GB</td>
+</tr>
+<tr>
+<td>Disk</td>
+<td>40 GB</td>
+</tr>
+<tr>
+<td>Network</td>
+<td>Bridged (same subnet as the domain controller)</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Important:</strong> make sure the client can <strong>ping the domain controller</strong> (e.g., ping scsdc01.scslab.corp).</p>
+<figure><a href="images/image-224.png" rel="noopener" target="_blank"><img alt="Screenshot: image-224.png" loading="lazy" src="images/image-224.png"/></a></figure>
+<h3>2. Set the DNS Server to Domain Controller</h3>
+<p>On the client machine:</p>
+<p>Go to <strong>Network and Sharing Center</strong></p>
+<p>Click <strong>Change adapter settings</strong></p>
+<p>Right-click your adapter → <strong>Properties</strong></p>
+<p>Select <strong>Internet Protocol Version 4 (TCP/IPv4)</strong> → <strong>Properties</strong></p>
+<p>Under "Use the following DNS server address", enter:
+Preferred DNS server: <code>192.168.1.20</code> (the domain controller)</p>
+<p>Click OK and restart the network.</p>
+<figure><a href="images/image-225.png" rel="noopener" target="_blank"><img alt="Screenshot: image-225.png" loading="lazy" src="images/image-225.png"/></a></figure>
+<p>🔍 This ensures the client uses <strong>AD-integrated DNS</strong> to find domain services.</p>
+<h3>3. Join the Domain</h3>
+<p>Once DNS is set correctly:</p>
+<p>Open <strong>System Properties</strong>: right-click <strong>This PC</strong> → <strong>Properties</strong> → Click <strong>Rename this PC (advanced)</strong></p>
+<p>Click <strong>Change...</strong> next to “To rename this computer or change its domain...”</p>
+<p>Select <strong>Domain</strong>, enter:
+scslab.corp</p>
+<p>Click OK</p>
+<p>When prompted, enter domain credentials (e.g., administrator)</p>
+<div class="shots"><figure><a href="images/image-226.png" rel="noopener" target="_blank"><img alt="Screenshot: image-226.png" loading="lazy" src="images/image-226.png"/></a></figure><figure><a href="images/image-227.png" rel="noopener" target="_blank"><img alt="Screenshot: image-227.png" loading="lazy" src="images/image-227.png"/></a></figure><figure><a href="images/image-228.png" rel="noopener" target="_blank"><img alt="Screenshot: image-228.png" loading="lazy" src="images/image-228.png"/></a></figure><figure><a href="images/image-229.png" rel="noopener" target="_blank"><img alt="Screenshot: image-229.png" loading="lazy" src="images/image-229.png"/></a></figure></div>
+
+
+
+<p>✅ You should see:</p>
+<p><strong>“Welcome to the scslab.corp domain.”</strong></p>
+<p>Restart the computer when prompted.</p>
+<h3>Test Domain Login</h3>
+<p>Sign in to the client with a domain account, for example <code>SCSLAB\alice.smith</code>, and confirm the logon works.</p>
+<h3>Summary</h3>
+<p>You now have a Windows client VM joined to your scslab.corp domain — ready to test logins, GPOs, security groups, and shared resources. This is a crucial part of validating your ADDS environment.</p>
+
+<nav class="series-nav" aria-label="Series navigation">
+<a class="sn-prev" href="../task-11-create-sample-groups-and-user-accounts/task-11-create-sample-groups-and-user-accounts.html"><span>← Task 11</span>Create Sample Groups and User Accounts</a>
+<a class="sn-next" href="../task-13-create-gpo-for-password-policy/task-13-create-gpo-for-password-policy.html"><span>Task 13 →</span>Create a GPO for Password Policy</a>
+</nav>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>
