@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MongoDB User-Defined Roles</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#13aa52;--accent-soft:#eaf7ef;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.08em;margin:1.6em 0 .4em}
+.tsn-post h3 .step{display:inline-block;color:#0b7a3a;background:var(--accent-soft);border-radius:4px;padding:0 .4em;margin-right:.4em;font-size:.85em}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:#0b7a3a;border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.86em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post .ok{color:#7ee2a8}
+.tsn-post .bad{color:#ff8a80}
+.tsn-post table{width:100%;border-collapse:collapse;margin:.8em 0;font-size:.95em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.3em 0}
+.tsn-post .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:.8em 0}
+.tsn-post .card{border:1px solid var(--line);border-radius:8px;padding:10px 14px;background:#fff}
+.tsn-post .card strong{display:block;color:#0b7a3a;margin-bottom:2px}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:#0b7a3a}
+.tsn-post .end{background:var(--accent-soft);border-radius:8px;padding:14px 18px;margin-top:1em}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
+</style>
+
+<h1>Creating User-Defined Roles in MongoDB: A Comprehensive Guide</h1>
+<div class="meta">By Sunke Nithin · October 14, 2026 &nbsp; <span class="tag">Database</span><span class="tag">MongoDB</span></div>
+
+<p class="lead">MongoDB's flexibility as a NoSQL database makes it a popular choice for managing large datasets, but securing access to those datasets is critical. User-defined roles let administrators create custom permissions tailored to specific application or organizational needs, offering granular control beyond built-in roles like <code>read</code> or <code>readWrite</code>. This post explains how to create and manage user-defined roles in MongoDB.</p>
+
+<div class="toc"><strong>Contents</strong>
+<ol>
+<li><a href="#udr-why">Why Create User-Defined Roles?</a></li>
+<li><a href="#udr-pre">Prerequisites</a></li>
+<li><a href="#udr-steps">Step-by-Step Guide</a></li>
+<li><a href="#udr-actions">Common Privilege Actions</a></li>
+<li><a href="#udr-best">Best Practices</a></li>
+<li><a href="#udr-trouble">Troubleshooting</a></li>
+</ol></div>
+
+<h2 id="udr-why"><span class="num">1</span>Why Create User-Defined Roles?</h2>
+<p>User-defined roles are essential when built-in roles are too broad or too restrictive for your use case. They give precise control over database operations, so users only perform authorized actions.</p>
+<div class="grid">
+<div class="card"><strong>Granular Access Control</strong>Restrict users to specific actions (e.g. <code>find</code>, <code>insert</code>) on particular collections or databases.</div>
+<div class="card"><strong>Application-Specific Permissions</strong>Tailor roles for applications, such as letting a logging service write to one collection.</div>
+<div class="card"><strong>Compliance and Security</strong>Meet regulatory requirements by limiting access to sensitive data.</div>
+<div class="card"><strong>Team-Based Permissions</strong>Give different teams, such as developers or analysts, their own permissions.</div>
+</div>
+<p>User-defined roles are ideal for scenarios that require collection-level access control.</p>
+
+<h2 id="udr-pre"><span class="num">2</span>Prerequisites</h2>
+<ul>
+<li>MongoDB is running with authentication enabled (<code>--auth</code> flag, or <code>security.authorization: enabled</code> in <code>mongod.conf</code>).</li>
+<li>You are connected as a user with the <code>userAdminAnyDatabase</code>, <code>userAdmin</code> or <code>root</code> role.</li>
+<li>You know the target database, collections and actions for the custom role.</li>
+</ul>
+
+<h2 id="udr-steps"><span class="num">3</span>Step-by-Step Guide to Creating User-Defined Roles</h2>
+
+<h3><span class="step">Step 1</span>Connect to the MongoDB Shell</h3>
+<p>Connect to your MongoDB instance and authenticate as an admin user:</p>
+<div class="code"><span class="lbl">BASH</span><pre><code>mongosh -u mongoadm -p</code></pre></div>
+<p>Only users with appropriate privileges, such as <code>userAdminAnyDatabase</code> or <code>root</code>, can create roles.</p>
+
+<h3><span class="step">Step 2</span>Switch to the Target Database</h3>
+<p>Roles are defined in the database where they will be applied. Switch to the desired database:</p>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>use myDatabase</code></pre></div>
+
+<h3><span class="step">Step 3</span>Create a User-Defined Role</h3>
+<p>Use <code>db.createRole()</code> to define a custom role. Specify the role name, its privileges and any inherited roles. The syntax is:</p>
+<div class="code"><span class="lbl">SYNTAX</span><pre><code>db.createRole({
+  role: "&lt;roleName&gt;",
+  privileges: [
+    {
+      resource: { db: "&lt;database&gt;", collection: "&lt;collection&gt;" },
+      actions: ["&lt;action1&gt;", "&lt;action2&gt;", ...]
+    }
+  ],
+  roles: [
+    { role: "&lt;inheritedRole&gt;", db: "&lt;database&gt;" }
+  ]
+})</code></pre></div>
+
+<p><strong>Example:</strong> create a role <code>logWriter</code> that can read from <code>dataCollection</code> and insert into <code>logCollection</code>:</p>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.createRole({
+  role: "logWriter",
+  privileges: [
+    { resource: { db: "myDatabase", collection: "dataCollection" }, actions: ["find"] },
+    { resource: { db: "myDatabase", collection: "logCollection" },  actions: ["insert"] }
+  ],
+  roles: []
+})</code></pre></div>
+
+<p>You can also inherit existing roles to combine permissions:</p>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.createRole({
+  role: "logWriterWithRead",
+  privileges: [
+    { resource: { db: "myDatabase", collection: "logCollection" }, actions: ["insert"] }
+  ],
+  roles: [{ role: "read", db: "myDatabase" }]
+})</code></pre></div>
+<p>This example inherits the built-in <code>read</code> role for read access to the whole database, and adds a specific <code>insert</code> privilege on top.</p>
+
+<h3><span class="step">Step 4</span>Assign the Role to a User</h3>
+<p>Assign the custom role to a new or an existing user:</p>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code><span class="cm">// For a new user</span>
+db.createUser({
+  user: "logUser",
+  pwd: "xxxxxxx",
+  roles: [{ role: "logWriter", db: "myDatabase" }]
+})
+
+<span class="cm">// For an existing user</span>
+db.grantRolesToUser("existingUser", [{ role: "logWriter", db: "myDatabase" }])</code></pre></div>
+<div class="note"><strong>Note:</strong> a user created while you are in <code>myDatabase</code> belongs to <code>myDatabase</code>, so that user must log in with <code>--authenticationDatabase myDatabase</code>.</div>
+
+<h3><span class="step">Step 5</span>Verify the Role</h3>
+<p>Check the role's details to make sure it was created correctly:</p>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.getRole("logWriter", { showPrivileges: true })</code></pre></div>
+<p>Then log in as <code>logUser</code> and check which actions are allowed:</p>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code><span class="cm">// mongosh -u logUser -p --authenticationDatabase myDatabase</span>
+use myDatabase
+db.dataCollection.find()                             <span class="ok">// Should succeed</span>
+db.logCollection.insertOne({ event: "Log entry" })   <span class="ok">// Should succeed</span>
+db.dataCollection.insertOne({ name: "Test" })        <span class="bad">// Should fail</span></code></pre></div>
+
+<h3><span class="step">Step 6</span>Modify or Drop a Role</h3>
+<p>To update a role's privileges, use <code>db.updateRole()</code>:</p>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.updateRole("logWriter", {
+  privileges: [
+    { resource: { db: "myDatabase", collection: "dataCollection" }, actions: ["find", "update"] },
+    { resource: { db: "myDatabase", collection: "logCollection" },  actions: ["insert"] }
+  ],
+  roles: []
+})</code></pre></div>
+<div class="warn"><code>db.updateRole()</code> <strong>replaces</strong> the whole <code>privileges</code> array; it does not add to it. List every privilege the role should keep.</div>
+
+<p>To delete a role, use <code>db.dropRole()</code>:</p>
+<div class="code"><span class="lbl">MONGOSH</span><pre><code>db.dropRole("logWriter")</code></pre></div>
+<div class="warn">Be cautious: dropping a role removes it from every user that was assigned it.</div>
+
+<h2 id="udr-actions"><span class="num">4</span>Common Privilege Actions</h2>
+<p>When defining privileges, you can use actions like:</p>
+<table>
+<tr><th>Action</th><th>Allows</th></tr>
+<tr><td><code>find</code></td><td>Read data from a collection</td></tr>
+<tr><td><code>insert</code></td><td>Add new documents</td></tr>
+<tr><td><code>update</code></td><td>Modify existing documents</td></tr>
+<tr><td><code>remove</code></td><td>Delete documents</td></tr>
+<tr><td><code>createIndex</code></td><td>Create indexes</td></tr>
+<tr><td><code>viewRole</code></td><td>View role definitions</td></tr>
+</table>
+<p>See <a href="https://www.mongodb.com/docs/manual/reference/privilege-actions/" target="_blank" rel="noopener">MongoDB Privilege Actions</a> for the complete list.</p>
+
+<h2 id="udr-best"><span class="num">5</span>Best Practices</h2>
+<ul>
+<li><strong>Minimal privileges:</strong> grant only the actions a user needs, to reduce security risk.</li>
+<li><strong>Descriptive role names:</strong> use clear names (e.g. <code>logWriter</code>, <code>dataReader</code>) that reflect the role's purpose.</li>
+<li><strong>Inherit built-in roles:</strong> combine custom privileges with built-in roles for efficiency.</li>
+<li><strong>Test thoroughly:</strong> log in as a test user to confirm the role behaves as expected.</li>
+<li><strong>Secure admin access:</strong> restrict role creation to users with <code>userAdmin</code> or <code>userAdminAnyDatabase</code>.</li>
+<li><strong>Document roles:</strong> keep a record of custom roles for team collaboration and auditing.</li>
+</ul>
+
+<h2 id="udr-trouble"><span class="num">6</span>Troubleshooting</h2>
+<table>
+<tr><th>Problem</th><th>What to check</th></tr>
+<tr><td>Permission denied</td><td>The admin user has <code>userAdmin</code> or <code>userAdminAnyDatabase</code> privileges.</td></tr>
+<tr><td>Role not found</td><td>The role was created in the correct database — check with <code>db.getRole()</code>.</td></tr>
+<tr><td>User access issues</td><td>The role's privileges — <code>db.getRole("&lt;role&gt;", { showPrivileges: true })</code>.</td></tr>
+<tr><td>Authentication errors</td><td>The user authenticates against the correct database using <code>--authenticationDatabase</code>.</td></tr>
+</table>
+
+<h2>Additional Resources</h2>
+<ul>
+<li><a href="https://www.mongodb.com/docs/manual/reference/method/db.createRole/" target="_blank" rel="noopener">MongoDB Documentation: db.createRole()</a></li>
+</ul>
+
+<h2>Conclusion</h2>
+<div class="end">Creating user-defined roles in MongoDB with <code>db.createRole()</code> lets administrators enforce precise access control, improving security and compliance. By tailoring permissions to specific collections or actions, you can meet complex application needs while keeping the environment secure.</div>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>
