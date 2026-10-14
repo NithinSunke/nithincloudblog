@@ -10,6 +10,7 @@
 <meta property="og:title" content="Nithin Cloud Blog">
 <meta property="og:description" content="Notes on Oracle Cloud Infrastructure, networking, and homelab infrastructure.">
 
+<!-- Relative, so the site works both opened from disk and served over HTTP. -->
 <link rel="stylesheet" href="style.css">
 </head>
 
@@ -17,15 +18,27 @@
 
 <header class="site">
   <div class="wrap">
-    <h1>Nithin Cloud Blog</h1>
-    <p>Notes on Oracle Cloud Infrastructure, networking, and homelab infrastructure.</p>
+    <div class="brand-row">
+      <h1><a href="index.html">Nithin Cloud Blog</a></h1>
+      <nav class="site-nav">
+        <a href="#posts">Posts</a>
+        <a href="#categories">Categories</a>
+      </nav>
+    </div>
+    <p class="tagline">
+      Hands-on notes from building and breaking things on Oracle Cloud
+      Infrastructure, networking, and a homelab that refuses to stay simple.
+    </p>
   </div>
 </header>
 
 <div class="wrap layout">
 
-  <main>
-    <h2 class="section">Posts</h2>
+  <main id="posts">
+    <div class="section-head">
+      <h2 class="section">Latest posts</h2>
+      <span class="n" id="count"></span>
+    </div>
 
     <!-- To add a post: copy one <li class="post"> block and edit the fields.
          The sidebar counts update themselves from the chips below. -->
@@ -33,23 +46,25 @@
 
       <li class="post">
         <h3>
-          <a href="2026-06-16-hybrid-dns-between-oci-private-dns-and-homelab-technitium-dns-using-tailscale/">
+          <a href="2026-06-16-hybrid-dns-between-oci-private-dns-and-homelab-technitium-dns-using-tailscale/2026-06-16-hybrid-dns-between-oci-private-dns-and-homelab-technitium-dns-using-tailscale.html">
             Hybrid DNS Between OCI Private DNS and Homelab Technitium DNS Using Tailscale
           </a>
         </h3>
 
         <p class="meta">
           <time datetime="2026-06-16">16 June 2026</time>
+          <span class="dot">&bull;</span>
           <span>Sunke Nithin</span>
-          <span>760 words &middot; ~4 min read</span>
+          <span class="dot">&bull;</span>
+          <span>~4 min read</span>
         </p>
 
         <p class="excerpt">
-          Integrating Oracle Cloud Infrastructure Private DNS with a homelab Technitium
-          DNS server over Tailscale. Technitium stays authoritative for
-          <code>scslabs.in</code>, OCI for <code>ocilabs.in</code>, resolving both
-          directions with no duplicate records &mdash; using an OCI listening endpoint
-          one way and a forwarding endpoint plus resolver rule the other.
+          Making OCI Private DNS and a homelab Technitium server resolve each
+          other&rsquo;s domains over Tailscale. Technitium stays authoritative for
+          <code>scslabs.in</code> and OCI for <code>ocilabs.in</code> &mdash; a listening
+          endpoint one way, a forwarding endpoint and resolver rule the other, and no
+          duplicate records anywhere.
         </p>
 
         <ul class="chips">
@@ -64,7 +79,15 @@
     <p class="empty" id="empty" hidden>No posts match that filter.</p>
   </main>
 
-  <aside class="sidebar">
+  <aside class="sidebar" id="categories">
+    <section class="widget about">
+      <h2 class="section">About</h2>
+      <p>
+        I&rsquo;m Sunke Nithin. I write up cloud and network builds in enough detail
+        that you could repeat them &mdash; including the parts that went wrong.
+      </p>
+    </section>
+
     <section class="widget">
       <h2 class="section">Categories</h2>
       <ul id="cat-list"></ul>
@@ -73,16 +96,15 @@
     <section class="widget">
       <h2 class="section">Tags</h2>
       <ul id="tag-list"></ul>
+      <button type="button" id="reset" hidden>Clear filter</button>
     </section>
-
-    <button type="button" id="reset" hidden>Clear filter</button>
   </aside>
 
 </div>
 
 <footer class="site">
   <div class="wrap">
-    <p>&copy; 2026 Sunke Nithin</p>
+    <p>&copy; 2026 Sunke Nithin &middot; Built as plain HTML, hosted on Cloudflare Pages.</p>
   </div>
 </footer>
 
@@ -90,11 +112,12 @@
 (function () {
   document.body.classList.remove('no-js');
 
-  var posts   = Array.prototype.slice.call(document.querySelectorAll('.post'));
-  var catList = document.getElementById('cat-list');
-  var tagList = document.getElementById('tag-list');
+  var posts    = Array.prototype.slice.call(document.querySelectorAll('.post'));
+  var catList  = document.getElementById('cat-list');
+  var tagList  = document.getElementById('tag-list');
   var resetBtn = document.getElementById('reset');
   var emptyMsg = document.getElementById('empty');
+  var countEl  = document.getElementById('count');
 
   // Read each post's chips once, so the visible chips stay the single
   // source of truth for both the post list and the sidebar counts.
@@ -117,9 +140,7 @@
       });
     });
     return Object.keys(counts)
-      .sort(function (a, b) {
-        return counts[b] - counts[a] || a.localeCompare(b);
-      })
+      .sort(function (a, b) { return counts[b] - counts[a] || a.localeCompare(b); })
       .map(function (name) { return { name: name, count: counts[name] }; });
   }
 
@@ -128,7 +149,7 @@
   function render(listEl, items, kind) {
     listEl.textContent = '';
     items.forEach(function (item) {
-      var li = document.createElement('li');
+      var li  = document.createElement('li');
       var btn = document.createElement('button');
       btn.type = 'button';
       btn.setAttribute('aria-pressed', 'false');
@@ -167,6 +188,7 @@
     Array.prototype.forEach.call(
       document.querySelectorAll('.widget button'),
       function (btn) {
+        if (btn.id === 'reset') return;
         var kind = btn.parentNode.parentNode.id === 'cat-list' ? 'cat' : 'tag';
         var name = btn.querySelector('.name').textContent;
         var on = !!active && active.kind === kind && active.name === name;
@@ -176,12 +198,12 @@
 
     resetBtn.hidden = !active;
     emptyMsg.hidden = shown !== 0;
+    countEl.textContent = active
+      ? shown + ' of ' + posts.length
+      : posts.length + (posts.length === 1 ? ' post' : ' posts');
   }
 
-  resetBtn.addEventListener('click', function () {
-    active = null;
-    apply();
-  });
+  resetBtn.addEventListener('click', function () { active = null; apply(); });
 
   render(catList, tally('_cats'), 'cat');
   render(tagList, tally('_tags'), 'tag');
