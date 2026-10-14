@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Introduction to MongoDB</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#13aa52;--accent-soft:#eaf7ef;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;--no:#b25e00;--no-soft:#fff4e5;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.02em;margin:0 0 .3em}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:#0b7a3a;border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.86em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post table{width:100%;border-collapse:collapse;margin:.8em 0;font-size:.95em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post .note{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid;background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.35em 0}
+.tsn-post .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:.8em 0}
+.tsn-post .card{border:1px solid var(--line);border-radius:8px;padding:12px 14px;background:#fff}
+.tsn-post .card strong{display:block;color:#0b7a3a;margin-bottom:2px}
+.tsn-post .card .eg{display:block;margin-top:6px;font-size:.88em;color:var(--muted)}
+.tsn-post .card .eg b{color:var(--ink);font-weight:600}
+.tsn-post .verdict{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin:.8em 0}
+.tsn-post .verdict > div{border-radius:10px;padding:12px 16px 6px}
+.tsn-post .verdict .yes{background:var(--accent-soft);border:1px solid #bfe6cd}
+.tsn-post .verdict .no{background:var(--no-soft);border:1px solid #f3d3a8}
+.tsn-post .verdict h3{color:#0b7a3a}
+.tsn-post .verdict .no h3{color:var(--no)}
+.tsn-post .verdict ul{margin:.3em 0 .6em}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:#0b7a3a}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
+</style>
+
+<h1>Introduction to MongoDB</h1>
+<div class="meta">By Sunke Nithin · August 22, 2025 &nbsp; <span class="tag">Database</span><span class="tag">MongoDB</span></div>
+
+<p class="lead">MongoDB is an open-source NoSQL database that stores data in flexible, JSON-like documents encoded as BSON (Binary JSON). Unlike traditional relational databases that use tables with fixed schemas, MongoDB uses collections of documents, allowing dynamic schemas and easier handling of unstructured or semi-structured data. It is designed for scalability, high performance and ease of development, with features like horizontal scaling (sharding), replication and rich querying.</p>
+
+<div class="toc"><strong>Contents</strong>
+<ol>
+<li><a href="#intro-doc">What a Document Looks Like</a></li>
+<li><a href="#intro-features">Key Features</a></li>
+<li><a href="#intro-where">Where is MongoDB Used?</a></li>
+<li><a href="#intro-industries">Industries Using MongoDB</a></li>
+<li><a href="#intro-when">When to Use It — and When Not To</a></li>
+</ol></div>
+
+<h2 id="intro-doc"><span class="num">1</span>What a Document Looks Like</h2>
+<p>Instead of a row spread across fixed columns, MongoDB stores each record as a self-contained document. Fields can hold nested objects and arrays, and two documents in the same collection don't need the same fields:</p>
+<div class="code"><span class="lbl">JSON</span><pre><code>{
+  "_id": 1,
+  "title": "Getting started with MongoDB",
+  "author": { "name": "Nithin", "role": "DBA" },
+  "tags": ["mongodb", "nosql", "database"],
+  "comments": [
+    { "user": "alice", "text": "Very helpful!" }
+  ]
+}</code></pre></div>
+
+<table>
+<tr><th>Relational database</th><th>MongoDB</th></tr>
+<tr><td>Database</td><td>Database</td></tr>
+<tr><td>Table</td><td>Collection</td></tr>
+<tr><td>Row</td><td>Document</td></tr>
+<tr><td>Column</td><td>Field</td></tr>
+<tr><td>Fixed schema</td><td>Flexible schema</td></tr>
+</table>
+
+<h2 id="intro-features"><span class="num">2</span>Key Features of MongoDB</h2>
+<div class="grid">
+<div class="card"><strong>Document-Oriented</strong>Stores data in JSON-like documents with key-value pairs, allowing nested structures.</div>
+<div class="card"><strong>Schema Flexibility</strong>No predefined schema, so fields can vary between documents in a collection.</div>
+<div class="card"><strong>Scalability</strong>Sharding distributes data across multiple servers; replication provides high availability.</div>
+<div class="card"><strong>Querying</strong>Powerful querying, indexing and aggregation for efficient data retrieval.</div>
+<div class="card"><strong>High Performance</strong>Optimized for read/write operations, especially on large-scale data.</div>
+</div>
+
+<h2 id="intro-where"><span class="num">3</span>Where is MongoDB Used?</h2>
+<p>MongoDB is widely used in applications that need flexible, scalable, high-performance data storage. Common use cases:</p>
+<div class="grid">
+<div class="card"><strong>Web Applications</strong>Content management systems — blogs, e-commerce platforms — storing dynamic content like product catalogs, user profiles or articles.<span class="eg"><b>Example:</b> a news website storing articles with varying metadata (author, tags, comments).</span></div>
+<div class="card"><strong>Real-Time Analytics</strong>Real-time processing for dashboards, user-behavior tracking or IoT applications.<span class="eg"><b>Example:</b> IoT platforms storing sensor data with varying attributes.</span></div>
+<div class="card"><strong>Mobile Apps</strong>Backend for user data, session information or app content, thanks to its scalability and JSON-like structure.<span class="eg"><b>Example:</b> social media apps storing user posts and interactions.</span></div>
+<div class="card"><strong>Content Management</strong>Ideal for CMS platforms where content types (videos, images, text) have different attributes.<span class="eg"><b>Example:</b> WordPress-like platforms managing diverse content.</span></div>
+<div class="card"><strong>Big Data Applications</strong>Handles large volumes of unstructured data in data lakes or analytics platforms.<span class="eg"><b>Example:</b> storing log data for analysis in a data pipeline.</span></div>
+<div class="card"><strong>E-Commerce</strong>Product catalogs, user reviews and order histories with varying attributes.<span class="eg"><b>Example:</b> an online store with different specifications for clothing vs. electronics.</span></div>
+<div class="card"><strong>Gaming</strong>Game state, player profiles and leaderboards for real-time multiplayer games.<span class="eg"><b>Example:</b> mobile games saving player progress and inventory.</span></div>
+<div class="card"><strong>Geospatial Applications</strong>Geospatial queries for location-based services like maps or delivery tracking.<span class="eg"><b>Example:</b> ride-sharing apps storing driver and user locations.</span></div>
+</div>
+
+<h2 id="intro-industries"><span class="num">4</span>Industries Using MongoDB</h2>
+<table>
+<tr><th>Industry</th><th>Typical use</th></tr>
+<tr><td>Technology</td><td>Scalable web services — companies such as eBay and Adobe use MongoDB.</td></tr>
+<tr><td>Finance</td><td>Fraud detection and transaction processing.</td></tr>
+<tr><td>Healthcare</td><td>Patient records with varying data formats.</td></tr>
+<tr><td>Retail</td><td>Inventory management and personalized recommendations.</td></tr>
+<tr><td>Media</td><td>Content delivery and analytics.</td></tr>
+</table>
+
+<h2 id="intro-when"><span class="num">5</span>When to Use MongoDB — and When Not To</h2>
+<div class="verdict">
+<div class="yes">
+<h3>✓ Good fit</h3>
+<ul>
+<li>Large-scale, unstructured or semi-structured data.</li>
+<li>Applications that need rapid development and flexible schemas.</li>
+<li>When horizontal scaling and high availability are priorities.</li>
+<li>Real-time analytics or event-driven architectures.</li>
+</ul>
+</div>
+<div class="no">
+<h3>✗ Think twice</h3>
+<ul>
+<li>Highly relational data that needs complex joins — better suited to SQL databases like PostgreSQL or Oracle.</li>
+<li>Applications built around strict, multi-table ACID transactions. MongoDB has supported multi-document ACID transactions since version 4.0, but relational databases are often still preferred here.</li>
+<li>Small applications with simple data structures, where a relational database is sufficient.</li>
+</ul>
+</div>
+</div>
+
+<div class="note">Next in this series: <a href="../connecting-to-mongodb-on-oracle-enterprise-linux-8-shell-and-gui-methods/connecting-to-mongodb-on-oracle-enterprise-linux-8-shell-and-gui-methods.html">Connecting to MongoDB on OEL 8</a>, <a href="../creating-a-database-in-mongodb/creating-a-database-in-mongodb.html">Creating a Database in MongoDB</a> and <a href="../mastering-crud-operations-in-mongodb/mastering-crud-operations-in-mongodb.html">Mastering CRUD Operations in MongoDB</a>.</div>
+
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>
