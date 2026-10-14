@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Migrating MongoDB to Oracle Autonomous Database — Nithin Cloud Blog</title>
+<meta name="description" content="Moving a MongoDB collection into Oracle Autonomous Database over the MongoDB API, using mongoexport and mongoimport, then querying the JSON with SQL.">
+<meta name="author" content="Sunke Nithin">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="Migrating MongoDB to Oracle Autonomous Database">
+<meta property="og:description" content="Moving a MongoDB collection into Oracle Autonomous Database over the MongoDB API, using mongoexport and mongoimport, then querying the JSON with SQL.">
+<meta property="article:published_time" content="2025-09-01">
+
+<!-- Relative, so the site works both opened from disk and served over HTTP. -->
+<link rel="stylesheet" href="../style.css">
+</head>
+
+<body>
+
+<header class="site">
+  <div class="wrap narrow">
+    <p class="brand"><a href="../index.html">Nithin Cloud Blog</a></p>
+    <p class="tagline">Notes on Oracle Cloud Infrastructure, networking, and homelab infrastructure.</p>
+  </div>
+</header>
+
+<div class="wrap narrow">
+<article>
+
+  <div class="post-header">
+    <h1>Migrating MongoDB to Oracle Autonomous Database</h1>
+    <p class="meta">
+      <time datetime="2025-09-01">1 September 2025</time>
+      <span class="dot">&bull;</span>
+      <span>Sunke Nithin</span>
+      <span class="dot">&bull;</span>
+      <span>~5 min read</span>
+    </p>
+    <ul class="chips">
+      <li class="cat">Database</li>
+      <li class="cat">ADB</li>
+      <li class="tag">Network</li>
+    </ul>
+  </div>
+
+  <p>In today's data-driven world, businesses often need to transition between database
+  systems to leverage advanced features like SQL analytics, AI capabilities, and scalable
+  cloud infrastructure. If you're using MongoDB and considering a move to Oracle Autonomous
+  Database, the process is surprisingly straightforward. Oracle's MongoDB API compatibility
+  allows you to use familiar MongoDB tools while unlocking the power of Oracle's SQL and AI
+  features. This blog post, inspired by the Oracle MongoDB API documentation, guides you
+  through migrating MongoDB data to Oracle Autonomous Database and querying that JSON data
+  with SQL.</p>
+
+  <h2>Why migrate to Oracle Autonomous Database?</h2>
+
+  <p>Oracle Autonomous Database offers a fully managed cloud database that supports both JSON
+  and relational workloads. With its MongoDB API compatibility, you can:</p>
+
+  <ul>
+    <li>Continue using MongoDB tools like Mongo Compass and mongosh.</li>
+    <li>Seamlessly query JSON data using SQL for relational-style analysis.</li>
+    <li>Leverage Oracle Database 23ai features like AI Vector Search, Retrieval-Augmented
+      Generation (RAG), and JSON Relational Duality.</li>
+  </ul>
+
+  <p>This makes it an ideal choice for organizations looking to modernize their data
+  infrastructure without abandoning existing MongoDB workflows.</p>
+
+  <h2>Step 1: Setting up your Oracle Autonomous Database</h2>
+
+  <p>To begin, create an Oracle Autonomous Database instance configured for JSON or
+  Transaction Processing workloads. Here's how:</p>
+
+  <ol>
+    <li><strong>Log in to Oracle Cloud Infrastructure (OCI):</strong> Access your OCI account.
+      If you don’t have one, sign up for a free account with Oracle’s Always Free
+      Resources.</li>
+    <li><strong>Create an Autonomous Database:</strong>
+      <ul>
+        <li>Navigate to the Autonomous Database page in the OCI console.</li>
+        <li>Click <strong>Create Autonomous Database</strong>.</li>
+        <li>Set the <strong>Display name</strong> and <strong>Database name</strong>
+          (e.g. <code>AJD1</code>).</li>
+        <li>Choose <strong>JSON</strong> or <strong>Transaction Processing</strong> as the
+          workload type.</li>
+        <li>Select database version <strong>23ai</strong> for the latest features.</li>
+        <li>Set a password for the ADMIN user and configure secure access for your IP.</li>
+        <li>Click <strong>Create</strong>.</li>
+      </ul>
+    </li>
+  </ol>
+
+  <p>Once created, retrieve the <strong>Public access URL</strong> for MongoDB API
+  connectivity from the <strong>Tool configuration</strong> tab in the database details.</p>
+
+  <figure>
+    <img src="images/image-1.png" loading="lazy"
+         alt="The Tool configuration tab of the Autonomous Database in the OCI console, showing the MongoDB API public access URL.">
+  </figure>
+
+  <h2>Step 2: Connecting with MongoDB tools</h2>
+
+  <p>Oracle’s MongoDB API allows you to connect using familiar tools like Mongo Compass or
+  mongosh. Here’s an example using mongosh:</p>
+
+<pre><code>mongosh 'mongodb://ADMIN:xxxxxxx@xixezm8d.adb.me-jeddah-1.oraclecloudapps.com:27017/ADMIN?authMechanism=PLAIN&amp;authSource=$external&amp;ssl=true&amp;retryWrites=false&amp;loadBalanced=true'</code></pre>
+
+  <figure>
+    <img src="images/image-3.png" loading="lazy"
+         alt="mongosh connecting to the Autonomous Database as the ADMIN user over the MongoDB API.">
+  </figure>
+
+  <p>Replace the password and the hostname/DB URL with your own database credentials and URL.
+  This command establishes a connection, allowing you to interact with your Oracle database as
+  if it were MongoDB.</p>
+
+  <p>Create a normal user in the ATP database and grant the privileges below.</p>
+
+  <figure>
+    <img src="images/image-5.png" loading="lazy"
+         alt="SQL worksheet creating the MONGOADM user in the Autonomous Database.">
+  </figure>
+
+<pre><code>GRANT CREATE SESSION, CREATE TABLE TO MONGOADM;
+GRANT SODA_APP TO MONGOADM;
+ALTER USER MONGOADM QUOTA UNLIMITED ON DATA;</code></pre>
+
+<pre><code>mongosh 'mongodb://mongoadm:xxxxx@xixezm8d.adb.me-jeddah-1.oraclecloudapps.com:27017/mongoadm?authMechanism=PLAIN&amp;authSource=$external&amp;ssl=true&amp;retryWrites=false&amp;loadBalanced=true'</code></pre>
+
+  <figure>
+    <img src="images/image-7.png" loading="lazy"
+         alt="mongosh connecting to the Autonomous Database as the mongoadm user.">
+  </figure>
+
+  <h3>Migrate your data using Mongo Shell</h3>
+
+  <h4>At the source database</h4>
+
+  <figure>
+    <img src="images/image-9.png" loading="lazy"
+         alt="mongosh session on the source MongoDB server listing the available databases.">
+  </figure>
+
+  <p>In this blog we will migrate the <strong>sample_airbnb</strong> database.</p>
+
+  <figure>
+    <img src="images/image-11.png" loading="lazy"
+         alt="The sample_airbnb database selected in mongosh, showing its collections including listingsAndReviews.">
+  </figure>
+
+  <p>Export the collection using <code>mongoexport</code>:</p>
+
+<pre><code>mongoexport --db sample_airbnb --collection listingsAndReviews --out /opt/listingsAndReviews.json --username mongoadmin --authenticationDatabase admin</code></pre>
+
+  <figure>
+    <img src="images/image-13.png" loading="lazy"
+         alt="Terminal output of mongoexport writing the listingsAndReviews collection out to a JSON file.">
+  </figure>
+
+  <h4>Connect to the target ATP database</h4>
+
+  <figure>
+    <img src="images/image-15.png" loading="lazy"
+         alt="mongosh connected to the target Autonomous Database before the import.">
+  </figure>
+
+  <h4>Import the backup JSON file into the target ATP database</h4>
+
+<pre><code>mongoimport 'mongodb://mongoadm@xixezm8d.adb.me-jeddah-1.oraclecloudapps.com:27017/mongoadm?authMechanism=PLAIN&amp;authSource=$external&amp;ssl=true&amp;retryWrites=false&amp;loadBalanced=true' --collection listingsAndReviews /opt/listingsAndReviews.json</code></pre>
+
+  <figure>
+    <img src="images/image-17.png" loading="lazy"
+         alt="Terminal output of mongoimport loading the JSON documents into the Autonomous Database.">
+  </figure>
+
+  <p>List the collections:</p>
+
+  <figure>
+    <img src="images/image-19.png" loading="lazy"
+         alt="mongosh showing the listingsAndReviews collection now present in the target database.">
+  </figure>
+
+  <p>List the row count in the ATP database:</p>
+
+  <figure>
+    <img src="images/image-21.png" loading="lazy"
+         alt="Oracle Database Actions SQL worksheet running SELECT Count(*) FROM MONGOADM.&quot;listingsAndReviews&quot;, returning 5555 rows, with the collection visible as a table in the navigator.">
+  </figure>
+
+  <p>List the data using <code>JSON_VALUE</code> to define columns:</p>
+
+  <figure>
+    <img src="images/image-23.png" loading="lazy"
+         alt="SQL worksheet using json_value to project listing_id, name, price, city, room_type and available_days out of the JSON data column, with the result grid showing Airbnb listings such as Charming Flat in Downtown Moda and Ocean View Waikiki Marina.">
+  </figure>
+
+  <h2>Leveraging Oracle’s advanced features</h2>
+
+  <p>With your JSON data in Oracle Autonomous Database, you can take advantage of powerful
+  features:</p>
+
+  <ul>
+    <li><strong>AI Vector Search:</strong> Enable semantic search on your JSON data.</li>
+    <li><strong>JSON Relational Duality:</strong> Seamlessly switch between JSON and
+      relational representations.</li>
+    <li><strong>Select AI:</strong> Use natural language to query your data.</li>
+  </ul>
+
+  <p>These capabilities make your data “AI-ready,” opening up new possibilities for analytics
+  and application development.</p>
+
+  <h2>Conclusion</h2>
+
+  <p>Migrating from MongoDB to Oracle Autonomous Database is a seamless process that retains
+  compatibility with MongoDB tools while unlocking the power of SQL and Oracle’s AI-driven
+  features. By following the steps outlined above, you can migrate your JSON data, query it
+  relationally, and perform advanced analytics with ease. For detailed instructions, refer to
+  the Oracle MongoDB API Quick Start Guide.</p>
+
+  <a class="back" href="../index.html">← All posts</a>
+
+</article>
+</div>
+
+<footer class="site">
+  <div class="wrap narrow">
+    <p>&copy; 2026 Sunke Nithin</p>
+  </div>
+</footer>
+
+</body>
+</html>
