@@ -681,3 +681,76 @@ ol.sources li:target {
 }
 
 ol.sources a { overflow-wrap: anywhere; }
+
+/* ---------------- search ---------------- */
+
+.search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-box svg {
+  position: absolute;
+  left: .65rem;
+  color: var(--faint);
+  pointer-events: none;
+}
+
+.search-box input {
+  width: 100%;
+  font: inherit;
+  font-size: .89rem;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: .5rem 2rem .5rem 2.1rem;
+  transition: border-color .14s ease, box-shadow .14s ease;
+}
+
+.search-box input::placeholder { color: var(--faint); }
+
+.search-box input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.search-box kbd {
+  position: absolute;
+  right: .55rem;
+  font: .7rem/1.4 var(--mono);
+  color: var(--faint);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0 .35rem;
+  pointer-events: none;
+}
+
+.search-box input:focus ~ kbd,
+.search-box input:not(:placeholder-shown) ~ kbd { display: none; }
+
+.search-status {
+  margin: .5rem 0 0;
+  font-size: .78rem;
+  color: var(--faint);
+  min-height: 1em;
+}
+
+.search-status:empty { display: none; }
+
+.post h3 mark {
+  background: var(--accent-soft);
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 .1em;
+}
+
+/* On narrow screens the sidebar drops below the posts — keep search on top. */
+@media (max-width: 54rem) {
+  aside.sidebar { display: contents; }
+  #search-widget { order: -1; margin-bottom: 0; }
+  .layout > main { order: 0; }
+  .layout > aside .widget:not(#search-widget) { order: 1; }
+}

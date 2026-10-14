@@ -707,6 +707,16 @@
   </main>
 
   <aside class="sidebar" id="categories">
+    <section class="widget search" id="search-widget" role="search">
+      <h2 class="section"><label for="q">Search</label></h2>
+      <div class="search-box">
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 20l-4.2-4.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input type="search" id="q" placeholder="Search post headings" autocomplete="off" spellcheck="false">
+        <kbd aria-hidden="true">/</kbd>
+      </div>
+      <p class="search-status" id="search-status" aria-live="polite"></p>
+    </section>
+
     <section class="widget about">
       <h2 class="section">About</h2>
       <p>
@@ -723,7 +733,7 @@
     <section class="widget">
       <h2 class="section">Tags</h2>
       <ul id="tag-list"></ul>
-      <button type="button" id="reset" hidden>Clear filter</button>
+      <button type="button" id="reset" hidden>Clear filters</button>
     </section>
   </aside>
 
@@ -757,7 +767,34 @@
     };
     post._cats = read('cat');
     post._tags = read('tag');
+    post._link  = post.querySelector('h3 a');
+    post._title = post._link.textContent.replace(/\s+/g, ' ').trim();
+    post._lower = post._title.toLowerCase();
   });
+
+  var searchEl = document.getElementById('q');
+  var statusEl = document.getElementById('search-status');
+  var words = [];   // lower-case search words; a post must contain all of them
+
+  function escapeRe(w) { return w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+  // Re-draw a heading, wrapping each matched word in <mark>.
+  function highlight(post) {
+    var link = post._link;
+    link.textContent = '';
+    if (!words.length) { link.textContent = post._title; return; }
+    var re = new RegExp('(' + words.map(escapeRe).join('|') + ')', 'gi');
+    post._title.split(re).forEach(function (part, i) {
+      if (!part) return;
+      if (i % 2) {
+        var m = document.createElement('mark');
+        m.textContent = part;
+        link.appendChild(m);
+      } else {
+        link.appendChild(document.createTextNode(part));
+      }
+    });
+  }
 
   function tally(key) {
     var counts = Object.create(null);
@@ -806,9 +843,12 @@
     var shown = 0;
 
     posts.forEach(function (post) {
-      var match = !active ||
+      var inFilter = !active ||
         (active.kind === 'cat' ? post._cats : post._tags).indexOf(active.name) !== -1;
+      var inSearch = words.every(function (w) { return post._lower.indexOf(w) !== -1; });
+      var match = inFilter && inSearch;
       post.hidden = !match;
+      highlight(post);
       if (match) shown++;
     });
 
@@ -823,14 +863,46 @@
       }
     );
 
-    resetBtn.hidden = !active;
+    var filtering = !!active || words.length > 0;
+    resetBtn.hidden = !filtering;
     emptyMsg.hidden = shown !== 0;
-    countEl.textContent = active
+    emptyMsg.textContent = words.length
+      ? 'No post headings match \u201c' + searchEl.value.trim() + '\u201d' +
+        (active ? ' in ' + active.name : '') + '.'
+      : 'No posts match that filter.';
+    statusEl.textContent = words.length
+      ? shown + (shown === 1 ? ' post matches' : ' posts match')
+      : '';
+    countEl.textContent = filtering
       ? shown + ' of ' + posts.length
       : posts.length + (posts.length === 1 ? ' post' : ' posts');
   }
 
-  resetBtn.addEventListener('click', function () { active = null; apply(); });
+  function setQuery(value) {
+    words = value.toLowerCase().split(/\s+/).filter(Boolean);
+    apply();
+  }
+
+  searchEl.addEventListener('input', function () { setQuery(searchEl.value); });
+
+  searchEl.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { searchEl.value = ''; setQuery(''); searchEl.blur(); }
+  });
+
+  // Press "/" anywhere on the page to jump to the search box.
+  document.addEventListener('keydown', function (e) {
+    var t = e.target.tagName;
+    if (e.key === '/' && t !== 'INPUT' && t !== 'TEXTAREA' && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+      searchEl.focus();
+    }
+  });
+
+  resetBtn.addEventListener('click', function () {
+    active = null;
+    searchEl.value = '';
+    setQuery('');
+  });
 
   render(catList, tally('_cats'), 'cat');
   render(tagList, tally('_tags'), 'tag');
