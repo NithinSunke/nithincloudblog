@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RMAN Useful Commands</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#c74634;--accent-soft:#fdf1ef;--accent-ink:#a3372a;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.06em;margin:1.6em 0 .4em;padding-left:.6em;border-left:4px solid var(--accent)}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.85em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em;overflow-wrap:normal}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post .tw{overflow-x:auto;margin:.8em 0}
+.tsn-post table{width:100%;border-collapse:collapse;font-size:.93em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.3em 0}
+.tsn-post .lab{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin:1em 0}
+.tsn-post .lab div{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:#fff;font-size:.9em}
+.tsn-post .lab b{display:block;color:var(--accent-ink);font-size:.82em;text-transform:uppercase;letter-spacing:.05em}
+.tsn-post .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:.8em 0}
+.tsn-post .flow span{background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:.88em;font-weight:600}
+.tsn-post .flow b{color:var(--accent)}
+.tsn-post .shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px;margin:.8em 0 1.2em;align-items:start}
+.tsn-post .shots.one{grid-template-columns:1fr}
+.tsn-post .shots figure{margin:0}
+.tsn-post .shots img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:8px;background:#fff;transition:box-shadow .15s ease}
+.tsn-post .shots a:hover img{box-shadow:0 4px 14px rgba(0,0,0,.14)}
+.tsn-post .shots.one img{max-width:100%;width:auto;margin:0 auto}
+.tsn-post .cap{color:var(--muted);font-size:.85em;margin-top:-.6em}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:var(--accent-ink)}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
+
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .check{list-style:none;padding:0;counter-reset:c}
+.tsn-post .check>li{position:relative;padding-left:2.4em;margin:.7em 0}
+.tsn-post .check>li::before{counter-increment:c;content:counter(c);position:absolute;left:0;top:.1em;width:1.7em;height:1.7em;line-height:1.7em;text-align:center;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:.85em}
+
+.tsn-post details{margin:.6em 0 1.2em}
+.tsn-post summary{cursor:pointer;color:var(--accent-ink);font-weight:600;font-size:.95em}
+.tsn-post .code pre.tall{max-height:640px;overflow:auto}
+</style>
+
+<h1>RMAN Useful Commands</h1>
+<div class="meta">By Sunke Nithin · April 16, 2025 &nbsp; <span class="tag">Database</span><span class="tag">Oracle</span></div>
+
+<p class="lead">Oracle <strong>Recovery Manager (RMAN)</strong> is the tool for backing up, restoring and recovering Oracle databases. This is a quick-reference of the RMAN commands I use most for listing, checking and cleaning up backups. Run them from <code>rman target /</code>.</p>
+
+<div class="note"><strong>Reading "completed before".</strong> <code>completed before 'sysdate-1'</code> means <em>older than 24 hours</em> — it skips the last day's backups, not "today" by calendar date. Use <code>completed after 'sysdate-1'</code> for the last 24 hours.</div>
+
+<h2>Configuration</h2><div class="tw"><table><thead><tr><th>Command</th><th>What it does</th></tr></thead><tbody><tr><td><code>show all;</code></td><td>Shows every RMAN configuration setting (retention policy, channels, autobackup, …)</td></tr></tbody></table></div>
+
+<h2>Listing Backups</h2><div class="tw"><table><thead><tr><th>Command</th><th>What it does</th></tr></thead><tbody><tr><td><code>list backup;</code></td><td>All backups: data files, control file, spfile and archived logs, in detail</td></tr><tr><td><code>list backup summary;</code></td><td>The same as a one-line-per-backup table</td></tr><tr><td><code>list backup completed before &#x27;sysdate-1&#x27;;</code></td><td>Backups older than 24 hours</td></tr><tr><td><code>list backup summary completed before &#x27;sysdate-1&#x27;;</code></td><td>Summary of backups older than 24 hours</td></tr><tr><td><code>list backup of database;</code></td><td>Database (data file) backups only</td></tr><tr><td><code>list backup of database summary completed before &#x27;sysdate-1&#x27;;</code></td><td>Summary of database backups older than 24 hours</td></tr><tr><td><code>list backup tag &#x27;TAG20230225T200006&#x27;;</code></td><td>Backups with a specific tag</td></tr><tr><td><code>list backup summary tag &#x27;TAG20230225T200006&#x27;;</code></td><td>Summary for one tag</td></tr><tr><td><code>list backup tag like &#x27;%TAG2023022%&#x27;;</code></td><td>Tags matching a pattern</td></tr><tr><td><code>list backupset;</code></td><td>All backup sets</td></tr><tr><td><code>list backupset summary;</code></td><td>Summary of all backup sets</td></tr><tr><td><code>list backuppiece &#x27;/u01/backup/c-2972374659-20230301-00&#x27;;</code></td><td>One specific backup piece</td></tr></tbody></table></div>
+
+<h2>Listing Backups of Specific Files</h2><div class="tw"><table><thead><tr><th>Command</th><th>What it does</th></tr></thead><tbody><tr><td><code>list backup of datafile 1;</code></td><td>Backups of data file 1</td></tr><tr><td><code>list backup of datafile 1,2 summary;</code></td><td>Summary for several data files</td></tr><tr><td><code>list backup of tablespace system;</code></td><td>Backups of a tablespace</td></tr><tr><td><code>list backup of tablespace system,sysaux summary;</code></td><td>Summary for several tablespaces</td></tr><tr><td><code>list backup of controlfile;</code></td><td>Control file backups</td></tr><tr><td><code>list backup of controlfile summary;</code></td><td>Summary of control file backups</td></tr><tr><td><code>list backup of spfile;</code></td><td>spfile backups</td></tr><tr><td><code>list backup of spfile summary;</code></td><td>Summary of spfile backups</td></tr></tbody></table></div>
+
+<h2>Archived Log Backups</h2><div class="tw"><table><thead><tr><th>Command</th><th>What it does</th></tr></thead><tbody><tr><td><code>list backup of archivelog all;</code></td><td>All archived log backups</td></tr><tr><td><code>list backup of archivelog all summary;</code></td><td>Summary of all archived log backups</td></tr><tr><td><code>list backup of archivelog sequence 192;</code></td><td>Backup of one log sequence</td></tr><tr><td><code>list backup of archivelog until sequence 192;</code></td><td>Logs up to and including sequence 192</td></tr><tr><td><code>list backup of archivelog from sequence 186;</code></td><td>Logs from sequence 186 onwards</td></tr><tr><td><code>list backup of archivelog sequence between 186 and 192;</code></td><td>Logs in a range</td></tr><tr><td><code>list backup of archivelog sequence between 186 and 192 summary;</code></td><td>The same range as a summary</td></tr></tbody></table></div>
+<p>Add <code>thread N</code> on RAC to pick a thread, e.g. <code>list backup of archivelog sequence 192 thread 2;</code></p>
+
+<h2>Other Lists and Reports</h2><div class="tw"><table><thead><tr><th>Command</th><th>What it does</th></tr></thead><tbody><tr><td><code>list incarnation;</code></td><td>Database incarnations (one per OPEN RESETLOGS)</td></tr><tr><td><code>list restore point all;</code></td><td>Restore points</td></tr><tr><td><code>list db_unique_name all;</code></td><td>Databases registered under this DBID (Data Guard; needs a recovery catalog)</td></tr><tr><td><code>list copy;</code></td><td>Image copies (data files, control file, archived logs)</td></tr><tr><td><code>report schema;</code></td><td>Data files and temp files with tablespaces and sizes</td></tr><tr><td><code>report need backup;</code></td><td>Files that need a backup to meet the retention policy</td></tr><tr><td><code>report obsolete;</code></td><td>Backups no longer needed under the retention policy</td></tr></tbody></table></div>
+
+<h2>Crosscheck</h2><div class="tw"><table><thead><tr><th>Command</th><th>What it does</th></tr></thead><tbody><tr><td><code>crosscheck backup;</code></td><td>Checks that every recorded backup piece still exists; marks missing ones EXPIRED</td></tr><tr><td><code>crosscheck backupset;</code></td><td>The same, for backup sets</td></tr><tr><td><code>crosscheck backuppiece &#x27;/u01/backup/c-2972374659-20230225-04&#x27;;</code></td><td>One backup piece</td></tr><tr><td><code>crosscheck archivelog all;</code></td><td>Checks archived logs on disk</td></tr><tr><td><code>crosscheck archivelog sequence 180;</code></td><td>One log sequence</td></tr><tr><td><code>crosscheck archivelog sequence between 180 and 196;</code></td><td>A range</td></tr><tr><td><code>crosscheck archivelog until sequence 196;</code></td><td>Up to a sequence</td></tr><tr><td><code>crosscheck archivelog from sequence 180 until sequence 196;</code></td><td>From one sequence to another</td></tr><tr><td><code>crosscheck copy;</code></td><td>Image copies</td></tr></tbody></table></div>
+
+<h2>Delete</h2><div class="tw"><table><thead><tr><th>Command</th><th>What it does</th></tr></thead><tbody><tr><td><code>delete expired backup;</code></td><td>Removes repository records for backups that crosscheck marked EXPIRED</td></tr><tr><td><code>delete obsolete;</code></td><td>Deletes backups no longer needed under the retention policy</td></tr><tr><td><code>delete archivelog all;</code></td><td>Deletes all archived logs (files and records) — asks first</td></tr><tr><td><code>delete noprompt archivelog all;</code></td><td>The same without asking</td></tr><tr><td><code>delete archivelog sequence 180;</code></td><td>One sequence</td></tr><tr><td><code>delete archivelog until sequence 190;</code></td><td>Up to and including a sequence</td></tr><tr><td><code>delete archivelog from sequence 180 until sequence 190;</code></td><td>A range</td></tr><tr><td><code>delete archivelog all backed up 1 times to device type disk;</code></td><td>Only logs that already have a backup — the safe way to clean up</td></tr><tr><td><code>delete archivelog all completed before &#x27;sysdate-2&#x27;;</code></td><td>Logs older than two days</td></tr></tbody></table></div>
+<div class="warn"><code>delete archivelog all</code> deletes logs whether or not they've been backed up (or applied on a standby). Set a deletion policy so RMAN refuses to delete logs that are still needed: <code>CONFIGURE ARCHIVELOG DELETION POLICY TO BACKED UP 1 TIMES TO DISK;</code> (or <code>… APPLIED ON ALL STANDBY</code> with Data Guard).</div>
+
+<h2>Catalog Existing Files</h2><div class="tw"><table><thead><tr><th>Command</th><th>What it does</th></tr></thead><tbody><tr><td><code>catalog start with &#x27;/u01/backup/&#x27;;</code></td><td>Registers backup pieces and copies found under a directory — asks before cataloging</td></tr><tr><td><code>catalog start with &#x27;/u01/backup/&#x27; noprompt;</code></td><td>The same without asking</td></tr><tr><td><code>catalog recovery area;</code></td><td>Catalogs everything in the fast recovery area (same as <code>catalog db_recovery_file_dest;</code>)</td></tr><tr><td><code>catalog backuppiece &#x27;/u01/backup/piece1.bkp&#x27;;</code></td><td>One specific backup piece</td></tr></tbody></table></div>
+<p>Cataloging is how you make RMAN aware of backups copied in from another server, for example when building a standby or restoring to a new host.</p>
+<p style="margin-top:1.4em">More: <a href="../rman-commands/rman-commands.html">RMAN BACKUP command reference and examples</a></p>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>
