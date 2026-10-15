@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Install VMware ESXi 7</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#1d6fa5;--accent-soft:#e8f2f9;--accent-ink:#155a87;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.06em;margin:1.6em 0 .4em;padding-left:.6em;border-left:4px solid var(--accent)}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.85em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em;overflow-wrap:normal}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post .tw{overflow-x:auto;margin:.8em 0}
+.tsn-post table{width:100%;border-collapse:collapse;font-size:.93em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.3em 0}
+.tsn-post .lab{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin:1em 0}
+.tsn-post .lab div{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:#fff;font-size:.9em}
+.tsn-post .lab b{display:block;color:var(--accent-ink);font-size:.82em;text-transform:uppercase;letter-spacing:.05em}
+.tsn-post .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:.8em 0}
+.tsn-post .flow span{background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:.88em;font-weight:600}
+.tsn-post .flow b{color:var(--accent)}
+.tsn-post .shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px;margin:.8em 0 1.2em;align-items:start}
+.tsn-post .shots.one{grid-template-columns:1fr}
+.tsn-post .shots figure{margin:0}
+.tsn-post .shots img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:8px;background:#fff;transition:box-shadow .15s ease}
+.tsn-post .shots a:hover img{box-shadow:0 4px 14px rgba(0,0,0,.14)}
+.tsn-post .shots.one img{max-width:100%;width:auto;margin:0 auto}
+.tsn-post .cap{color:var(--muted);font-size:.85em;margin-top:-.6em}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:var(--accent-ink)}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
+
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .check{list-style:none;padding:0;counter-reset:c}
+.tsn-post .check>li{position:relative;padding-left:2.4em;margin:.7em 0}
+.tsn-post .check>li::before{counter-increment:c;content:counter(c);position:absolute;left:0;top:.1em;width:1.7em;height:1.7em;line-height:1.7em;text-align:center;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:.85em}
+
+.tsn-post details{margin:.6em 0 1.2em}
+.tsn-post summary{cursor:pointer;color:var(--accent-ink);font-weight:600;font-size:.95em}
+.tsn-post .code pre.tall{max-height:640px;overflow:auto}
+</style>
+
+<h1>How to Install VMware ESXi 7: Step-by-Step Guide for Beginners</h1>
+<div class="meta">By Sunke Nithin · May 4, 2025 &nbsp; <span class="tag">Virtualization</span><span class="tag">Vmware</span><span class="tag">Installation</span></div>
+<p class="lead"><strong>VMware ESXi</strong> is a bare-metal hypervisor: it installs directly on the server and runs virtual machines. Here's a complete ESXi 7.0 installation — installer, management network, web client, licence and a datastore.</p>
+
+<h2>Prerequisites</h2>
+<ul>
+<li>A server with a supported 64-bit CPU and <strong>Intel VT-x/AMD-V</strong> enabled in the BIOS</li>
+<li>At least 2 CPU cores and 8 GB RAM (4 GB is the bare minimum to install; you need more to run VMs)</li>
+<li>A boot device of at least 32 GB (SSD recommended — ESXi 7 no longer recommends SD cards or small USB sticks as boot media)</li>
+<li>The ESXi 7 ISO (Broadcom support portal) and a USB stick for the installer, written with Rufus or balenaEtcher</li>
+<li>A static IP, hostname and DNS server for the host</li>
+</ul>
+<div class="note">Check the <a href="https://compatibilityguide.broadcom.com/">compatibility guide</a> — consumer NICs and storage controllers often lack ESXi drivers. Note also that Broadcom ended the free ESXi licence in 2024; the 60-day evaluation still works for a lab.</div>
+
+<h2><span class="num">1</span>Boot the Installer</h2>
+<p>Boot the server from the USB stick (or the ISO for a nested lab VM). The installer loads:</p>
+<div class="shots"><figure><a href="images/image.png" target="_blank" rel="noopener"><img src="images/image.png" alt="ESXi installer loading modules" loading="lazy"></a></figure><figure><a href="images/image-1.png" target="_blank" rel="noopener"><img src="images/image-1.png" alt="ESXi 7.0.0 installer starting, build 16324942" loading="lazy"></a></figure></div>
+
+<h2><span class="num">2</span>Install</h2>
+<p>Press <kbd>Enter</kbd> on the welcome screen and <kbd>F11</kbd> to accept the EULA:</p>
+<div class="shots"><figure><a href="images/image-2.png" target="_blank" rel="noopener"><img src="images/image-2.png" alt="Welcome to the VMware ESXi 7.0.0 Installation" loading="lazy"></a></figure><figure><a href="images/image-6.png" target="_blank" rel="noopener"><img src="images/image-6.png" alt="End User License Agreement" loading="lazy"></a></figure></div>
+<p>Select the disk to install to, then the keyboard layout:</p>
+<div class="shots"><figure><a href="images/image-8.png" target="_blank" rel="noopener"><img src="images/image-8.png" alt="Select a disk: 150 GB local VMware virtual disk" loading="lazy"></a></figure><figure><a href="images/image-11.png" target="_blank" rel="noopener"><img src="images/image-11.png" alt="Keyboard layout: US Default" loading="lazy"></a></figure></div>
+<p>Set the root password, confirm with <kbd>F11</kbd> (the disk is repartitioned), and wait:</p>
+<div class="shots"><figure><a href="images/image-12.png" target="_blank" rel="noopener"><img src="images/image-12.png" alt="Enter a root password" loading="lazy"></a></figure><figure><a href="images/image-14.png" target="_blank" rel="noopener"><img src="images/image-14.png" alt="Confirm Install: disk will be repartitioned" loading="lazy"></a></figure></div>
+<div class="shots"><figure><a href="images/image-16.png" target="_blank" rel="noopener"><img src="images/image-16.png" alt="Installing ESXi 7.0.0" loading="lazy"></a></figure><figure><a href="images/image-18.png" target="_blank" rel="noopener"><img src="images/image-18.png" alt="Installation complete: remove the installation media before rebooting" loading="lazy"></a></figure></div>
+<p>Remove the installation media and press <kbd>Enter</kbd> to reboot.</p>
+
+<h2><span class="num">3</span>Configure the Management Network (DCUI)</h2>
+<p>After the reboot the yellow-and-grey DCUI shows the DHCP address. Press <kbd>F2</kbd> and log in as root:</p>
+<div class="shots"><figure><a href="images/image-24.png" target="_blank" rel="noopener"><img src="images/image-24.png" alt="DCUI: manage this host at https://192.168.1.100/ (DHCP)" loading="lazy"></a></figure><figure><a href="images/image-25.png" target="_blank" rel="noopener"><img src="images/image-25.png" alt="Authentication Required: root login" loading="lazy"></a></figure></div>
+<p><strong>Configure Management Network</strong> → <strong>IPv4 Configuration</strong> → <em>Set static IPv4 address</em>:</p>
+<div class="shots"><figure><a href="images/image-28.png" target="_blank" rel="noopener"><img src="images/image-28.png" alt="System Customization: Configure Management Network" loading="lazy"></a></figure><figure><a href="images/image-29.png" target="_blank" rel="noopener"><img src="images/image-29.png" alt="Configure Management Network: IPv4 Configuration" loading="lazy"></a></figure></div>
+<div class="shots"><figure><a href="images/image-30.png" target="_blank" rel="noopener"><img src="images/image-30.png" alt="Static IPv4: 192.168.1.100, 255.255.255.0, gateway 192.168.1.1" loading="lazy"></a></figure><figure><a href="images/image-31.png" target="_blank" rel="noopener"><img src="images/image-31.png" alt="DNS Configuration: primary DNS 192.168.1.10, hostname vmesxi7.scslabs.com" loading="lazy"></a></figure></div>
+<p><strong>DNS Configuration</strong> — DNS server and FQDN. Press <kbd>Esc</kbd> and confirm with <kbd>Y</kbd> to apply and restart the management network:</p>
+<div class="shots one"><figure><a href="images/image-32.png" target="_blank" rel="noopener"><img src="images/image-32.png" alt="Apply changes and restart management network? Y" loading="lazy"></a></figure></div>
+
+<h2><span class="num">4</span>Log In to the Host Client</h2>
+<p>Browse to <code>https://192.168.1.100</code>, accept the certificate warning, and log in as root:</p>
+<div class="shots"><figure><a href="images/image-33.png" target="_blank" rel="noopener"><img src="images/image-33.png" alt="Browser certificate warning for 192.168.1.100" loading="lazy"></a></figure><figure><a href="images/image-34.png" target="_blank" rel="noopener"><img src="images/image-34.png" alt="VMware ESXi host client login" loading="lazy"></a></figure></div>
+<div class="shots one"><figure><a href="images/image-35.png" target="_blank" rel="noopener"><img src="images/image-35.png" alt="ESXi host client with the CEIP prompt" loading="lazy"></a></figure></div>
+
+<h2><span class="num">5</span>Assign a Licence</h2>
+<p><strong>Manage → Licensing → Assign license</strong>, enter the key, <strong>Check license</strong>, then <strong>Assign</strong> (key hidden below):</p>
+<div class="shots"><figure><a href="images/image-37.png" target="_blank" rel="noopener"><img src="images/image-37.png" alt="Manage, Licensing: Evaluation Mode, Assign license" loading="lazy"></a></figure><figure><a href="images/image-38.png" target="_blank" rel="noopener"><img src="images/image-38.png" alt="Assign license dialog (key hidden)" loading="lazy"></a></figure></div>
+<div class="shots one"><figure><a href="images/image-39.png" target="_blank" rel="noopener"><img src="images/image-39.png" alt="License key is valid for VMware vSphere 7 Enterprise Plus (key hidden)" loading="lazy"></a></figure></div>
+
+<h2><span class="num">6</span>Create a Datastore</h2>
+<p><strong>Storage → New datastore</strong> → <em>Create new VMFS datastore</em>, name it and pick an unused disk:</p>
+<div class="shots"><figure><a href="images/image-40.png" target="_blank" rel="noopener"><img src="images/image-40.png" alt="Storage: New datastore" loading="lazy"></a></figure><figure><a href="images/image-41.png" target="_blank" rel="noopener"><img src="images/image-41.png" alt="New datastore: Create new VMFS datastore" loading="lazy"></a></figure></div>
+<div class="shots"><figure><a href="images/image-42.png" target="_blank" rel="noopener"><img src="images/image-42.png" alt="Name VMSTORE, select the 500 GB local disk" loading="lazy"></a></figure><figure><a href="images/image-43.png" target="_blank" rel="noopener"><img src="images/image-43.png" alt="Use full disk, VMFS 6" loading="lazy"></a></figure></div>
+<div class="shots"><figure><a href="images/image-44.png" target="_blank" rel="noopener"><img src="images/image-44.png" alt="Ready to complete" loading="lazy"></a></figure><figure><a href="images/image-45.png" target="_blank" rel="noopener"><img src="images/image-45.png" alt="Warning: the disk contents will be erased, Yes" loading="lazy"></a></figure></div>
+<div class="shots one"><figure><a href="images/image-46.png" target="_blank" rel="noopener"><img src="images/image-46.png" alt="Datastores: datastore1 and VMSTORE (499.75 GB)" loading="lazy"></a></figure></div>
+<p>The host is ready for virtual machines. Next: <a href="../how-to-install-vcenter-server-7-vcsa-step-by-step-guide/how-to-install-vcenter-server-7-vcsa-step-by-step-guide.html">Install vCenter Server 7</a>.</p>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SQL Server 2016 to Oracle 19c Migration</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#c74634;--accent-soft:#fdf1ef;--accent-ink:#a3372a;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.06em;margin:1.6em 0 .4em;padding-left:.6em;border-left:4px solid var(--accent)}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.85em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em;overflow-wrap:normal}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post .tw{overflow-x:auto;margin:.8em 0}
+.tsn-post table{width:100%;border-collapse:collapse;font-size:.93em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.3em 0}
+.tsn-post .lab{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin:1em 0}
+.tsn-post .lab div{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:#fff;font-size:.9em}
+.tsn-post .lab b{display:block;color:var(--accent-ink);font-size:.82em;text-transform:uppercase;letter-spacing:.05em}
+.tsn-post .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:.8em 0}
+.tsn-post .flow span{background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:.88em;font-weight:600}
+.tsn-post .flow b{color:var(--accent)}
+.tsn-post .shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px;margin:.8em 0 1.2em;align-items:start}
+.tsn-post .shots.one{grid-template-columns:1fr}
+.tsn-post .shots figure{margin:0}
+.tsn-post .shots img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:8px;background:#fff;transition:box-shadow .15s ease}
+.tsn-post .shots a:hover img{box-shadow:0 4px 14px rgba(0,0,0,.14)}
+.tsn-post .shots.one img{max-width:100%;width:auto;margin:0 auto}
+.tsn-post .cap{color:var(--muted);font-size:.85em;margin-top:-.6em}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:var(--accent-ink)}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
+
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .check{list-style:none;padding:0;counter-reset:c}
+.tsn-post .check>li{position:relative;padding-left:2.4em;margin:.7em 0}
+.tsn-post .check>li::before{counter-increment:c;content:counter(c);position:absolute;left:0;top:.1em;width:1.7em;height:1.7em;line-height:1.7em;text-align:center;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:.85em}
+
+.tsn-post details{margin:.6em 0 1.2em}
+.tsn-post summary{cursor:pointer;color:var(--accent-ink);font-weight:600;font-size:.95em}
+.tsn-post .code pre.tall{max-height:640px;overflow:auto}
+</style>
+
+<h1>How to Migrate a SQL Server 2016 Database to Oracle 19c Using SQL Developer</h1>
+<div class="meta">By Sunke Nithin · April 11, 2025 &nbsp; <span class="tag">Database</span><span class="tag">Oracle</span><span class="tag">MSSQL</span><span class="tag">Migration</span></div>
+<p class="lead">Oracle SQL Developer's <strong>Migration Wizard</strong> moves a whole SQL Server database to Oracle: it captures the source model, converts data types, translates T-SQL objects to PL/SQL, generates the Oracle schema and moves the data. Here I migrate a small SQL Server 2016 database, <code>imagedb</code>, into an Oracle 19c PDB.</p>
+
+<div class="tw"><table><thead><tr><th>Component</th><th>Detail</th></tr></thead><tbody><tr><td>Source</td><td>SQL Server 2016 (13.0.5026), database <code>imagedb</code></td></tr><tr><td>Target</td><td>Oracle Database 19c, PDB <code>ncdb</code></td></tr><tr><td>Tool</td><td>Oracle SQL Developer (latest), on Windows</td></tr><tr><td>Driver</td><td>jTDS JDBC driver (<code>jtds-1.3.1.jar</code>)</td></tr><tr><td>Accounts</td><td>SQL Server login with read access; an Oracle DBA account for the target</td></tr></tbody></table></div>
+<div class="note">For copying just one table, the right-click <strong>Copy To Oracle</strong> is quicker — see <a href="../migrating-a-table-from-sql-server-to-oracle-using-sql-developer/migrating-a-table-from-sql-server-to-oracle-using-sql-developer.html">Migrating a table from SQL Server to Oracle</a>.</div>
+
+<h2><span class="num">1</span>Sample Source Data</h2>
+<p>A table holding images as binary data, with 11 rows:</p>
+<div class="shots"><figure><a href="images/image-274.png" target="_blank" rel="noopener"><img src="images/image-274.png" alt="T-SQL creating dbo.ImageStore and loading 11 images with OPENROWSET BULK" loading="lazy"></a></figure><figure><a href="images/image-276.png" target="_blank" rel="noopener"><img src="images/image-276.png" alt="SELECT from imagedb.dbo.ImageStore: 11 rows" loading="lazy"></a></figure></div>
+
+<h2><span class="num">2</span>Add the jTDS Driver</h2>
+<p><strong>Tools → Preferences → Database → Third Party JDBC Drivers → Add Entry</strong>, select <code>jtds-1.3.1.jar</code> (from SourceForge), and restart SQL Developer:</p>
+<div class="shots"><figure><a href="images/image-224.png" target="_blank" rel="noopener"><img src="images/image-224.png" alt="SQL Developer Tools menu: Preferences" loading="lazy"></a></figure><figure><a href="images/image-226.png" target="_blank" rel="noopener"><img src="images/image-226.png" alt="SourceForge: jTDS SQL Server and Sybase JDBC driver" loading="lazy"></a></figure></div>
+<div class="shots"><figure><a href="images/image-228.png" target="_blank" rel="noopener"><img src="images/image-228.png" alt="Third Party JDBC Drivers: jtds-1.3.1.jar added" loading="lazy"></a></figure><figure><a href="images/image-230.png" target="_blank" rel="noopener"><img src="images/image-230.png" alt="New connection: Database Type now includes SQLServer" loading="lazy"></a></figure></div>
+
+<h2><span class="num">3</span>Connect to SQL Server</h2>
+<p>Create a connection of type <strong>SQLServer</strong>: host, port 1433, login, then <strong>Retrieve database</strong> and choose the database. (TCP/IP must be enabled in SQL Server Configuration Manager.)</p>
+<div class="shots"><figure><a href="images/image-232.png" target="_blank" rel="noopener"><img src="images/image-232.png" alt="SQL Server connection: user sa, host 192.168.1.27, port 1433, database imagedb" loading="lazy"></a></figure><figure><a href="images/image-234.png" target="_blank" rel="noopener"><img src="images/image-234.png" alt="SQL Server connection browsing imagedb.dbo.ImageStore columns" loading="lazy"></a></figure></div>
+
+<h2><span class="num">4</span>Create the Migration Repository</h2>
+<div class="code"><span class="lbl">SQL</span><pre><code>-- in the target PDB, as a DBA
+CREATE USER mig_repo_schema IDENTIFIED BY &quot;&lt;password&gt;&quot;
+  DEFAULT TABLESPACE users QUOTA UNLIMITED ON users;
+GRANT CONNECT, RESOURCE, CREATE SESSION, CREATE VIEW, CREATE MATERIALIZED VIEW
+   TO mig_repo_schema;</code></pre></div>
+<p>Connect as that user, then <strong>Tools → Migration → Repository Management → Create Repository</strong>:</p>
+<div class="shots"><figure><a href="images/image-237.png" target="_blank" rel="noopener"><img src="images/image-237.png" alt="Tools, Migration, Repository Management, Create Repository" loading="lazy"></a></figure><figure><a href="images/image-239.png" target="_blank" rel="noopener"><img src="images/image-239.png" alt="Create Repository in o19tc_mig_repo_schema" loading="lazy"></a></figure></div>
+<div class="shots"><figure><a href="images/image-241.png" target="_blank" rel="noopener"><img src="images/image-241.png" alt="Installing Repository progress" loading="lazy"></a></figure><figure><a href="images/image-243.png" target="_blank" rel="noopener"><img src="images/image-243.png" alt="Migration repository associated with o19tc_mig_repo_schema" loading="lazy"></a></figure></div>
+
+<h2><span class="num">5</span>Run the Migration Wizard</h2>
+<p>Right-click the SQL Server database and choose <strong>Migrate To Oracle</strong>:</p>
+<div class="shots"><figure><a href="images/image-244.png" target="_blank" rel="noopener"><img src="images/image-244.png" alt="Right-click imagedb under SQLServer Connections: Migrate To Oracle" loading="lazy"></a></figure><figure><a href="images/image-245.png" target="_blank" rel="noopener"><img src="images/image-245.png" alt="Migration Wizard step 1: Introduction" loading="lazy"></a></figure></div>
+<p>Choose the repository, then a project name and an output directory for the generated scripts:</p>
+<div class="shots"><figure><a href="images/image-246.png" target="_blank" rel="noopener"><img src="images/image-246.png" alt="Step 2: Repository connection o19tc_mig_repo_schema" loading="lazy"></a></figure><figure><a href="images/image-248.png" target="_blank" rel="noopener"><img src="images/image-248.png" alt="Step 3: Project MIG_TEST1 with output directory" loading="lazy"></a></figure></div>
+<p>Pick the source connection (online mode) and the database to capture:</p>
+<div class="shots"><figure><a href="images/image-250.png" target="_blank" rel="noopener"><img src="images/image-250.png" alt="Step 4: Source database connection image, online mode" loading="lazy"></a></figure><figure><a href="images/image-252.png" target="_blank" rel="noopener"><img src="images/image-252.png" alt="Step 5: Capture imagedb" loading="lazy"></a></figure></div>
+<p>Review the data type mappings — e.g. <code>IMAGE</code> → <code>BLOB</code>, <code>DATETIME</code> → <code>DATE</code>, <code>INT</code> → <code>NUMBER(10,0)</code> — and the object types to translate:</p>
+<div class="shots"><figure><a href="images/image-253.png" target="_blank" rel="noopener"><img src="images/image-253.png" alt="Step 6: Convert, data type mappings (IMAGE to BLOB, INT to NUMBER(10,0), DATETIME to DATE)" loading="lazy"></a></figure><figure><a href="images/image-255.png" target="_blank" rel="noopener"><img src="images/image-255.png" alt="Step 7: Translate constraints, functions, procedures, triggers and views" loading="lazy"></a></figure></div>
+<p>Choose the target connection (I used <code>SYSTEM</code> on the PDB, because the wizard creates a new user for the schema) and the data move connections:</p>
+<div class="shots"><figure><a href="images/image-256.png" target="_blank" rel="noopener"><img src="images/image-256.png" alt="Step 8: Target database connection o19tc_system_ncdb, online" loading="lazy"></a></figure><figure><a href="images/image-258.png" target="_blank" rel="noopener"><img src="images/image-258.png" alt="Step 9: Move Data online from image to o19tc_system_ncdb" loading="lazy"></a></figure></div>
+<div class="shots"><figure><a href="images/image-260.png" target="_blank" rel="noopener"><img src="images/image-260.png" alt="Step 10: Summary" loading="lazy"></a></figure><figure><a href="images/image-262.png" target="_blank" rel="noopener"><img src="images/image-262.png" alt="Database Migration running" loading="lazy"></a></figure></div>
+<div class="note"><strong>Online</strong> mode moves the data directly over JDBC — fine for small databases. For large ones, choose <strong>offline</strong>: the wizard generates scripts that export with BCP and load with SQL*Loader.</div>
+
+<h2><span class="num">6</span>Check the Result</h2>
+<div class="shots"><figure><a href="images/image-263.png" target="_blank" rel="noopener"><img src="images/image-263.png" alt="Migration actions have completed successfully" loading="lazy"></a></figure><figure><a href="images/image-264.png" target="_blank" rel="noopener"><img src="images/image-264.png" alt="Migration projects panel showing capture, convert, generate and data move complete" loading="lazy"></a></figure></div>
+<p>The wizard created a user named after the source database — <code>IMAGEDB</code> — expired and locked. Unlock it and set a password:</p>
+<div class="shots"><figure><a href="images/image-266.png" target="_blank" rel="noopener"><img src="images/image-266.png" alt="DBA Users: new IMAGEDB user, expired and locked" loading="lazy"></a></figure><figure><a href="images/image-268.png" target="_blank" rel="noopener"><img src="images/image-268.png" alt="IMAGEDB user actions: Edit" loading="lazy"></a></figure></div>
+<div class="shots"><figure><a href="images/image-270.png" target="_blank" rel="noopener"><img src="images/image-270.png" alt="Edit User: set a new password and unlock the account" loading="lazy"></a></figure><figure><a href="images/image-272.png" target="_blank" rel="noopener"><img src="images/image-272.png" alt="IMAGEDB account now OPEN" loading="lazy"></a></figure></div>
+<div class="code"><span class="lbl">SQL</span><pre><code>ALTER USER imagedb IDENTIFIED BY &quot;&lt;password&gt;&quot; ACCOUNT UNLOCK;
+
+-- compare with SQL Server: SELECT COUNT(*), SUM(DATALENGTH(ImageData)) FROM dbo.ImageStore;
+SELECT COUNT(*), SUM(DBMS_LOB.GETLENGTH(imagedata)) FROM imagedb.imagestore;
+
+EXEC DBMS_STATS.GATHER_SCHEMA_STATS(&#x27;IMAGEDB&#x27;);</code></pre></div>
+<p>Connect as the new user and check the data — all 11 rows arrived:</p>
+<div class="shots"><figure><a href="images/image-278.png" target="_blank" rel="noopener"><img src="images/image-278.png" alt="New connection o19tc_imagedb_ncdb as imagedb to service ncdb" loading="lazy"></a></figure><figure><a href="images/image-280.png" target="_blank" rel="noopener"><img src="images/image-280.png" alt="IMAGESTORE in the IMAGEDB schema with 11 rows of BLOB data" loading="lazy"></a></figure></div>
+
+<h2>Tips</h2>
+<ul>
+<li>Run the migration in a test environment first and review the generated scripts.</li>
+<li>Check translated procedures and triggers carefully — T-SQL to PL/SQL translation is never 100%.</li>
+<li>For large databases, migrate in parts and use offline data movement.</li>
+<li>Make sure you're licensed for both products in production.</li>
+</ul>
+<p style="margin-top:1.4em">Related: <a href="../how-to-install-microsoft-sql-server-2016-on-windows-server-2016/how-to-install-microsoft-sql-server-2016-on-windows-server-2016.html">Install SQL Server 2016</a></p>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>
