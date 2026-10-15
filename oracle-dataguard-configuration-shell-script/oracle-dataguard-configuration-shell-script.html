@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Guard Configuration Shell Script</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#c74634;--accent-soft:#fdf1ef;--accent-ink:#a3372a;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.06em;margin:1.6em 0 .4em;padding-left:.6em;border-left:4px solid var(--accent)}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.85em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em;overflow-wrap:normal}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post .tw{overflow-x:auto;margin:.8em 0}
+.tsn-post table{width:100%;border-collapse:collapse;font-size:.93em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.3em 0}
+.tsn-post .lab{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin:1em 0}
+.tsn-post .lab div{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:#fff;font-size:.9em}
+.tsn-post .lab b{display:block;color:var(--accent-ink);font-size:.82em;text-transform:uppercase;letter-spacing:.05em}
+.tsn-post .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:.8em 0}
+.tsn-post .flow span{background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:.88em;font-weight:600}
+.tsn-post .flow b{color:var(--accent)}
+.tsn-post .shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px;margin:.8em 0 1.2em;align-items:start}
+.tsn-post .shots.one{grid-template-columns:1fr}
+.tsn-post .shots figure{margin:0}
+.tsn-post .shots img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:8px;background:#fff;transition:box-shadow .15s ease}
+.tsn-post .shots a:hover img{box-shadow:0 4px 14px rgba(0,0,0,.14)}
+.tsn-post .shots.one img{max-width:100%;width:auto;margin:0 auto}
+.tsn-post .cap{color:var(--muted);font-size:.85em;margin-top:-.6em}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:var(--accent-ink)}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
+
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .check{list-style:none;padding:0;counter-reset:c}
+.tsn-post .check>li{position:relative;padding-left:2.4em;margin:.7em 0}
+.tsn-post .check>li::before{counter-increment:c;content:counter(c);position:absolute;left:0;top:.1em;width:1.7em;height:1.7em;line-height:1.7em;text-align:center;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:.85em}
+
+.tsn-post details{margin:.6em 0 1.2em}
+.tsn-post summary{cursor:pointer;color:var(--accent-ink);font-weight:600;font-size:.95em}
+.tsn-post .code pre.tall{max-height:640px;overflow:auto}
+</style>
+
+<h1>Oracle Data Guard Configuration Shell Script</h1>
+<div class="meta">By Sunke Nithin · July 9, 2019 &nbsp; <span class="tag">Database</span><span class="tag">Scripts</span></div>
+
+<p class="lead">A bash script that builds a <strong>physical standby database</strong> end to end from the primary server: it checks ARCHIVELOG and FORCE LOGGING, sets the Data Guard parameters, configures the standby listener and TNS entries over ssh, creates standby redo logs, runs <strong>RMAN <code>DUPLICATE … FOR STANDBY FROM ACTIVE DATABASE</code></strong>, and starts managed recovery. It was written for 11.2.0.4 but works the same on 12c–19c (non-CDB).</p>
+
+<h2>What the Script Does</h2>
+<div class="tw"><table><thead><tr><th>Step</th><th>What happens</th></tr></thead><tbody><tr><td>1</td><td>Checks it runs as <code>oracle</code> and isn't already running (run-flag file)</td></tr><tr><td>2</td><td>Logs in to the primary as SYSDBA to test the credentials</td></tr><tr><td>3</td><td>Enables ARCHIVELOG mode and FORCE LOGGING if needed (asks first — ARCHIVELOG needs a restart)</td></tr><tr><td>4</td><td>Sets <code>LOG_ARCHIVE_CONFIG</code>, <code>LOG_ARCHIVE_DEST_2</code> (deferred), <code>FAL_SERVER</code> and <code>STANDBY_FILE_MANAGEMENT</code> on the primary</td></tr><tr><td>5</td><td>Creates the data file and FRA directories on the standby</td></tr><tr><td>6</td><td>Writes a <code>listener.ora</code> with a static entry for the standby, copies it over and starts the listener</td></tr><tr><td>7</td><td>Adds TNS entries for both databases on both servers and <code>tnsping</code>s them from each side</td></tr><tr><td>8</td><td>Adds standby redo logs on the primary, copies the password file, and starts the standby in NOMOUNT with a one-line pfile</td></tr><tr><td>9</td><td>Runs the RMAN active duplicate from the primary</td></tr><tr><td>10</td><td>Starts managed recovery with real-time apply, enables redo transport, switches a log</td></tr><tr><td>11</td><td>Scans its log for <code>ORA-</code>/<code>RMAN-</code> errors, removes old logs, and emails the result</td></tr></tbody></table></div>
+
+<h2>Prerequisites</h2>
+<div class="code"><span class="lbl">BASH</span><pre><code># on the primary, as oracle: passwordless ssh to the standby
+ssh-keygen -t rsa
+ssh-copy-id oracle@orclstdy01.snv.ind
+ssh oracle@orclstdy01.snv.ind hostname
+
+# on the standby: Oracle software installed in the same ORACLE_HOME path,
+# and an oratab entry so oraenv works
+echo &quot;sunkdev:/a01/oracle/11.2.0.4/db:N&quot; &gt;&gt; /etc/oratab</code></pre></div>
+<ul>
+<li>Oracle software installed on the standby at the same <code>ORACLE_HOME</code> path, and the same directory layout (the script uses <code>NOFILENAMECHECK</code>).</li>
+<li>Port 1521 open between the servers, and <code>mailx</code> configured if you want the emails.</li>
+<li>Edit the variables at the top: database names, host names, paths and redo log size (match your online redo logs).</li>
+</ul>
+
+<h2>Usage</h2>
+<div class="code"><span class="lbl">BASH</span><pre><code>chmod 700 build_standby.sh
+./build_standby.sh</code></pre></div>
+<p>The script stops and asks before each change to the primary. Don't leave the SYS password in the file — replace the <code>DBA_PASSWORD</code> line with <code>read -rsp "SYS password: " DBA_PASSWORD</code>, or use a wallet.</p>
+
+<h2>The Script</h2>
+<p>The full script is 442 lines. Click to expand; the copy button copies all of it.</p>
+<details><summary>Show build_standby.sh</summary>
+<div class="code"><span class="lbl">BASH</span><pre class="tall"><code>#!/bin/bash
+# +----------------------------------------------------------------------------+
+# | build_standby.sh                                                           |
+# | Creates a physical standby with RMAN active duplicate (Oracle 11.2+).     |
+# | Run on the PRIMARY server as the oracle OS user.                           |
+# +----------------------------------------------------------------------------+
+
+export ORACLE_SID=sunkdev
+ORAENV_ASK=NO
+. oraenv
+ORAENV_ASK=YES
+
+# +----------------------------------------------------------------------------+
+# | GLOBAL VARIABLES                                                           |
+# +----------------------------------------------------------------------------+
+SCRIPT_NAME_FULL=$0
+SCRIPT_NAME=${SCRIPT_NAME_FULL##*/}
+SCRIPT_NAME_NOEXT=${SCRIPT_NAME%%.sh}
+
+# ---- primary / standby ----
+PRIMARY_DB_NAME=sunkdev          # db_unique_name and TNS alias of the primary
+STANDBY_DB_NAME=sunksbdev        # db_unique_name and TNS alias of the standby
+DBA_USERNAME=SYS
+DBA_PASSWORD=&#x27;&lt;sys_password&gt;&#x27;    # better: read -s, or a wallet (see the post)
+PRIMARY_HOST_NAME=oradbdvl01.snv.ind
+STANDBY_HOST_NAME=orclstdy01.snv.ind
+STANDBY_SSH=oracle@${STANDBY_HOST_NAME}
+STANDBY_ORACLE_HOME=/a01/oracle/11.2.0.4/db   # same path as the primary home
+STANDBY_STAGE_DIR=/c01/standby                # scratch directory on the standby
+DATAFILE_DIR=/a01/oracle/oradata/${PRIMARY_DB_NAME}
+FRA_DIR=/a01/oracle/fast_recovery_area
+REDO_SIZE=50M                                 # must match the online redo log size
+
+# ---- directories ----
+ORACLE_BASE=/a01/oracle
+CUSTOM_ORACLE_DIR=/d01/scripts
+CUSTOM_ORACLE_LOG_DIR=${CUSTOM_ORACLE_DIR}/log
+CUSTOM_ORACLE_TEMP_DIR=${CUSTOM_ORACLE_DIR}/temp
+
+# ---- host / date ----
+HOSTNAME=$(hostname)
+HOSTNAME_SHORT=${HOSTNAME%%.*}
+HOSTNAME_SHORT_UPPER=$(echo &quot;$HOSTNAME_SHORT&quot; | tr &#x27;[:lower:]&#x27; &#x27;[:upper:]&#x27;)
+START_DATE=$(date)
+DATE_LOG=$(date +%Y-%m-%d-%H%M%S)
+
+# ---- email ----
+ORGANIZATION_NAME=&quot;Example&quot;
+MAIL_RECIPIENT_LIST_EXIT_SUCCESS=&quot;dba@example.com&quot;
+MAIL_RECIPIENT_LIST_EXIT_FAILED=&quot;dba@example.com&quot;
+MAIL_FROM=&quot;${ORGANIZATION_NAME} Database Support &lt;dba@example.com&gt;&quot;
+
+# ---- log / temp files ----
+LOG_FILE_NAME=${CUSTOM_ORACLE_LOG_DIR}/${SCRIPT_NAME_NOEXT}_${HOSTNAME_SHORT_UPPER}_${DATE_LOG}.log
+LOG_FILE_NAME_NODATE=${CUSTOM_ORACLE_LOG_DIR}/${SCRIPT_NAME_NOEXT}_${HOSTNAME_SHORT_UPPER}.log
+LOG_FILE_ARCHIVE_OBSOLETE_DAYS=8
+CHECK_SCRIPT_RUNNING_FLAG_FILE=${CUSTOM_ORACLE_TEMP_DIR}/${SCRIPT_NAME_NOEXT}_${HOSTNAME_SHORT_UPPER}.running
+SQL_OUTPUT_TEMP_FILE_NAME=${CUSTOM_ORACLE_TEMP_DIR}/${SCRIPT_NAME_NOEXT}_${HOSTNAME_SHORT_UPPER}.lst
+
+HOST_RVAL_SUCCESS=0
+HOST_RVAL_FAILED=1
+HIDE_PASSWORD_STRING=&quot;xxxxxxxxxxxxx&quot;
+
+mkdir -p &quot;$CUSTOM_ORACLE_LOG_DIR&quot; &quot;$CUSTOM_ORACLE_TEMP_DIR&quot;
+
+# +----------------------------------------------------------------------------+
+# | COMMON FUNCTIONS                                                           |
+# +----------------------------------------------------------------------------+
+function wl {
+  echo &quot;${1}&quot; &gt;&gt; &quot;${LOG_FILE_NAME}&quot;
+  echo &quot;${1}&quot;
+}
+
+function banner {
+  wl &quot; &quot;
+  wl &quot;+-------------------------------------------------------------------------+&quot;
+  wl &quot;| $(date &#x27;+%m/%d/%Y %H:%M:%S&#x27;)  ${1}&quot;
+  wl &quot;+-------------------------------------------------------------------------+&quot;
+}
+
+function askYesNo {             # askYesNo &quot;question&quot; -&gt; exits on n / empty
+  wl &quot;${1} (y/[n]):&quot;
+  read -r userResponse
+  if [[ -z ${userResponse} || ${userResponse} == [Nn] ]]; then
+    wl &quot;Exiting script as per user request. Good-bye!&quot;
+    removeScriptRunFlagFile
+    exit ${HOST_RVAL_SUCCESS}
+  fi
+}
+
+function removeScriptRunFlagFile {
+  rm -f &quot;${CHECK_SCRIPT_RUNNING_FLAG_FILE}&quot;
+  wl &quot;TRACE&gt; Removed script run flag file (${CHECK_SCRIPT_RUNNING_FLAG_FILE})&quot;
+}
+
+function sendEmail {            # sendEmail SEVERITY &quot;addr1 addr2&quot;
+  local L_SEVERITY=${1}
+  local L_EMAIL_ADDRESS
+  local SUBJECT=&quot;[${HOSTNAME_SHORT_UPPER}] - ${L_SEVERITY}: ${SCRIPT_NAME}&quot;
+  for L_EMAIL_ADDRESS in ${2}; do
+    echo &quot;See the attached log.&quot; | mailx -s &quot;${SUBJECT}&quot; -r &quot;${MAIL_FROM}&quot; -a &quot;${LOG_FILE_NAME}&quot; &quot;${L_EMAIL_ADDRESS}&quot;
+    wl &quot;TRACE&gt; Sent email to ${L_EMAIL_ADDRESS}&quot;
+  done
+}
+
+function finish {               # finish SUCCESSFUL|FAILED|RUNNING
+  local L_SEVERITY=${1}
+  wl &quot; &quot;
+  wl &quot;TRACE&gt; ${L_SEVERITY}&quot;
+  [[ ${L_SEVERITY} != &quot;RUNNING&quot; ]] &amp;&amp; removeScriptRunFlagFile
+  wl &quot;FINISH TIME: $(date)&quot;
+  cp -f &quot;${LOG_FILE_NAME}&quot; &quot;${LOG_FILE_NAME_NODATE}&quot;
+  if [[ ${L_SEVERITY} == &quot;SUCCESSFUL&quot; ]]; then
+    sendEmail &quot;SUCCESSFUL&quot; &quot;${MAIL_RECIPIENT_LIST_EXIT_SUCCESS}&quot;
+    exit ${HOST_RVAL_SUCCESS}
+  else
+    sendEmail &quot;FAILED&quot; &quot;${MAIL_RECIPIENT_LIST_EXIT_FAILED}&quot;
+    exit ${HOST_RVAL_FAILED}
+  fi
+}
+
+function checkScriptAlreadyRunning {
+  if [ -f &quot;${CHECK_SCRIPT_RUNNING_FLAG_FILE}&quot; ]; then
+    wl &quot;TRACE&gt; WARNING: ${SCRIPT_NAME} is already running on this host. Exiting.&quot;
+    finish &quot;RUNNING&quot;
+  fi
+  touch &quot;${CHECK_SCRIPT_RUNNING_FLAG_FILE}&quot;
+}
+
+function verifyOSUserLogin {
+  local L_UID
+  L_UID=$(id -un)
+  if [[ ${L_UID} != &quot;oracle&quot; ]]; then
+    wl &quot;TRACE&gt; Logged in as (${L_UID}). Run this script as the oracle OS user.&quot;
+    finish &quot;FAILED&quot;
+  fi
+}
+
+function verifyTNSConnectString {
+  wl &quot;TRACE&gt; tnsping ${1}&quot;
+  if ! &quot;$ORACLE_HOME/bin/tnsping&quot; &quot;${1}&quot; &gt;&gt; &quot;${LOG_FILE_NAME}&quot;; then
+    wl &quot;TRACE&gt; The TNS service name (${1}) IS NOT valid.&quot;
+    finish &quot;FAILED&quot;
+  fi
+  wl &quot;TRACE&gt; The TNS service name (${1}) IS valid.&quot;
+}
+
+function verifyDatabaseLoginCredentials {   # db user password SYSDBA|&quot;&quot;
+  local L_DB_NAME=${1} L_USER=${2} L_PWD=${3} L_PRIV=&quot;&quot;
+  [[ ${4} == &quot;SYSDBA&quot; ]] &amp;&amp; L_PRIV=&quot; AS SYSDBA&quot;
+  wl &quot;TRACE&gt; Test login (${L_USER}/${HIDE_PASSWORD_STRING}@${L_DB_NAME}${L_PRIV}).&quot;
+  &quot;$ORACLE_HOME/bin/sqlplus&quot; -s /nolog &gt; &quot;${SQL_OUTPUT_TEMP_FILE_NAME}&quot; &lt;&lt;EOF
+WHENEVER OSERROR EXIT 9
+WHENEVER SQLERROR EXIT SQL.SQLCODE
+CONNECT ${L_USER}/&quot;${L_PWD}&quot;@${L_DB_NAME}${L_PRIV}
+SET HEAD OFF
+SELECT &#x27;Logged in as &#x27; || lower(user) FROM dual;
+EOF
+  if grep -qE &#x27;ORA-|PLS-|SP2-&#x27; &quot;${SQL_OUTPUT_TEMP_FILE_NAME}&quot;; then
+    cat &quot;${SQL_OUTPUT_TEMP_FILE_NAME}&quot; | tee -a &quot;${LOG_FILE_NAME}&quot;
+    wl &quot;TRACE&gt; Database credentials for (${L_DB_NAME}${L_PRIV}) ARE NOT valid.&quot;
+    finish &quot;FAILED&quot;
+  fi
+  wl &quot;TRACE&gt; Database credentials for (${L_DB_NAME}${L_PRIV}) are valid.&quot;
+  rm -f &quot;${SQL_OUTPUT_TEMP_FILE_NAME}&quot;
+}
+
+function runSql {               # runSql &lt;&lt;&#x27;EOF&#x27; ... EOF   (local, as sysdba)
+  sqlplus -s / as sysdba | tee -a &quot;${LOG_FILE_NAME}&quot;
+}
+
+function sqlValue {             # sqlValue &quot;select ...&quot; -&gt; single value
+  sqlplus -s / as sysdba &lt;&lt;EOF | tr -d &#x27;[:space:]&#x27;
+set head off feedback off pagesize 0
+$1
+EOF
+}
+
+# +----------------------------------------------------------------------------+
+# | DATA GUARD FUNCTIONS                                                       |
+# +----------------------------------------------------------------------------+
+function archiveLogging {
+  local L_MODE
+  L_MODE=$(sqlValue &#x27;select log_mode from v$database;&#x27;)
+  if [[ ${L_MODE} == &quot;ARCHIVELOG&quot; ]]; then
+    wl &quot;Database is in ARCHIVELOG mode.&quot;
+    return
+  fi
+  wl &quot;Database is in NOARCHIVELOG mode.&quot;
+  askYesNo &quot;Enable ARCHIVELOG mode? This restarts the primary database&quot;
+  runSql &lt;&lt;&#x27;EOF&#x27;
+shutdown immediate
+startup mount
+alter database archivelog;
+alter database open;
+EOF
+  wl &quot;Database is now in $(sqlValue &#x27;select log_mode from v$database;&#x27;) mode.&quot;
+}
+
+function forceLogging {
+  if [[ $(sqlValue &#x27;select force_logging from v$database;&#x27;) == &quot;YES&quot; ]]; then
+    wl &quot;FORCE LOGGING is enabled.&quot;
+    return
+  fi
+  wl &quot;FORCE LOGGING is NOT enabled.&quot;
+  askYesNo &quot;Enable FORCE LOGGING on the primary database?&quot;
+  echo &#x27;ALTER DATABASE FORCE LOGGING;&#x27; | runSql
+}
+
+function initializationParams {
+  cat &gt; &quot;${CUSTOM_ORACLE_TEMP_DIR}/primary_config.sql&quot; &lt;&lt;EOF
+ALTER SYSTEM SET LOG_ARCHIVE_CONFIG=&#x27;DG_CONFIG=(${PRIMARY_DB_NAME},${STANDBY_DB_NAME})&#x27; SCOPE=BOTH;
+ALTER SYSTEM SET LOG_ARCHIVE_DEST_2=&#x27;SERVICE=${STANDBY_DB_NAME} ASYNC NOAFFIRM VALID_FOR=(ONLINE_LOGFILES,PRIMARY_ROLE) DB_UNIQUE_NAME=${STANDBY_DB_NAME}&#x27; SCOPE=BOTH;
+ALTER SYSTEM SET LOG_ARCHIVE_DEST_STATE_2=DEFER SCOPE=BOTH;
+ALTER SYSTEM SET FAL_SERVER=${STANDBY_DB_NAME} SCOPE=BOTH;
+ALTER SYSTEM SET STANDBY_FILE_MANAGEMENT=AUTO SCOPE=BOTH;
+ALTER SYSTEM SET REMOTE_LOGIN_PASSWORDFILE=EXCLUSIVE SCOPE=SPFILE;
+EOF
+  cat &quot;${CUSTOM_ORACLE_TEMP_DIR}/primary_config.sql&quot; | tee -a &quot;${LOG_FILE_NAME}&quot;
+  askYesNo &quot;Apply the parameters above to the primary database?&quot;
+  echo &quot;@${CUSTOM_ORACLE_TEMP_DIR}/primary_config.sql&quot; | runSql
+}
+
+function standbyDirectories {
+  ssh &quot;${STANDBY_SSH}&quot; &quot;mkdir -p ${DATAFILE_DIR} ${FRA_DIR}/${STANDBY_DB_NAME^^} ${STANDBY_STAGE_DIR} ${ORACLE_BASE}/admin/${PRIMARY_DB_NAME}/adump&quot; | tee -a &quot;${LOG_FILE_NAME}&quot;
+}
+
+function standbyListener {
+  # static registration so RMAN can connect to the NOMOUNT auxiliary instance
+  cat &gt; &quot;${CUSTOM_ORACLE_TEMP_DIR}/listener.ora&quot; &lt;&lt;EOF
+SID_LIST_LISTENER =
+  (SID_LIST =
+    (SID_DESC =
+      (GLOBAL_DBNAME = ${STANDBY_DB_NAME})
+      (ORACLE_HOME = ${STANDBY_ORACLE_HOME})
+      (SID_NAME = ${ORACLE_SID})
+    )
+  )
+
+LISTENER =
+  (DESCRIPTION_LIST =
+    (DESCRIPTION = (ADDRESS = (PROTOCOL = TCP)(HOST = ${STANDBY_HOST_NAME})(PORT = 1521)))
+    (DESCRIPTION = (ADDRESS = (PROTOCOL = IPC)(KEY = EXTPROC1521)))
+  )
+
+ADR_BASE_LISTENER = ${ORACLE_BASE}
+EOF
+  cat &quot;${CUSTOM_ORACLE_TEMP_DIR}/listener.ora&quot; | tee -a &quot;${LOG_FILE_NAME}&quot;
+  scp -p &quot;${CUSTOM_ORACLE_TEMP_DIR}/listener.ora&quot; &quot;${STANDBY_SSH}:${STANDBY_STAGE_DIR}/&quot;
+  ssh &quot;${STANDBY_SSH}&quot; bash -s &lt;&lt;EOF | tee -a &quot;${LOG_FILE_NAME}&quot;
+cp ${STANDBY_STAGE_DIR}/listener.ora ${STANDBY_ORACLE_HOME}/network/admin/listener.ora
+export ORACLE_HOME=${STANDBY_ORACLE_HOME}
+\$ORACLE_HOME/bin/lsnrctl stop  &gt;/dev/null 2&gt;&amp;1
+\$ORACLE_HOME/bin/lsnrctl start
+EOF
+}
+
+function tnsEntries {
+  cat &gt; &quot;${CUSTOM_ORACLE_TEMP_DIR}/tnsnames.ora&quot; &lt;&lt;EOF
+${PRIMARY_DB_NAME} =
+  (DESCRIPTION =
+    (ADDRESS = (PROTOCOL = TCP)(HOST = ${PRIMARY_HOST_NAME})(PORT = 1521))
+    (CONNECT_DATA = (SERVICE_NAME = ${PRIMARY_DB_NAME}))
+  )
+
+${STANDBY_DB_NAME} =
+  (DESCRIPTION =
+    (ADDRESS = (PROTOCOL = TCP)(HOST = ${STANDBY_HOST_NAME})(PORT = 1521))
+    (CONNECT_DATA = (SERVICE_NAME = ${STANDBY_DB_NAME})(UR = A))
+  )
+EOF
+  cat &quot;${CUSTOM_ORACLE_TEMP_DIR}/tnsnames.ora&quot; | tee -a &quot;${LOG_FILE_NAME}&quot;
+  # append only if the aliases are not there yet, so a re-run does not duplicate them
+  grep -qi &quot;^${STANDBY_DB_NAME} *=&quot; &quot;$ORACLE_HOME/network/admin/tnsnames.ora&quot; 2&gt;/dev/null || \
+    cat &quot;${CUSTOM_ORACLE_TEMP_DIR}/tnsnames.ora&quot; &gt;&gt; &quot;$ORACLE_HOME/network/admin/tnsnames.ora&quot;
+  # passwordless ssh is required: https://oracle-base.com/articles/linux/user-equivalence-configuration-on-linux
+  scp -p &quot;${CUSTOM_ORACLE_TEMP_DIR}/tnsnames.ora&quot; &quot;${STANDBY_SSH}:${STANDBY_STAGE_DIR}/&quot;
+  ssh &quot;${STANDBY_SSH}&quot; bash -s &lt;&lt;EOF | tee -a &quot;${LOG_FILE_NAME}&quot;
+F=${STANDBY_ORACLE_HOME}/network/admin/tnsnames.ora
+grep -qi &quot;^${STANDBY_DB_NAME} *=&quot; \$F 2&gt;/dev/null || cat ${STANDBY_STAGE_DIR}/tnsnames.ora &gt;&gt; \$F
+EOF
+}
+
+function verifyTnsFromStandby {
+  # quoted heredoc: \$? and the if-tests run on the STANDBY, not locally
+  ssh &quot;${STANDBY_SSH}&quot; PRI=&quot;${PRIMARY_DB_NAME}&quot; STB=&quot;${STANDBY_DB_NAME}&quot; OH=&quot;${STANDBY_ORACLE_HOME}&quot; bash -s &lt;&lt;&#x27;EOF&#x27; | tee -a &quot;${LOG_FILE_NAME}&quot;
+rc=0
+for alias in &quot;$PRI&quot; &quot;$STB&quot;; do
+  if &quot;$OH/bin/tnsping&quot; &quot;$alias&quot; &gt;/dev/null; then
+    echo &quot;TRACE&gt; (standby) TNS alias $alias IS valid&quot;
+  else
+    echo &quot;TRACE&gt; (standby) TNS alias $alias IS NOT valid&quot;; rc=1
+  fi
+done
+exit $rc
+EOF
+  if (( PIPESTATUS[0] != 0 )); then
+    finish &quot;FAILED&quot;
+  fi
+}
+
+function copyPasswordFile {
+  # the standby needs the primary&#x27;s password file (same SYS password) for redo transport
+  scp -p &quot;$ORACLE_HOME/dbs/orapw${ORACLE_SID}&quot; &quot;${STANDBY_SSH}:${STANDBY_ORACLE_HOME}/dbs/orapw${ORACLE_SID}&quot;
+  wl &quot;TRACE&gt; Copied password file orapw${ORACLE_SID} to the standby.&quot;
+}
+
+function standbyRedo {
+  # standby redo logs: same size as the online logs, one more group than the online logs.
+  # Created on the primary so they exist after a switchover; RMAN duplicate creates them on the standby too.
+  askYesNo &quot;Create standby redo logs on the primary?&quot;
+  runSql &lt;&lt;EOF
+ALTER DATABASE ADD STANDBY LOGFILE (&#x27;${DATAFILE_DIR}/stdby_redo01.log&#x27;) SIZE ${REDO_SIZE};
+ALTER DATABASE ADD STANDBY LOGFILE (&#x27;${DATAFILE_DIR}/stdby_redo02.log&#x27;) SIZE ${REDO_SIZE};
+ALTER DATABASE ADD STANDBY LOGFILE (&#x27;${DATAFILE_DIR}/stdby_redo03.log&#x27;) SIZE ${REDO_SIZE};
+ALTER DATABASE ADD STANDBY LOGFILE (&#x27;${DATAFILE_DIR}/stdby_redo04.log&#x27;) SIZE ${REDO_SIZE};
+EOF
+}
+
+function standbyPfile {
+  echo &quot;db_name=${PRIMARY_DB_NAME}&quot; &gt; &quot;${CUSTOM_ORACLE_TEMP_DIR}/init${ORACLE_SID}.ora&quot;
+  scp -p &quot;${CUSTOM_ORACLE_TEMP_DIR}/init${ORACLE_SID}.ora&quot; &quot;${STANDBY_SSH}:${STANDBY_ORACLE_HOME}/dbs/&quot;
+}
+
+function startStandbyNomount {
+  ssh &quot;${STANDBY_SSH}&quot; bash -s &lt;&lt;EOF | tee -a &quot;${LOG_FILE_NAME}&quot;
+export ORACLE_HOME=${STANDBY_ORACLE_HOME} ORACLE_SID=${ORACLE_SID}
+\$ORACLE_HOME/bin/sqlplus -s / as sysdba &lt;&lt;&#x27;SQL&#x27;
+startup nomount pfile=&#x27;${STANDBY_ORACLE_HOME}/dbs/init${ORACLE_SID}.ora&#x27;
+exit
+SQL
+EOF
+}
+
+function rmanDuplicate {
+  # &#x27;&gt;&#x27; not &#x27;&gt;&gt;&#x27; so a re-run does not append a second DUPLICATE command
+  cat &gt; &quot;${CUSTOM_ORACLE_TEMP_DIR}/active_duplicate.cmd&quot; &lt;&lt;EOF
+DUPLICATE TARGET DATABASE
+  FOR STANDBY
+  FROM ACTIVE DATABASE
+  DORECOVER
+  SPFILE
+    SET db_unique_name=&#x27;${STANDBY_DB_NAME}&#x27; COMMENT &#x27;Is standby&#x27;
+    SET log_archive_dest_2=&#x27;SERVICE=${PRIMARY_DB_NAME} ASYNC VALID_FOR=(ONLINE_LOGFILES,PRIMARY_ROLE) DB_UNIQUE_NAME=${PRIMARY_DB_NAME}&#x27;
+    SET fal_server=&#x27;${PRIMARY_DB_NAME}&#x27; COMMENT &#x27;Is primary&#x27;
+  NOFILENAMECHECK;
+EOF
+  cat &quot;${CUSTOM_ORACLE_TEMP_DIR}/active_duplicate.cmd&quot; | tee -a &quot;${LOG_FILE_NAME}&quot;
+  # run from the primary: target = primary, auxiliary = standby (NOMOUNT, via static listener entry)
+  rman target &quot;${DBA_USERNAME}/\&quot;${DBA_PASSWORD}\&quot;@${PRIMARY_DB_NAME}&quot; \
+       auxiliary &quot;${DBA_USERNAME}/\&quot;${DBA_PASSWORD}\&quot;@${STANDBY_DB_NAME}&quot; \
+       cmdfile=&quot;${CUSTOM_ORACLE_TEMP_DIR}/active_duplicate.cmd&quot; | tee -a &quot;${LOG_FILE_NAME}&quot;
+}
+
+function startMrp {
+  ssh &quot;${STANDBY_SSH}&quot; bash -s &lt;&lt;EOF | tee -a &quot;${LOG_FILE_NAME}&quot;
+export ORACLE_HOME=${STANDBY_ORACLE_HOME} ORACLE_SID=${ORACLE_SID}
+\$ORACLE_HOME/bin/sqlplus -s / as sysdba &lt;&lt;&#x27;SQL&#x27;
+ALTER DATABASE RECOVER MANAGED STANDBY DATABASE USING CURRENT LOGFILE DISCONNECT FROM SESSION;
+exit
+SQL
+EOF
+}
+
+# +----------------------------------------------------------------------------+
+# | SCRIPT STARTS HERE                                                         |
+# +----------------------------------------------------------------------------+
+wl &quot;START TIME: ${START_DATE}&quot;
+verifyOSUserLogin
+checkScriptAlreadyRunning
+
+banner &quot;SCRIPT VARIABLES&quot;
+wl &quot;SCRIPT            : ${SCRIPT_NAME}&quot;
+wl &quot;HOST NAME         : ${HOSTNAME}&quot;
+wl &quot;LOG FILE          : ${LOG_FILE_NAME}&quot;
+wl &quot;ORACLE_SID        : ${ORACLE_SID}&quot;
+wl &quot;PRIMARY_DB_NAME   : ${PRIMARY_DB_NAME} on ${PRIMARY_HOST_NAME}&quot;
+wl &quot;STANDBY_DB_NAME   : ${STANDBY_DB_NAME} on ${STANDBY_HOST_NAME}&quot;
+wl &quot;DBA_USERNAME      : ${DBA_USERNAME} (password ${HIDE_PASSWORD_STRING})&quot;
+
+banner &quot;WARNING&quot;
+wl &quot;This script creates a physical standby (${STANDBY_DB_NAME}) of ${PRIMARY_DB_NAME}&quot;
+wl &quot;on ${STANDBY_HOST_NAME} using RMAN DUPLICATE ... FROM ACTIVE DATABASE.&quot;
+wl &quot;Prerequisites: passwordless ssh to ${STANDBY_SSH}; Oracle software installed&quot;
+wl &quot;on the standby at ${STANDBY_ORACLE_HOME}; an oratab entry for ${ORACLE_SID} there.&quot;
+askYesNo &quot;Continue and create the standby database?&quot;
+
+banner &quot;TEST LOGIN TO PRIMARY DATABASE&quot;
+verifyDatabaseLoginCredentials &quot;${PRIMARY_DB_NAME}&quot; &quot;${DBA_USERNAME}&quot; &quot;${DBA_PASSWORD}&quot; SYSDBA
+
+banner &quot;ARCHIVELOG / FORCE LOGGING / PARAMETERS ON PRIMARY&quot;
+archiveLogging
+forceLogging
+initializationParams
+
+banner &quot;STANDBY DIRECTORIES, LISTENER AND TNS&quot;
+standbyDirectories
+standbyListener
+tnsEntries
+verifyTNSConnectString &quot;${PRIMARY_DB_NAME}&quot;
+verifyTNSConnectString &quot;${STANDBY_DB_NAME}&quot;
+verifyTnsFromStandby
+
+banner &quot;STANDBY REDO LOGS, PASSWORD FILE, PFILE&quot;
+standbyRedo
+copyPasswordFile
+standbyPfile
+
+banner &quot;START STANDBY INSTANCE IN NOMOUNT&quot;
+startStandbyNomount
+verifyDatabaseLoginCredentials &quot;${STANDBY_DB_NAME}&quot; &quot;${DBA_USERNAME}&quot; &quot;${DBA_PASSWORD}&quot; SYSDBA
+
+banner &quot;RMAN ACTIVE DUPLICATE FOR STANDBY&quot;
+rmanDuplicate
+
+banner &quot;START MANAGED RECOVERY (REAL-TIME APPLY)&quot;
+startMrp
+
+banner &quot;ENABLE REDO TRANSPORT AND SWITCH LOGFILE ON PRIMARY&quot;
+runSql &lt;&lt;&#x27;EOF&#x27;
+alter system set log_archive_dest_state_2=enable scope=both;
+alter system switch logfile;
+EOF
+
+banner &quot;SCAN LOG FILE FOR EXCEPTIONS&quot;
+if grep -E &#x27;ORA-|RMAN-&#x27; &quot;${LOG_FILE_NAME}&quot; | grep -vE &#x27;RMAN-20242|RMAN-00571|RMAN-00569|RMAN-03002|RMAN-07529|RMAN-07517|RMAN-05538&#x27;; then
+  wl &quot;---&gt; ERRORS WERE FOUND &lt;---&quot;
+  ERRORS=&quot;YES&quot;
+else
+  wl &quot;TRACE&gt; No exceptions were found.&quot;
+  ERRORS=&quot;NO&quot;
+fi
+
+banner &quot;REMOVE SCRIPT LOGS OLDER THAN ${LOG_FILE_ARCHIVE_OBSOLETE_DAYS} DAYS&quot;
+find &quot;${CUSTOM_ORACLE_LOG_DIR}/&quot; -name &quot;${SCRIPT_NAME_NOEXT}_${HOSTNAME_SHORT_UPPER}_*.log&quot; \
+     -mtime +${LOG_FILE_ARCHIVE_OBSOLETE_DAYS} -exec ls -l {} \; -exec rm -f {} \; | tee -a &quot;${LOG_FILE_NAME}&quot;
+
+if [[ ${ERRORS} == &quot;YES&quot; ]]; then
+  finish &quot;FAILED&quot;
+else
+  finish &quot;SUCCESSFUL&quot;
+fi
+</code></pre></div>
+</details>
+
+<h2>Verify the Standby</h2>
+<div class="code"><span class="lbl">SQL</span><pre><code>-- on the standby
+select database_role, open_mode, protection_mode from v$database;
+select process, status, thread#, sequence# from v$managed_standby;   -- MRP0 = APPLYING_LOG
+select name, value from v$dataguard_stats;                           -- transport / apply lag
+
+-- on the primary
+select dest_id, status, error from v$archive_dest_status where dest_id = 2;</code></pre></div>
+<p>Once it's running, consider adding the Data Guard broker (<code>dg_broker_start=true</code> and <code>dgmgrl</code>) — it makes switchover, failover and monitoring much easier.</p>
+
+<h2>Changes from My Original Version</h2>
+<p>I cleaned the script up while moving it here. The main fixes:</p>
+<ul>
+<li><strong>Parameters didn't take effect.</strong> They were set with <code>scope=spfile</code> and the database was never restarted. They're now <code>SCOPE=BOTH</code> (except <code>REMOTE_LOGIN_PASSWORDFILE</code>), and the broken <code>DG_CONFIG=(sunkdev",sunksbdev")</code> quoting is fixed.</li>
+<li><strong>Standby redo logs</strong> were created with <code>ADD LOGFILE</code> — that adds online redo log groups. It's now <code>ADD STANDBY LOGFILE</code>.</li>
+<li><strong>Password file</strong> — it was never copied to the standby, so redo transport and the RMAN auxiliary connection would fail. Added.</li>
+<li><strong>Remote checks ran locally.</strong> The <code>tnsping</code> test sent to the standby used an unquoted heredoc, so <code>$?</code> was expanded on the primary before ssh ran, and it called an undefined <code>errorExit</code>. It's now a quoted heredoc and fails the script properly.</li>
+<li>The RMAN command file was appended (<code>&gt;&gt;</code>), so a second run had two <code>DUPLICATE</code> commands; it's overwritten now. RMAN runs from the primary with <code>cmdfile=</code>, and redo transport is deferred until the standby exists.</li>
+<li>Managed recovery now uses real-time apply; <code>FAL_CLIENT</code> is dropped (deprecated since 11.2).</li>
+<li>Shell bugs: <code>#!/bin/sh</code> → <code>#!/bin/bash</code> (it uses bash syntax), <code>tr -d "/t/n/r"</code> (deleted the letters t, n, r) replaced, the <code>id | awk -F(</code> syntax error replaced with <code>id -un</code>, broken <code>find -exec … ;</code> and undefined <code>$LS_BIN</code>/<code>$RM_BIN</code> fixed, banner variables that were never set removed, and the hostname variables are set before they're used.</li>
+<li>Password and email addresses replaced with placeholders.</li>
+</ul>
+<div class="note">The structure of this script — the logging function, run-flag file, credential checks and email-on-exit — follows <strong>Jeffrey M. Hunter</strong>'s Oracle DBA shell scripts from <a href="https://www.idevelopment.info/">idevelopment.info</a>, which I adapted to build a standby.</div>
+<p style="margin-top:1.4em">Related: <a href="../recover-standby-database-using-increment-backups/recover-standby-database-using-increment-backups.html">Recover a standby database using incremental backups</a></p>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>

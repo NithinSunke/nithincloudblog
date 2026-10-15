@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oracle Linux 7 Installation</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#2f6f3e;--accent-soft:#eaf4ec;--accent-ink:#24572f;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.06em;margin:1.6em 0 .4em;padding-left:.6em;border-left:4px solid var(--accent)}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.85em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em;overflow-wrap:normal}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post .tw{overflow-x:auto;margin:.8em 0}
+.tsn-post table{width:100%;border-collapse:collapse;font-size:.93em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.3em 0}
+.tsn-post .lab{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin:1em 0}
+.tsn-post .lab div{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:#fff;font-size:.9em}
+.tsn-post .lab b{display:block;color:var(--accent-ink);font-size:.82em;text-transform:uppercase;letter-spacing:.05em}
+.tsn-post .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:.8em 0}
+.tsn-post .flow span{background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:.88em;font-weight:600}
+.tsn-post .flow b{color:var(--accent)}
+.tsn-post .shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px;margin:.8em 0 1.2em;align-items:start}
+.tsn-post .shots.one{grid-template-columns:1fr}
+.tsn-post .shots figure{margin:0}
+.tsn-post .shots img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:8px;background:#fff;transition:box-shadow .15s ease}
+.tsn-post .shots a:hover img{box-shadow:0 4px 14px rgba(0,0,0,.14)}
+.tsn-post .shots.one img{max-width:100%;width:auto;margin:0 auto}
+.tsn-post .cap{color:var(--muted);font-size:.85em;margin-top:-.6em}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:var(--accent-ink)}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
+
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .check{list-style:none;padding:0;counter-reset:c}
+.tsn-post .check>li{position:relative;padding-left:2.4em;margin:.7em 0}
+.tsn-post .check>li::before{counter-increment:c;content:counter(c);position:absolute;left:0;top:.1em;width:1.7em;height:1.7em;line-height:1.7em;text-align:center;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:.85em}
+
+.tsn-post details{margin:.6em 0 1.2em}
+.tsn-post summary{cursor:pointer;color:var(--accent-ink);font-weight:600;font-size:.95em}
+.tsn-post .code pre.tall{max-height:640px;overflow:auto}
+</style>
+
+<h1>Oracle Linux 7 Installation</h1>
+<div class="meta">By Sunke Nithin · June 13, 2019 &nbsp; <span class="tag">Linux</span></div>
+
+<p class="lead">A walkthrough of installing <strong>Oracle Linux 7</strong> (formerly Oracle Enterprise Linux) in a VMware Workstation virtual machine — creating the VM, choosing the software, partitioning the disk, and finishing the first-boot setup.</p>
+
+<div class="note"><strong>Version note (2026).</strong> Oracle Linux 7 has reached the end of Premier Support and only gets Extended Support. It's still fine for practising with older Oracle Database releases, but use <strong>Oracle Linux 8 or 9</strong> for anything new. The installer (Anaconda) looks almost the same on all three, so these steps carry over.</div>
+
+<h2><span class="num">1</span>Download the ISO</h2>
+<p>Download the latest Oracle Linux 7 update ISO (the full DVD image) from <a href="https://yum.oracle.com/oracle-linux-isos.html">yum.oracle.com</a> or Oracle Software Delivery Cloud (<a href="https://edelivery.oracle.com/">edelivery.oracle.com</a>). Use the newest update (7.9) rather than an early one like 7.1 — it has years of fixes already in it.</p>
+
+<h2><span class="num">2</span>Create the Virtual Machine</h2>
+<ol>
+<li>In VMware Workstation choose <strong>File → New Virtual Machine → Typical</strong> and click <strong>Next</strong>.</li>
+<li>Select <strong>Installer disc image file (iso)</strong>, browse to the Oracle Linux 7 ISO and click <strong>Next</strong>.</li>
+<li>Enter a name for the VM and the folder to keep it in.</li>
+<li>Set the maximum disk size (40 GB or more if you'll install Oracle Database) and choose whether to store the virtual disk as a single file or split it. Click <strong>Next</strong>, then <strong>Finish</strong>.</li>
+<li>Click <strong>Edit virtual machine settings</strong>: give it at least <strong>2 GB of memory</strong> (8 GB if it will run a database), the processors your hardware allows, and a <strong>Bridged</strong> network adapter so the VM gets an address on your home network.</li>
+</ol>
+
+<h2><span class="num">3</span>Start the Installer</h2>
+<p>Power on the VM, select <strong>Install Oracle Linux 7.x</strong> and press <kbd>Enter</kbd>. Pick your language and click <strong>Continue</strong>.</p>
+
+<h2><span class="num">4</span>Installation Summary</h2>
+<ul>
+<li><strong>Date &amp; Time</strong> — set your time zone.</li>
+<li><strong>Installation Source</strong> — Local media.</li>
+<li><strong>Software Selection</strong> — choose <strong>Server with GUI</strong> and these add-ons:
+<ul><li>Java Platform</li><li>KDE (optional — GNOME is the default desktop)</li><li>Compatibility Libraries</li></ul>
+Pick whatever your environment needs; for a database server, <em>Server with GUI</em> plus <em>Compatibility Libraries</em> is a good start, and the <code>oracle-database-preinstall</code> RPM adds the rest later.</li>
+<li><strong>Network &amp; Host Name</strong> — switch the adapter <strong>On</strong> and set the host name, so the network comes up at boot.</li>
+</ul>
+
+<h2><span class="num">5</span>Partition the Disk</h2>
+<p>Click <strong>Installation Destination</strong>, select the disk, choose <strong>I will configure partitioning</strong> and click <strong>Done</strong>. Choose <strong>Standard Partition</strong> (or LVM) and use <strong>+</strong> to add mount points. A sensible layout for a 40 GB lab disk:</p>
+<div class="tw"><table><thead><tr><th>Mount point</th><th>Size</th><th>File system</th></tr></thead><tbody><tr><td>/boot</td><td>1 GB</td><td>xfs</td></tr><tr><td>swap</td><td>4 GB (or equal to RAM up to 16 GB)</td><td>swap</td></tr><tr><td>/</td><td>20 GB</td><td>xfs</td></tr><tr><td>/u01</td><td>the rest</td><td>xfs — Oracle software and data</td></tr></tbody></table></div>
+<div class="warn"><strong>Don't give the rest of the disk to swap.</strong> In my original lab I made <code>/</code> about 37 GB of ext4 and put everything else into swap. Swap only needs to be about the size of RAM (Oracle's installer checks it against memory); extra swap is wasted space. XFS is the default and recommended file system on Oracle Linux 7 — ext4 works but there's no reason to change it. A separate <code>/u01</code> keeps Oracle files from filling the root file system.</div>
+<p>Click <strong>Done</strong> and <strong>Accept Changes</strong>.</p>
+
+<h2><span class="num">6</span>Install</h2>
+<ol>
+<li>Click <strong>Begin Installation</strong>.</li>
+<li>While it installs, set the <strong>root password</strong> and use <strong>User Creation</strong> to add a normal user.</li>
+<li>When it finishes, click <strong>Reboot</strong>.</li>
+</ol>
+
+<h2><span class="num">7</span>First Boot</h2>
+<ol>
+<li>Accept the licence agreement and click <strong>Finish Configuration</strong>.</li>
+<li>For registration choose <strong>No, I prefer to register at a later time</strong>; you don't need ULN — the free public yum repositories are enough (see the related post below).</li>
+<li>Sign in with the user you created, step through the welcome screens and click <strong>Start using Oracle Linux Server</strong>.</li>
+</ol>
+<p>If the VM is on a working bridged network, the internet is available straight away. Check with:</p>
+<div class="code"><span class="lbl">BASH</span><pre><code>ip addr
+ping -c 3 yum.oracle.com
+sudo yum update -y</code></pre></div>
+<p style="margin-top:1.4em">Related: <a href="../public-yum-configuration-for-oracle-linux-7/public-yum-configuration-for-oracle-linux-7.html">Public yum configuration for Oracle Linux 7</a></p>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>
