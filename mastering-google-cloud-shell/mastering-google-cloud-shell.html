@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mastering Google Cloud Shell</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#1a73e8;--accent-soft:#e8f0fe;--accent-ink:#174ea6;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.06em;margin:1.6em 0 .4em;padding-left:.6em;border-left:4px solid var(--accent)}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.85em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em;overflow-wrap:normal}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post .tw{overflow-x:auto;margin:.8em 0}
+.tsn-post table{width:100%;border-collapse:collapse;font-size:.93em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.3em 0}
+.tsn-post .lab{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin:1em 0}
+.tsn-post .lab div{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:#fff;font-size:.9em}
+.tsn-post .lab b{display:block;color:var(--accent-ink);font-size:.82em;text-transform:uppercase;letter-spacing:.05em}
+.tsn-post .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:.8em 0}
+.tsn-post .flow span{background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:.88em;font-weight:600}
+.tsn-post .flow b{color:var(--accent)}
+.tsn-post .shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px;margin:.8em 0 1.2em;align-items:start}
+.tsn-post .shots.one{grid-template-columns:1fr}
+.tsn-post .shots figure{margin:0}
+.tsn-post .shots img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:8px;background:#fff;transition:box-shadow .15s ease}
+.tsn-post .shots a:hover img{box-shadow:0 4px 14px rgba(0,0,0,.14)}
+.tsn-post .shots.one img{max-width:100%;width:auto;margin:0 auto}
+.tsn-post .cap{color:var(--muted);font-size:.85em;margin-top:-.6em}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:var(--accent-ink)}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
+
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .check{list-style:none;padding:0;counter-reset:c}
+.tsn-post .check>li{position:relative;padding-left:2.4em;margin:.7em 0}
+.tsn-post .check>li::before{counter-increment:c;content:counter(c);position:absolute;left:0;top:.1em;width:1.7em;height:1.7em;line-height:1.7em;text-align:center;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:.85em}
+
+.tsn-post details{margin:.6em 0 1.2em}
+.tsn-post summary{cursor:pointer;color:var(--accent-ink);font-weight:600;font-size:.95em}
+.tsn-post .code pre.tall{max-height:640px;overflow:auto}
+</style>
+
+<h1>Mastering Google Cloud Shell</h1>
+<div class="meta">By Sunke Nithin · August 9, 2025 &nbsp; <span class="tag">CLOUD</span><span class="tag">GCP</span></div>
+
+<p class="lead"><strong>Google Cloud Shell</strong> is a free, browser-based terminal for Google Cloud. It runs on a temporary virtual machine with the Google Cloud CLI and common tools already installed and already signed in as you — nothing to install locally. Here's what it offers, how to start, and its limits.</p>
+
+<h2>Key Features</h2>
+<div class="tw"><table><thead><tr><th>Feature</th><th>Details</th></tr></thead><tbody><tr><td>Pre-installed tools</td><td><code>gcloud</code>, <code>gsutil</code>, <code>bq</code>, <code>kubectl</code>, <code>terraform</code>, plus <code>git</code>, <code>vim</code>, <code>nano</code>, Python, Node.js, Docker and more</td></tr><tr><td>Persistent home</td><td>5 GB of persistent storage mounted as <code>$HOME</code>, kept between sessions</td></tr><tr><td>Built-in editor</td><td>Cloud Shell Editor, based on Code OSS (the open-source core of VS Code) — <strong>Open Editor</strong> or <code>cloudshell edit &lt;file&gt;</code></td></tr><tr><td>Your identity</td><td>Runs as your Google account, with your IAM permissions</td></tr><tr><td>Any project</td><td>Switch with <code>gcloud config set project &lt;PROJECT_ID&gt;</code></td></tr><tr><td>Web Preview</td><td>Preview a web app running on ports 8080 and others in the browser</td></tr></tbody></table></div>
+
+<h2>Getting Started</h2>
+<ol>
+<li>Sign in to the Google Cloud console.</li>
+<li>Click the <strong>Activate Cloud Shell</strong> icon at the top right.</li>
+</ol>
+<div class="shots one"><figure><a href="images/image-31.png" target="_blank" rel="noopener"><img src="images/image-31.png" alt="Google Cloud console toolbar: Activate Cloud Shell button" loading="lazy"></a></figure></div>
+<p>The first time a command needs your credentials, Cloud Shell asks you to <strong>Authorize</strong> it:</p>
+<div class="shots one"><figure><a href="images/image-32.png" target="_blank" rel="noopener"><img src="images/image-32.png" alt="Authorize Cloud Shell dialog asking to use your credentials for Google Cloud API calls" loading="lazy"></a></figure></div>
+<p>A few seconds later the terminal opens at the bottom of the console, set to the current project:</p>
+<div class="shots one"><figure><a href="images/image-33.png" target="_blank" rel="noopener"><img src="images/image-33.png" alt="Cloud Shell terminal open at the bottom of the console, with the project set" loading="lazy"></a></figure></div>
+
+<h2>Example Uses</h2>
+<h3>Create a VM</h3>
+<div class="code"><span class="lbl">BASH</span><pre><code>gcloud compute instances create my-vm \
+  --zone=us-central1-a \
+  --machine-type=e2-micro \
+  --image-family=debian-12 \
+  --image-project=debian-cloud</code></pre></div>
+<h3>Build infrastructure with Terraform</h3>
+<div class="code"><span class="lbl">BASH</span><pre><code>terraform init
+terraform plan
+terraform apply</code></pre></div>
+<h3>Script routine tasks</h3>
+<p>Use <code>gcloud</code>, <code>gsutil</code> / <code>gcloud storage</code> and <code>bq</code> scripts for backups, exports and IAM changes — kept in <code>$HOME</code> so they're there next time.</p>
+<h3>Deploy a web app</h3>
+<div class="code"><span class="lbl">BASH</span><pre><code>git clone https://github.com/&lt;you&gt;/&lt;app&gt;.git &amp;&amp; cd &lt;app&gt;
+gcloud app deploy
+gcloud app logs tail -s default</code></pre></div>
+<p>Use <strong>Web Preview</strong> to test the app locally before deploying.</p>
+
+<h2>Limits</h2>
+<p>From Google's <a href="https://docs.cloud.google.com/shell/docs/limitations">Cloud Shell quotas and limits</a> page:</p>
+<div class="tw"><table><thead><tr><th>Limit</th><th>Value</th></tr></thead><tbody><tr><td>Weekly usage</td><td>50 hours per week (check under Session information → Usage quota)</td></tr><tr><td>Session length</td><td>12 hours maximum; then start a new one</td></tr><tr><td>Inactivity</td><td>The VM ends after 40 minutes of inactivity; anything outside <code>$HOME</code> is lost</td></tr><tr><td>Home directory</td><td>5 GB; deleted if you don't use Cloud Shell for 120 days (you get an email first)</td></tr><tr><td>Use</td><td>Interactive use only — no mining, scanning or long-running services</td></tr><tr><td>Editor</td><td>Custom extensions can't be installed</td></tr></tbody></table></div>
+<div class="note"><strong>Corrections:</strong> my original post said sessions end after 20 minutes idle and that Cloud Shell runs on an f1-micro VM. Google's documentation says 40 minutes, and doesn't specify the machine type. The weekly 50-hour quota is the limit people most often hit.</div>
+
+<h2>Cost</h2>
+<p>Cloud Shell itself is free. You pay only for the resources you create from it — VMs, databases, storage and so on.</p>
+
+<h2>Tips</h2>
+<div class="tw"><table><thead><tr><th>Tip</th><th>Why</th></tr></thead><tbody><tr><td>Keep everything in <code>$HOME</code></td><td>The rest of the VM is reset when the session ends</td></tr><tr><td>Use <code>~/.customize_environment</code></td><td>A script that runs as root at every start — install extra packages there</td></tr><tr><td>Use aliases</td><td>Save frequently used commands and projects in <code>~/.bashrc</code> (keep its Cloud Shell lines)</td></tr><tr><td>Don't store secrets</td><td>Avoid service-account keys and API keys in your home directory; use your own identity or Secret Manager</td></tr><tr><td>SSH keys for Git</td><td>Set up <code>~/.ssh</code> for GitHub or GitLab</td></tr><tr><td>Several tabs</td><td>Open more terminal tabs with <strong>+</strong></td></tr><tr><td>Move files</td><td><code>cloudshell download &lt;file&gt;</code>, or Upload/Download in the ⋮ menu</td></tr></tbody></table></div>
+
+<h2>Conclusion</h2>
+<p>Cloud Shell is the quickest way to work with Google Cloud from anywhere — authenticated, tooled up and free. Keep its limits in mind, and it's ideal for learning, administration and quick deployments.</p>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>
