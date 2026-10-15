@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stop and Start a RAC Database</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#c74634;--accent-soft:#fdf1ef;--accent-ink:#a3372a;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;--go:#188038;--go-soft:#e6f4ea;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2.stop{border-bottom-color:#f0c7c0}
+.tsn-post h2.start{border-bottom-color:#b9dfc6}
+.tsn-post h3{font-size:1.04em;margin:1.4em 0 .4em;display:flex;align-items:center;gap:.5em;flex-wrap:wrap}
+.tsn-post .st{display:inline-flex;align-items:center;justify-content:center;width:1.7em;height:1.7em;border-radius:50%;color:#fff;font-size:.82em;font-weight:700;background:var(--accent)}
+.tsn-post .start-sec .st{background:var(--go)}
+.tsn-post .who{font-size:.7em;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-radius:4px;padding:1px 7px;background:#eef2f5;color:#4b5563}
+.tsn-post .who.root{background:#fdecea;color:#b3261e}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px}
+.tsn-post .code{position:relative;margin:.6em 0 1em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.86em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .start-sec .code .lbl{background:var(--go)}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post .tw{overflow-x:auto;margin:.8em 0}
+.tsn-post table{width:100%;border-collapse:collapse;font-size:.93em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post .order{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:1em 0}
+.tsn-post .order > div{border-radius:10px;padding:10px 14px}
+.tsn-post .order .s{background:#fdf1ef;border:1px solid #f0c7c0}
+.tsn-post .order .g{background:var(--go-soft);border:1px solid #b9dfc6}
+.tsn-post .order b{display:block;margin-bottom:4px}
+.tsn-post .order ol{margin:0;padding-left:1.3em;font-size:.94em}
+.tsn-post a{color:var(--accent-ink)}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}.tsn-post .order{grid-template-columns:1fr}}
+</style>
+
+<h1>Stop and Start an Oracle RAC Database</h1>
+<div class="meta">By Sunke Nithin · July 4, 2019 &nbsp; <span class="tag">Database</span><span class="tag">Rac</span><span class="tag">Oracle</span></div>
+
+<p class="lead">A quick reference for shutting down and starting up a two-node Oracle RAC (11g Release 2) cleanly — database first and clusterware last on the way down, and the reverse on the way up. Replace <code>dbname</code>, <code>nodename1</code> and <code>nodename2</code> with your own names.</p>
+
+<div class="order">
+<div class="s"><b>Stop order</b><ol><li>Database</li><li>ASM</li><li>Node apps</li><li>Clusterware <span style="color:var(--muted)">(as root)</span></li></ol></div>
+<div class="g"><b>Start order</b><ol><li>Clusterware <span style="color:var(--muted)">(as root)</span></li><li>Database</li><li>Check resources</li></ol></div>
+</div>
+
+<h2 class="stop">Stop the RAC Database</h2>
+<div class="stop-sec">
+
+<h3><span class="st">0</span>Set the environment <span class="who">oracle</span></h3>
+<p>Source the Grid profile, or use <code>oraenv</code> and point it at the local ASM instance:</p>
+<div class="code"><span class="lbl">BASH</span><pre><code>. ./grid_env
+
+<span class="cm"># or</span>
+. oraenv
+ORACLE_SID = [grid] ? +ASM1</code></pre></div>
+
+<h3><span class="st">1</span>Stop the database <span class="who">oracle</span></h3>
+<div class="code"><span class="lbl">BASH</span><pre><code>srvctl stop database -d dbname -o immediate
+srvctl status database -d dbname</code></pre></div>
+<p>This shuts down the instances on all nodes at once.</p>
+
+<h3><span class="st">2</span>Stop ASM <span class="who">oracle</span></h3>
+<div class="code"><span class="lbl">BASH</span><pre><code>srvctl stop asm -n nodename1 -f
+srvctl stop asm -n nodename2 -f
+
+srvctl status asm -n nodename1
+srvctl status asm -n nodename2</code></pre></div>
+
+<h3><span class="st">3</span>Stop node apps <span class="who">oracle</span></h3>
+<div class="code"><span class="lbl">BASH</span><pre><code>srvctl stop nodeapps -n nodename1 -f
+srvctl stop nodeapps -n nodename2 -f
+
+srvctl status nodeapps -n nodename1
+srvctl status nodeapps -n nodename2</code></pre></div>
+
+<h3><span class="st">4</span>Stop the clusterware <span class="who root">root</span></h3>
+<p>Log in as <strong>root</strong>, source the Grid profile, then:</p>
+<div class="code"><span class="lbl">BASH · ROOT</span><pre><code>crsctl stop cluster -all
+crsctl check cluster -all</code></pre></div>
+<div class="note"><code>crsctl stop cluster -all</code> stops the remaining cluster resources (ASM, listeners, VIPs and so on) on every node itself, so steps 2–3 are optional — doing them one by one just lets you see each layer go down. If the OCR and voting disks live in ASM, <code>srvctl stop asm</code> may refuse while the clusterware still needs it; in that case go straight to step 4.</div>
+</div>
+
+<h2 class="start">Start the RAC Database</h2>
+<div class="start-sec">
+
+<h3><span class="st">1</span>Start the clusterware <span class="who root">root</span></h3>
+<p>Log in as <strong>root</strong> and source the Grid profile:</p>
+<div class="code"><span class="lbl">BASH · ROOT</span><pre><code>. /home/grid/grid_env
+
+<span class="cm"># or</span>
+. oraenv
+ORACLE_SID = [root] ? +ASM1
+
+crsctl start cluster -all     <span class="cm"># starts cluster services on both nodes</span></code></pre></div>
+<p>This brings up ASM, the listeners and node apps on both nodes as well.</p>
+
+<h3><span class="st">2</span>Start the database <span class="who">oracle</span></h3>
+<p>Log in as <strong>oracle</strong> and source the profile (<code>. ./grid_env</code>):</p>
+<div class="code"><span class="lbl">BASH</span><pre><code>srvctl start database -d dbname     <span class="cm"># starts the instances on both nodes</span>
+srvctl status database -d dbname</code></pre></div>
+
+<h3><span class="st">3</span>Check the cluster resources <span class="who">oracle</span></h3>
+<div class="code"><span class="lbl">BASH</span><pre><code>crsctl stat res -t</code></pre></div>
+<p>Every resource should show <code>ONLINE</code> on both nodes. (The older <code>crs_stat -t -v</code> does the same job but is deprecated in 11g R2.)</p>
+</div>
+
+<h2>Command Reference</h2>
+<div class="tw"><table>
+<thead><tr><th>Task</th><th>Command</th><th>Run as</th></tr></thead>
+<tbody>
+<tr><td>Stop database</td><td><code>srvctl stop database -d dbname -o immediate</code></td><td>oracle</td></tr>
+<tr><td>Database status</td><td><code>srvctl status database -d dbname</code></td><td>oracle</td></tr>
+<tr><td>Stop ASM on a node</td><td><code>srvctl stop asm -n nodename -f</code></td><td>oracle</td></tr>
+<tr><td>Stop node apps on a node</td><td><code>srvctl stop nodeapps -n nodename -f</code></td><td>oracle</td></tr>
+<tr><td>Stop / start clusterware</td><td><code>crsctl stop cluster -all</code> / <code>crsctl start cluster -all</code></td><td>root</td></tr>
+<tr><td>Check clusterware</td><td><code>crsctl check cluster -all</code></td><td>root</td></tr>
+<tr><td>Start database</td><td><code>srvctl start database -d dbname</code></td><td>oracle</td></tr>
+<tr><td>All resources</td><td><code>crsctl stat res -t</code></td><td>oracle or root</td></tr>
+</tbody></table></div>
+<div class="note">On 12c and later the same commands accept long-form options too — for example <code>srvctl stop database -db dbname -stopoption immediate</code> and <code>srvctl stop asm -node nodename1</code>. The short forms above still work.</div>
+
+<p style="margin-top:1.4em">Building a RAC lab to practise on? See <a href="../two-node-rac-installation-steps-using-virtual-box/two-node-rac-installation-steps-using-virtual-box.html">Two-Node Oracle RAC Installation Steps Using VirtualBox</a>.</p>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>
