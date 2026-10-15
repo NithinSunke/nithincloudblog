@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Upgrade vCenter 7 to vCenter 8</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#1d6fb8;--accent-soft:#e8f1fa;--accent-ink:#165a96;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.06em;margin:1.6em 0 .4em;padding-left:.6em;border-left:4px solid var(--accent)}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.85em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em;overflow-wrap:normal}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post .tw{overflow-x:auto;margin:.8em 0}
+.tsn-post table{width:100%;border-collapse:collapse;font-size:.93em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.3em 0}
+.tsn-post .lab{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin:1em 0}
+.tsn-post .lab div{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:#fff;font-size:.9em}
+.tsn-post .lab b{display:block;color:var(--accent-ink);font-size:.82em;text-transform:uppercase;letter-spacing:.05em}
+.tsn-post .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:.8em 0}
+.tsn-post .flow span{background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:.88em;font-weight:600}
+.tsn-post .flow b{color:var(--accent)}
+.tsn-post .shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px;margin:.8em 0 1.2em;align-items:start}
+.tsn-post .shots.one{grid-template-columns:1fr}
+.tsn-post .shots figure{margin:0}
+.tsn-post .shots img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:8px;background:#fff;transition:box-shadow .15s ease}
+.tsn-post .shots a:hover img{box-shadow:0 4px 14px rgba(0,0,0,.14)}
+.tsn-post .shots.one img{max-width:100%;width:auto;margin:0 auto}
+.tsn-post .cap{color:var(--muted);font-size:.85em;margin-top:-.6em}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:var(--accent-ink)}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
+</style>
+
+<h1>Steps to Upgrade vCenter Server 7 to vCenter Server 8</h1>
+<div class="meta">By Sunke Nithin · May 4, 2025 &nbsp; <span class="tag">Virtualization</span><span class="tag">Vmware</span></div>
+
+<p class="lead">vCenter Server 8 brings performance improvements, security enhancements and support for modern infrastructure. If you're still on vCenter 7, here's the whole upgrade in my homelab, using the vCenter Server Appliance (VCSA) GUI installer. The installer deploys a new 8.0 appliance, copies your configuration across, then shuts the old one down and takes over its identity.</p>
+
+<div class="lab">
+<div><b>Source</b><code>vcenter.scslabs.com</code> · VCSA 7.0 · <code>192.168.1.101</code></div>
+<div><b>ESXi host</b><code>192.168.1.100</code> (runs both appliances)</div>
+<div><b>New appliance</b>VM <code>vCenter8</code> · Tiny · temporary IP <code>192.168.1.102</code></div>
+<div><b>ISO</b><code>VMware-VCSA-all-8.0.2-22617221</code></div>
+</div>
+
+<div class="flow"><span>Prepare</span><b>→</b><span>Stage 1: deploy new VCSA 8</span><b>→</b><span>Stage 2: copy data &amp; cut over</span><b>→</b><span>Verify</span></div>
+
+<div class="toc"><strong>Contents</strong>
+<ol>
+<li><a href="#vc-pre">Pre-upgrade checklist</a></li>
+<li><a href="#vc-iso">Mount the ISO and start the installer</a></li>
+<li><a href="#vc-s1">Stage 1: deploy the new appliance</a></li>
+<li><a href="#vc-s2">Stage 2: transfer the configuration</a></li>
+<li><a href="#vc-post">Post-upgrade steps</a></li>
+</ol></div>
+
+<h2 id="vc-pre"><span class="num">1</span>Pre-Upgrade Checklist</h2>
+<ul>
+<li>Take a <strong>file-based backup</strong> of the existing VCSA (VAMI → Backup), and/or a snapshot of the appliance VM.</li>
+<li>Check that your <strong>ESXi hosts</strong>, hardware and other VMware products (backup tools, NSX, vSAN and so on) are compatible with vCenter 8, using the Broadcom Compatibility Guide and Interoperability Matrix.</li>
+<li>Check the <strong>supported upgrade path</strong> from your exact vCenter 7 build: a recent 7.0 Update 3 build can need a matching 8.0 update rather than an older 8.0 release.</li>
+<li>Download the <strong>vCenter Server 8 ISO</strong> from the Broadcom Support Portal (formerly VMware Customer Connect).</li>
+<li>Reserve a <strong>temporary static IP</strong> on the same network for the new appliance. It's only used during the upgrade; at the end the new appliance takes over the old one's name and IP.</li>
+<li>Have a <strong>vCenter 8 license key</strong> ready — vCenter 7 keys don't license vCenter 8, which runs in evaluation mode until you add one.</li>
+</ul>
+
+<h2 id="vc-iso"><span class="num">2</span>Mount the ISO and Start the Installer</h2>
+<p>Mount the vCenter 8 ISO on your workstation and open the installer folder for your operating system:</p>
+<div class="code"><span class="lbl">PATH</span><pre><code>vcsa-ui-installer\win32\installer.exe     <span class="cm"># Windows</span>
+vcsa-ui-installer/lin64/installer        <span class="cm"># Linux</span>
+vcsa-ui-installer/mac/Installer.app      <span class="cm"># macOS</span></code></pre></div>
+<p>Launch the installer and choose <strong>Upgrade</strong>.</p>
+<div class="shots"><figure><a href="images/image-74.png" target="_blank" rel="noopener"><img src="images/image-74.png" alt="File Explorer showing the VMware-VCSA-all-8.0.2-22617221 ISO among the downloaded images" loading="lazy"></a></figure><figure><a href="images/image-75.png" target="_blank" rel="noopener"><img src="images/image-75.png" alt="Mounted ISO, vcsa-ui-installer\win32 folder with installer.exe selected" loading="lazy"></a></figure><figure><a href="images/image-76.png" target="_blank" rel="noopener"><img src="images/image-76.png" alt="vCenter Server 8.0 Installer start screen with Install, Upgrade, Migrate and Restore options" loading="lazy"></a></figure></div>
+
+<h2 id="vc-s1"><span class="num">3</span>Stage 1: Deploy the New vCenter Appliance</h2>
+<h3>Introduction and license agreement</h3>
+<p>Review the introduction, click <strong>Next</strong>, and accept the EULA.</p>
+<div class="shots"><figure><a href="images/image-77.png" target="_blank" rel="noopener"><img src="images/image-77.png" alt="Upgrade Stage 1 introduction explaining the two-stage upgrade" loading="lazy"></a></figure><figure><a href="images/image-78.png" target="_blank" rel="noopener"><img src="images/image-78.png" alt="End user license agreement with the accept checkbox ticked" loading="lazy"></a></figure></div>
+
+<h3>Connect to the source appliance</h3>
+<p>Enter the source vCenter 7 address and click <strong>Connect to Source</strong>. Then provide its SSO administrator and root credentials, plus the <strong>ESXi host or vCenter that manages the source appliance</strong>, and accept the certificate thumbprints.</p>
+<div class="shots"><figure><a href="images/image-79.png" target="_blank" rel="noopener"><img src="images/image-79.png" alt="Connect to source appliance: source vCenter at 192.168.1.101, port 443, Connect to Source button" loading="lazy"></a></figure><figure><a href="images/image-80.png" target="_blank" rel="noopener"><img src="images/image-80.png" alt="Source appliance SSO user administrator@scslabs.com, root password, and the ESXi host 192.168.1.100 that manages it" loading="lazy"></a></figure><figure><a href="images/image-81.png" target="_blank" rel="noopener"><img src="images/image-81.png" alt="Certificate warning listing the SHA1 thumbprints for 192.168.1.101 and 192.168.1.100" loading="lazy"></a></figure></div>
+
+<h3>Choose where to deploy the new appliance</h3>
+<p>Enter the <strong>target ESXi host</strong> (or vCenter) for the new VCSA 8 — here the same host, <code>192.168.1.100</code>. Then set the <strong>new VM name</strong> and root password, pick the <strong>deployment size</strong>, and choose a <strong>datastore</strong>.</p>
+<div class="shots"><figure><a href="images/image-82.png" target="_blank" rel="noopener"><img src="images/image-82.png" alt="Deployment target: ESXi host 192.168.1.100, port 443, user root" loading="lazy"></a></figure><figure><a href="images/image-83.png" target="_blank" rel="noopener"><img src="images/image-83.png" alt="Set up target vCenter Server VM: VM name vCenter8 and root password" loading="lazy"></a></figure><figure><a href="images/image-84.png" target="_blank" rel="noopener"><img src="images/image-84.png" alt="Select deployment size: Tiny, with the table of vCPU, memory, storage, hosts and VMs per size" loading="lazy"></a></figure><figure><a href="images/image-85.png" target="_blank" rel="noopener"><img src="images/image-85.png" alt="Select datastore: VMSTORE with thin disk mode enabled" loading="lazy"></a></figure></div>
+<div class="tw"><table>
+<thead><tr><th>Size</th><th>vCPUs</th><th>Memory</th><th>Hosts / VMs (up to)</th></tr></thead>
+<tbody>
+<tr><td>Tiny</td><td>2</td><td>14 GB</td><td>10 / 100</td></tr>
+<tr><td>Small</td><td>4</td><td>21 GB</td><td>100 / 1,000</td></tr>
+<tr><td>Medium</td><td>8</td><td>30 GB</td><td>400 / 4,000</td></tr>
+<tr><td>Large</td><td>16</td><td>39 GB</td><td>1,000 / 10,000</td></tr>
+<tr><td>X-Large</td><td>24</td><td>58 GB</td><td>2,000 / 35,000</td></tr>
+</tbody></table></div>
+<p class="cap">From the installer's sizing screen. Pick at least the size of your current appliance.</p>
+
+<h3>Configure the temporary network</h3>
+<p>Give the new appliance its <strong>temporary</strong> settings: network, static IPv4 address, prefix, gateway and DNS servers.</p>
+<div class="shots one"><figure><a href="images/image-86.png" target="_blank" rel="noopener"><img src="images/image-86.png" alt="Configure network settings: VM Network, IPv4 static, temporary IP 192.168.1.102/24, gateway 192.168.1.1, DNS 192.168.1.10 and 8.8.8.8" loading="lazy"></a></figure></div>
+
+<h3>Finish and deploy</h3>
+<p>Review the summary and click <strong>Finish</strong>. The installer deploys the new appliance; when it reports success, click <strong>Continue</strong> to go to Stage 2.</p>
+<div class="shots"><figure><a href="images/image-87.png" target="_blank" rel="noopener"><img src="images/image-87.png" alt="Ready to complete stage 1 summary of the deployment, datastore and network details" loading="lazy"></a></figure><figure><a href="images/image-88.png" target="_blank" rel="noopener"><img src="images/image-88.png" alt="Stage 1 progress dialog at 0%, Initializing" loading="lazy"></a></figure><figure><a href="images/image-89.png" target="_blank" rel="noopener"><img src="images/image-89.png" alt="Stage 1 progress at 46%, Deploying the vCenter Server" loading="lazy"></a></figure><figure><a href="images/image-90.png" target="_blank" rel="noopener"><img src="images/image-90.png" alt="Stage 1 complete: You have successfully deployed the vCenter Server, with a Continue button" loading="lazy"></a></figure></div>
+
+<h2 id="vc-s2"><span class="num">4</span>Stage 2: Transfer the Configuration</h2>
+<p>Stage 2 reconnects to the source vCenter and runs the pre-upgrade checks.</p>
+<div class="shots"><figure><a href="images/image-91.png" target="_blank" rel="noopener"><img src="images/image-91.png" alt="Stage 2 introduction of the upgrade wizard" loading="lazy"></a></figure><figure><a href="images/image-92.png" target="_blank" rel="noopener"><img src="images/image-92.png" alt="Stage 2 source vCenter details: 192.168.1.101, SSO credentials and the managing ESXi host" loading="lazy"></a></figure><figure><a href="images/image-93.png" target="_blank" rel="noopener"><img src="images/image-93.png" alt="Pre-upgrade checks are in progress" loading="lazy"></a></figure></div>
+
+<h3>Select the data to copy</h3>
+<p>Choose what to bring across. Copying only <strong>configuration and inventory</strong> is fastest; adding tasks, events and performance metrics keeps history but lengthens the downtime. Here, 1.98 GB with an estimated 37 minutes of downtime.</p>
+<div class="shots one"><figure><a href="images/image-94.png" target="_blank" rel="noopener"><img src="images/image-94.png" alt="Select upgrade data: configuration and inventory 1.98 GB, estimated downtime 37 minutes, selected" loading="lazy"></a></figure></div>
+
+<h3>CEIP, review and start</h3>
+<p>Choose whether to join the Customer Experience Improvement Program, review the summary and click <strong>Finish</strong>. Confirm the warning: the <strong>source vCenter is shut down</strong> once the new appliance takes over its network identity.</p>
+<div class="shots"><figure><a href="images/image-95.png" target="_blank" rel="noopener"><img src="images/image-95.png" alt="Configure CEIP page with the join checkbox left unticked" loading="lazy"></a></figure><figure><a href="images/image-96.png" target="_blank" rel="noopener"><img src="images/image-96.png" alt="Ready to complete stage 2: source vcenter.scslabs.com 7.0, target 8.0 on the temporary IP, configuration only, CEIP opted out" loading="lazy"></a></figure><figure><a href="images/image-97.png" target="_blank" rel="noopener"><img src="images/image-97.png" alt="Warning that the source vCenter will be shut down once the network configuration is activated on the destination" loading="lazy"></a></figure></div>
+
+<h3>Data transfer and cutover</h3>
+<p>The wizard copies the data, sets up the target vCenter and starts its services, then imports the copied data. A message that there are no licenses to add is expected — see the licensing note above.</p>
+<div class="shots"><figure><a href="images/image-98.png" target="_blank" rel="noopener"><img src="images/image-98.png" alt="Stage 2 progress at 0%: copy data, set up target vCenter and start services, import copied data" loading="lazy"></a></figure><figure><a href="images/image-99.png" target="_blank" rel="noopener"><img src="images/image-99.png" alt="Stage 2 progress: first two steps done, importing copied data at 30%" loading="lazy"></a></figure><figure><a href="images/image-100.png" target="_blank" rel="noopener"><img src="images/image-100.png" alt="Messages dialog: There are no licenses to add" loading="lazy"></a></figure><figure><a href="images/image-101.png" target="_blank" rel="noopener"><img src="images/image-101.png" alt="Upgrade Stage 2 complete, with the getting-started link https://vcenter.scslabs.com:443" loading="lazy"></a></figure></div>
+
+<h2 id="vc-post"><span class="num">5</span>Post-Upgrade Steps</h2>
+<ul>
+<li>Log in to <code>https://&lt;vcenter-FQDN&gt;</code> (here <code>https://vcenter.scslabs.com</code>) as <code>administrator@vsphere.local</code> or your SSO domain administrator.</li>
+<li>Verify the inventory (datacenters, clusters, hosts, VMs), vDS and storage configuration.</li>
+<li>Add your <strong>vCenter 8 license</strong> under <em>Administration → Licensing</em>.</li>
+<li>Reconnect and test backup tools, monitoring agents and other integrations.</li>
+<li>Take a fresh file-based backup of the new appliance.</li>
+<li>When everything checks out, <strong>delete the old VCSA 7 VM</strong> — it's powered off but not removed automatically.</li>
+</ul>
+<div class="shots one"><figure><a href="images/image-102.png" target="_blank" rel="noopener"><img src="images/image-102.png" alt="vSphere Client of the upgraded vcenter.scslabs.com showing Datacenter, Cluster1, the ESXi host and VMs" loading="lazy"></a></figure></div><p class="cap">The upgraded vcenter.scslabs.com in the vSphere Client, with the same datacenter, cluster, host and VMs.</p>
+
+<h2>Tips and Notes</h2>
+<ul>
+<li>The old appliance is <strong>not deleted</strong> automatically — clean it up manually once you're confident.</li>
+<li><strong>Don't power off</strong> hosts or the source appliance while the upgrade is running.</li>
+<li>Keep both appliances on the <strong>same subnet</strong> for a smoother migration, and make sure forward and reverse DNS for the vCenter FQDN are correct beforehand.</li>
+</ul>
+
+<h2>Conclusion</h2>
+<p>The two-stage installer makes upgrading from vCenter 7 to 8 a safe, structured process: Stage 1 builds the new appliance next to the old one, and Stage 2 moves your data across and switches identity. Always rehearse in a lab before upgrading production.</p>
+
+<p class="cap" style="margin-top:1.4em">Click any screenshot to open it full size.</p>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>
