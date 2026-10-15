@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oracle Transparent Data Encryption</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#c74634;--accent-soft:#fdf1ef;--accent-ink:#a3372a;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.05em;margin:1.5em 0 .4em}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.85em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em;overflow-wrap:normal}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post .tw{overflow-x:auto;margin:.8em 0}
+.tsn-post table{width:100%;border-collapse:collapse;font-size:.94em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.3em 0}
+.tsn-post figure{margin:.8em 0 1.2em;text-align:center}
+.tsn-post figure img{max-width:100%;height:auto;border:1px solid var(--line);border-radius:8px}
+.tsn-post figcaption{color:var(--muted);font-size:.85em;margin-top:4px}
+.tsn-post .status{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:.8em 0}
+.tsn-post .status span{border-radius:6px;padding:4px 10px;font:600 .82em/1.4 Consolas,monospace;border:1px solid var(--line);background:#fff}
+.tsn-post .status .s1{border-color:#e0b4ad;background:#fdf1ef;color:#a3372a}
+.tsn-post .status .s2{border-color:#f0d79a;background:#fff8e6;color:#8a5a00}
+.tsn-post .status .s3{border-color:#b9dfc6;background:#eaf7ef;color:#0b7a3a}
+.tsn-post .status b{color:var(--muted)}
+.tsn-post .types{columns:3 160px;padding-left:1.2em}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:var(--accent-ink)}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
+</style>
+
+<h1>Transparent Data Encryption (TDE) in Oracle Database</h1>
+<div class="meta">By Sunke Nithin · February 5, 2020 &nbsp; <span class="tag">Database</span><span class="tag">Encryption</span><span class="tag">Oracle</span></div>
+
+<p class="lead">Oracle Database secures data inside the database with authentication, authorization and auditing — but not the operating-system data files the data is stored in. <strong>Transparent Data Encryption (TDE)</strong> closes that gap: it encrypts sensitive data in the data files (and therefore in backups), and keeps the encryption keys in a security module outside the database called a <strong>keystore</strong>.</p>
+
+<p>TDE is <em>transparent</em> because applications don't change. Data is encrypted automatically when it's written to disk and decrypted automatically when an authorized session reads it, and key management is built in. You can encrypt individual <strong>columns</strong> or entire <strong>tablespaces</strong>.</p>
+
+<div class="toc"><strong>Contents</strong>
+<ol>
+<li><a href="#tde-why">Benefits and how it works</a></li>
+<li><a href="#tde-ks">Configure and create the software keystore</a></li>
+<li><a href="#tde-key">Open the keystore and set the master key</a></li>
+<li><a href="#tde-col">Encrypt columns</a></li>
+<li><a href="#tde-ts">Encrypt a tablespace</a></li>
+<li><a href="#tde-manage">Rekey, change algorithms and passwords</a></li>
+</ol></div>
+
+<h2 id="tde-why"><span class="num">1</span>Benefits and How It Works</h2>
+<ul>
+<li>Sensitive data stays encrypted if the storage media or a data file is stolen — including backups shipped to off-site storage.</li>
+<li>It helps you meet security-related regulatory compliance requirements.</li>
+<li>Database users and applications see decrypted data as usual; they don't need to know it's stored encrypted.</li>
+<li>You can encrypt data with zero downtime on production systems (online table redefinition, or online tablespace encryption from 12.2), or offline during a maintenance window.</li>
+<li>No application changes — the database handles encryption and decryption.</li>
+</ul>
+<p>Both column and tablespace encryption use a <strong>two-tier key architecture</strong>: data is encrypted with table or tablespace keys, and those keys are themselves encrypted with a <strong>TDE master encryption key</strong> stored in the keystore. Without the master key, an intruder can't read the data from storage or backup media.</p>
+
+<h2 id="tde-ks"><span class="num">2</span>Configure and Create the Software Keystore</h2>
+<p>The example database is <code>sundev</code> (Oracle 19.3) on host <code>orclncdvl01</code>.</p>
+
+<h3>Step 1 — Create the keystore directory</h3>
+<div class="code"><span class="lbl">BASH</span><pre><code>mkdir -p /d01/app/oracle/admin/sundev/tde_wallet</code></pre></div>
+
+<h3>Step 2 — Tell the database where the keystore is</h3>
+<p>Add this entry to <code>sqlnet.ora</code>:</p>
+<div class="code"><span class="lbl">SQLNET.ORA</span><pre><code>ENCRYPTION_WALLET_LOCATION =
+  (SOURCE = (METHOD = FILE)
+    (METHOD_DATA =
+      (DIRECTORY = /d01/app/oracle/admin/sundev/tde_wallet/)))</code></pre></div>
+<div class="note"><code>ENCRYPTION_WALLET_LOCATION</code> in <code>sqlnet.ora</code> is deprecated from Oracle 19c. The newer method is the <code>WALLET_ROOT</code> and <code>TDE_CONFIGURATION</code> initialization parameters, for example <code>ALTER SYSTEM SET WALLET_ROOT='/d01/app/oracle/admin/sundev/wallet' SCOPE=SPFILE;</code>, restart, then <code>ALTER SYSTEM SET TDE_CONFIGURATION='KEYSTORE_CONFIGURATION=FILE';</code> — the keystore then lives in a <code>tde</code> subdirectory of <code>WALLET_ROOT</code>.</div>
+
+<h3>Step 3 — Create the keystore</h3>
+<p>Connect as a user with the <code>SYSDBA</code>, <code>SYSKM</code> or <code>ADMINISTER KEY MANAGEMENT</code> privilege, and create the keystore with a password:</p>
+<div class="code"><span class="lbl">SQL</span><pre><code>sqlplus / as sysdba
+
+ADMINISTER KEY MANAGEMENT CREATE KEYSTORE '/d01/app/oracle/admin/sundev/tde_wallet/'
+  IDENTIFIED BY &lt;keystore_password&gt;;
+
+<span class="cm">-- keystore altered.</span>
+!ls /d01/app/oracle/admin/sundev/tde_wallet/
+<span class="cm">-- ewallet.p12</span></code></pre></div>
+<p>The <code>ewallet.p12</code> file that appears is the keystore. Check its status:</p>
+<div class="code"><span class="lbl">SQL</span><pre><code>SELECT wrl_type, wrl_parameter, status, wallet_type FROM v$encryption_wallet;</code></pre></div>
+<figure><img src="images/tde1.png" alt="v$encryption_wallet: FILE keystore at /d01/app/oracle/admin/sundev/tde_wallet/ with status CLOSED and wallet type UNKNOWN" loading="lazy"><figcaption>Right after creation the keystore is <code>CLOSED</code>.</figcaption></figure>
+
+<h2 id="tde-key"><span class="num">3</span>Open the Keystore and Set the Master Key</h2>
+<p>The keystore status moves through three stages:</p>
+<div class="status"><span class="s1">CLOSED</span><b>→ open →</b><span class="s2">OPEN_NO_MASTER_KEY</span><b>→ set key →</b><span class="s3">OPEN</span></div>
+
+<h3>Open the keystore</h3>
+<div class="code"><span class="lbl">SQL</span><pre><code>ADMINISTER KEY MANAGEMENT SET KEYSTORE OPEN IDENTIFIED BY &lt;keystore_password&gt;;</code></pre></div>
+<figure><img src="images/tde2.png" alt="v$encryption_wallet after opening: status OPEN_NO_MASTER_KEY, wallet type PASSWORD" loading="lazy"><figcaption>Open, but there's no master key yet.</figcaption></figure>
+
+<h3>Set the TDE master encryption key</h3>
+<div class="code"><span class="lbl">SQL</span><pre><code>ADMINISTER KEY MANAGEMENT SET KEY
+  IDENTIFIED BY &lt;keystore_password&gt;
+  WITH BACKUP USING 'master_key_backup';</code></pre></div>
+<figure><img src="images/tde3.png" alt="SET KEY ... WITH BACKUP returns keystore altered; v$encryption_wallet now shows status OPEN" loading="lazy"><figcaption>With a master key set, the status is <code>OPEN</code>. <code>WITH BACKUP</code> saves a copy of the keystore first.</figcaption></figure>
+<div class="note"><strong>Multitenant (CDB) databases:</strong> run these statements in the root container and add <code>CONTAINER = ALL</code>, so every PDB's keystore is opened and gets a master key.</div>
+
+<h3>Open the keystore automatically (auto-login)</h3>
+<p>A password keystore must be opened again after every restart. To have it open automatically, create an auto-login keystore (<code>cwallet.sso</code>) from it:</p>
+<div class="code"><span class="lbl">SQL</span><pre><code>ADMINISTER KEY MANAGEMENT CREATE AUTO_LOGIN KEYSTORE
+  FROM KEYSTORE '/d01/app/oracle/admin/sundev/tde_wallet/'
+  IDENTIFIED BY &lt;keystore_password&gt;;</code></pre></div>
+<div class="warn"><strong>Back up the keystore.</strong> If you lose <code>ewallet.p12</code> or its password, the encrypted data can't be decrypted — not even by Oracle Support. Back it up separately from the database backups (keeping them together defeats the point of encrypting the backups), and back it up again every time the master key changes. Use <code>CREATE LOCAL AUTO_LOGIN</code> if the auto-login file should only work on this host.</div>
+
+<h2 id="tde-col"><span class="num">4</span>Encrypt Columns</h2>
+<p>Whether you encrypt individual columns or whole tablespaces depends on the data types in the table and the features you use — several features don't support TDE column encryption.</p>
+
+<h3>Data types you can encrypt with TDE column encryption</h3>
+<ul class="types">
+<li>BINARY_DOUBLE</li><li>BINARY_FLOAT</li><li>CHAR</li><li>DATE</li><li>INTERVAL DAY TO SECOND</li><li>INTERVAL YEAR TO MONTH</li><li>NCHAR</li><li>NUMBER</li><li>NVARCHAR2</li><li>RAW (legacy or extended)</li><li>TIMESTAMP (incl. WITH TIME ZONE / WITH LOCAL TIME ZONE)</li><li>VARCHAR2 (legacy or extended)</li>
+</ul>
+<p>Encryption adds overhead to each value, so the maximum size of an encrypted column is smaller than normal:</p>
+<div class="tw"><table>
+<thead><tr><th>Data type</th><th>Maximum size when encrypted</th></tr></thead>
+<tbody>
+<tr><td>CHAR</td><td>1,932 bytes</td></tr>
+<tr><td>VARCHAR2 (legacy)</td><td>3,932 bytes</td></tr>
+<tr><td>VARCHAR2 (extended)</td><td>32,699 bytes</td></tr>
+<tr><td>NVARCHAR2 (legacy)</td><td>1,966 bytes</td></tr>
+<tr><td>NVARCHAR2 (extended)</td><td>16,315 bytes</td></tr>
+<tr><td>NCHAR</td><td>966 bytes</td></tr>
+<tr><td>RAW (extended)</td><td>32,699 bytes</td></tr>
+</tbody></table></div>
+<p style="font-size:.85em;color:var(--muted)">Source: Oracle Database Advanced Security Guide, Table 3-1.</p>
+
+<h3>Restrictions on TDE column encryption</h3>
+<p>Don't use TDE column encryption with:</p>
+<ul>
+<li>Index types other than B-tree</li>
+<li>Range scans through an index</li>
+<li>Synchronous change data capture</li>
+<li>Transportable tablespaces</li>
+<li>Identity columns</li>
+<li>Columns used in foreign key constraints</li>
+</ul>
+<p>If any of these apply, use tablespace encryption instead.</p>
+
+<h3>Create a table with an encrypted column (default algorithm)</h3>
+<p>Add the <code>ENCRYPT</code> clause to the column. Without an algorithm, TDE column encryption uses <strong>AES192</strong>.</p>
+<div class="code"><span class="lbl">SQL</span><pre><code>CREATE TABLE emp (
+  first_name  VARCHAR2(20),
+  last_name   VARCHAR2(30),
+  emp_id      NUMBER(5),
+  salary      NUMBER(5,2) ENCRYPT
+);
+
+DESC emp
+<span class="cm">-- Name                Null?    Type
+-- ------------------- -------- ---------------------
+-- FIRST_NAME                   VARCHAR2(20)
+-- LAST_NAME                    VARCHAR2(30)
+-- EMP_ID                       NUMBER(5)
+-- SALARY                       NUMBER(5,2) ENCRYPT</span></code></pre></div>
+
+<h3>Choose an algorithm, or encrypt without salt</h3>
+<ul>
+<li><code>ENCRYPT NO SALT</code> — encrypt without salt. Salt makes identical values encrypt differently; you must use <code>NO SALT</code> on a column you want to index.</li>
+<li><code>ENCRYPT USING '&lt;algorithm&gt;'</code> — one of <code>AES128</code>, <code>AES192</code> (default), <code>AES256</code> or <code>3DES168</code>.</li>
+</ul>
+<div class="code"><span class="lbl">SQL</span><pre><code>CREATE TABLE employee (
+  first_name  VARCHAR2(128),
+  last_name   VARCHAR2(128),
+  empid       NUMBER ENCRYPT NO SALT,
+  salary      NUMBER(6) ENCRYPT USING 'AES256'
+);</code></pre></div>
+<p>Here <code>empid</code> is encrypted without salt, and <strong>both</strong> columns use AES256 — all encrypted columns in a table must use the same algorithm.</p>
+<div class="note">The original example used <code>3DES168</code>. It still works, but it's a legacy algorithm; use AES (preferably <code>AES256</code>) for new work.</div>
+
+<h3>Save space with NOMAC</h3>
+<p>By default TDE adds a 20-byte integrity check (MAC) to every encrypted value. <code>'NOMAC'</code> skips it, which can save significant space and CPU on large tables with many encrypted values:</p>
+<div class="code"><span class="lbl">SQL</span><pre><code>CREATE TABLE employee (
+  first_name  VARCHAR2(128),
+  last_name   VARCHAR2(128),
+  empid       NUMBER ENCRYPT 'NOMAC',
+  salary      NUMBER(6)
+);</code></pre></div>
+
+<h2 id="tde-ts"><span class="num">5</span>Encrypt a Tablespace</h2>
+<p>Tablespace encryption encrypts everything stored in the tablespace and avoids the column-level restrictions above. A new encrypted tablespace:</p>
+<div class="code"><span class="lbl">SQL</span><pre><code>CREATE TABLESPACE secure_data
+  DATAFILE '/d01/app/oracle/oradata/sundev/secure_data01.dbf' SIZE 100M
+  ENCRYPTION USING 'AES256'
+  DEFAULT STORAGE (ENCRYPT);</code></pre></div>
+<p>From 12.2 you can encrypt an existing tablespace online:</p>
+<div class="code"><span class="lbl">SQL</span><pre><code>ALTER TABLESPACE users ENCRYPTION ONLINE USING 'AES256' ENCRYPT;
+
+SELECT tablespace_name, encrypted FROM dba_tablespaces;</code></pre></div>
+
+<h2 id="tde-manage"><span class="num">6</span>Rekey, Change Algorithms and Passwords</h2>
+
+<h3>Change the encryption key or algorithm for a table</h3>
+<p>Each table has one TDE table key for all its encrypted columns. <code>REKEY</code> generates a new key, decrypts the data with the old key, re-encrypts it with the new one and updates the metadata. Add <code>USING</code> to switch algorithm at the same time:</p>
+<div class="code"><span class="lbl">SQL</span><pre><code>ALTER TABLE employee REKEY;
+ALTER TABLE employee REKEY USING 'AES256';</code></pre></div>
+
+<h3>Change the integrity algorithm</h3>
+<div class="code"><span class="lbl">SQL</span><pre><code>ALTER TABLE employee REKEY USING 'AES256' 'SHA-1';   <span class="cm">-- add/keep the integrity check</span>
+ALTER TABLE employee REKEY USING 'AES256' 'NOMAC';   <span class="cm">-- remove it</span></code></pre></div>
+
+<h3>Change the keystore password</h3>
+<div class="code"><span class="lbl">SQL</span><pre><code>ADMINISTER KEY MANAGEMENT ALTER KEYSTORE PASSWORD
+  [FORCE KEYSTORE]
+  IDENTIFIED BY &lt;old_password&gt;
+  SET &lt;new_password&gt;
+  [WITH BACKUP [USING 'backup_identifier']];</code></pre></div>
+<p>After changing the password, recreate the auto-login keystore if you use one, and take a fresh backup of the keystore.</p>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>
