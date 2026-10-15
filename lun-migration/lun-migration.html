@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LUN Migration: New LUNs in ASM</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#2f6f3e;--accent-soft:#eaf4ec;--accent-ink:#24572f;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.06em;margin:1.6em 0 .4em;padding-left:.6em;border-left:4px solid var(--accent)}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.85em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em;overflow-wrap:normal}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post .tw{overflow-x:auto;margin:.8em 0}
+.tsn-post table{width:100%;border-collapse:collapse;font-size:.93em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.3em 0}
+.tsn-post .lab{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin:1em 0}
+.tsn-post .lab div{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:#fff;font-size:.9em}
+.tsn-post .lab b{display:block;color:var(--accent-ink);font-size:.82em;text-transform:uppercase;letter-spacing:.05em}
+.tsn-post .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:.8em 0}
+.tsn-post .flow span{background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:.88em;font-weight:600}
+.tsn-post .flow b{color:var(--accent)}
+.tsn-post .shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px;margin:.8em 0 1.2em;align-items:start}
+.tsn-post .shots.one{grid-template-columns:1fr}
+.tsn-post .shots figure{margin:0}
+.tsn-post .shots img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:8px;background:#fff;transition:box-shadow .15s ease}
+.tsn-post .shots a:hover img{box-shadow:0 4px 14px rgba(0,0,0,.14)}
+.tsn-post .shots.one img{max-width:100%;width:auto;margin:0 auto}
+.tsn-post .cap{color:var(--muted);font-size:.85em;margin-top:-.6em}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:var(--accent-ink)}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
+
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .check{list-style:none;padding:0;counter-reset:c}
+.tsn-post .check>li{position:relative;padding-left:2.4em;margin:.7em 0}
+.tsn-post .check>li::before{counter-increment:c;content:counter(c);position:absolute;left:0;top:.1em;width:1.7em;height:1.7em;line-height:1.7em;text-align:center;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:.85em}
+
+.tsn-post details{margin:.6em 0 1.2em}
+.tsn-post summary{cursor:pointer;color:var(--accent-ink);font-weight:600;font-size:.95em}
+.tsn-post .code pre.tall{max-height:640px;overflow:auto}
+</style>
+
+<h1>LUN Migration: Adding New LUNs to Oracle ASM</h1>
+<div class="meta">By Sunke Nithin · June 26, 2019 &nbsp; <span class="tag">Linux</span><span class="tag">Storage</span></div>
+
+<p class="lead">When storage is replaced or grows, new SAN LUNs have to be brought into Oracle ASM on every RAC node. This is the action plan I followed on a two-node cluster (<code>dbdvl01</code>, <code>dbdvl02</code>) with ASMLib: check the environment, label the new LUNs, check ASM sees them, add them to a disk group (or create a new one), and watch the rebalance. Part 2 uses the new disk group to move the <a href="../lun-migration-2/lun-migration-2.html">OCR and voting disks</a>.</p>
+
+<h2>Action Plan</h2>
+<ol>
+<li>Collect the details from the environment</li>
+<li>Verify the LUN details</li>
+<li>Create the ASM disks</li>
+<li>Verify ASM can see them</li>
+<li>Add them to a disk group</li>
+<li>Monitor the rebalance</li>
+<li>Verify from both ASM instances</li>
+</ol>
+
+<h2><span class="num">1</span>Collect the Details from the Environment</h2>
+<p>Record the cluster resources and the current disks and disk groups before changing anything:</p>
+<div class="code"><span class="lbl">BASH</span><pre><code>[grid@dbdvl01 ~]$ crsctl stat res -t
+[grid@dbdvl01 ~]$ sqlplus / as sysasm
+
+SQL&gt; select group_number, name, state, type, total_mb, free_mb from v$asm_diskgroup;
+SQL&gt; select group_number, name, path, header_status, mount_status, state from v$asm_disk;
+SQL&gt; select * from v$asm_operation;</code></pre></div>
+
+<h2><span class="num">2</span>Verify the LUN Details</h2>
+<p>The new LUN must be visible — with the same multipath name — on <strong>every</strong> node:</p>
+<div class="code"><span class="lbl">BASH</span><pre><code>[root@dbdvl01 ~]# multipath -ll          # the new LUN is visible on BOTH nodes
+[root@dbdvl01 ~]# fdisk -l /dev/mapper/vpath3
+[root@dbdvl01 ~]# oracleasm listdisks</code></pre></div>
+
+<h2><span class="num">3</span>Create the ASM Disks</h2>
+<p>Label the LUNs with ASMLib on one node, then scan on the others:</p>
+<div class="code"><span class="lbl">BASH</span><pre><code># node 1 (OL6: /etc/init.d/oracleasm; OL7+: /usr/sbin/oracleasm)
+[root@dbdvl01 ~]# oracleasm createdisk OCRVD1 /dev/mapper/vpath3p1
+[root@dbdvl01 ~]# oracleasm createdisk OCRVD2 /dev/mapper/vpath4p1
+[root@dbdvl01 ~]# oracleasm createdisk OCRVD3 /dev/mapper/vpath5p1
+[root@dbdvl01 ~]# oracleasm listdisks
+
+# node 2: pick up the new labels
+[root@dbdvl02 ~]# oracleasm scandisks
+[root@dbdvl02 ~]# oracleasm listdisks</code></pre></div>
+<div class="note">Use a <strong>partition</strong> on the multipath device (<code>vpath3p1</code>), or the whole device — but always the multipath name, never an individual <code>/dev/sdX</code> path. On systems without ASMLib, use udev rules or ASM Filter Driver instead.</div>
+
+<h2><span class="num">4</span>Verify ASM Can See the New Disks</h2>
+<div class="code"><span class="lbl">SQL</span><pre><code>SQL&gt; select path, header_status, mount_status, state from v$asm_disk
+      where header_status in (&#x27;PROVISIONED&#x27;,&#x27;CANDIDATE&#x27;);</code></pre></div>
+<p>A disk labelled by ASMLib shows <code>HEADER_STATUS = PROVISIONED</code> (a raw candidate disk shows <code>CANDIDATE</code>). Run this on both nodes.</p>
+
+<h2><span class="num">5</span>Add the Disks to a Disk Group</h2>
+<p>To <strong>grow or migrate an existing disk group</strong>, add the new disk; ASM rebalances the data onto it:</p>
+<div class="code"><span class="lbl">SQL</span><pre><code>SQL&gt; alter diskgroup DATA add disk &#x27;ORCL:DATA2&#x27; rebalance power 4;</code></pre></div>
+<p>To move to new LUNs completely, add all the new disks and drop the old ones <strong>in the same command</strong> — one rebalance moves everything, and the old disks can be removed from the server once it finishes:</p>
+<div class="code"><span class="lbl">SQL</span><pre><code>SQL&gt; alter diskgroup DATA
+       add  disk &#x27;ORCL:DATA2&#x27;, &#x27;ORCL:DATA3&#x27;
+       drop disk DATA_0000, DATA_0001
+       rebalance power 4;</code></pre></div>
+<p>For a <strong>new disk group</strong> — like the one for OCR and voting disks in Part 2:</p>
+<div class="code"><span class="lbl">SQL</span><pre><code>SQL&gt; create diskgroup OCR normal redundancy
+       disk &#x27;ORCL:OCRVD1&#x27;, &#x27;ORCL:OCRVD2&#x27;, &#x27;ORCL:OCRVD3&#x27;
+       attribute &#x27;compatible.asm&#x27; = &#x27;19.0.0.0&#x27;;   -- at least 11.2 for voting files
+
+-- mount it on the other node(s) too
+[grid@dbdvl02 ~]$ srvctl start diskgroup -diskgroup OCR -node dbdvl02</code></pre></div>
+<div class="note"><strong>Correction:</strong> my original notes used <code>create diskgroup NEW_OCRVD add disk 'ORCL:OCRVD2'</code>, which isn't valid syntax (<code>add disk</code> belongs to <code>alter diskgroup</code>) and mixed up the disk names (it labelled <code>DATA2</code> and then added <code>OCRVD2</code>). The commands above are consistent.</div>
+
+<h2><span class="num">6</span>Monitor the Rebalance</h2>
+<div class="code"><span class="lbl">SQL</span><pre><code>SQL&gt; select group_number, operation, state, power, est_minutes from v$asm_operation;
+-- no rows = rebalance finished</code></pre></div>
+
+<h2><span class="num">7</span>Verify from Both ASM Instances</h2>
+<div class="code"><span class="lbl">SQL</span><pre><code>SQL&gt; select group_number, name, path, header_status, mount_status, state from v$asm_disk;
+SQL&gt; select group_number, name, total_mb, free_mb from v$asm_disk_stat;</code></pre></div>
+<p>All new disks should be <code>MEMBER</code> / <code>CACHED</code> / <code>NORMAL</code> on both nodes, with the expected sizes.</p>
+<p style="margin-top:1.4em">Next: <a href="../lun-migration-2/lun-migration-2.html">Moving OCR and voting disks to the new LUNs</a></p>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>
