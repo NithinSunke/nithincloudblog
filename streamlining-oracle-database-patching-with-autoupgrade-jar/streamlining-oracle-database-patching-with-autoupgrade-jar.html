@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oracle Patching with AutoUpgrade</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#c74634;--accent-soft:#fdf1ef;--accent-ink:#a3372a;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.05em;margin:1.5em 0 .4em}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.85em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em;overflow-wrap:normal}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post .tw{overflow-x:auto;margin:.8em 0}
+.tsn-post table{width:100%;border-collapse:collapse;font-size:.93em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post td:first-child code{white-space:nowrap}
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.3em 0}
+.tsn-post figure{margin:.8em 0 1.2em;text-align:center}
+.tsn-post figure img{max-width:100%;height:auto;border:1px solid var(--line);border-radius:8px}
+.tsn-post figcaption{color:var(--muted);font-size:.85em;margin-top:4px}
+.tsn-post details{margin:.2em 0 1.2em}
+.tsn-post summary{cursor:pointer;color:var(--muted);font-size:.88em}
+.tsn-post summary:hover{color:var(--accent-ink)}
+.tsn-post .why{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin:.8em 0}
+.tsn-post .why div{border:1px solid var(--line);border-radius:8px;padding:10px 14px;background:#fff}
+.tsn-post .why b{display:block;color:var(--accent-ink)}
+.tsn-post .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:.8em 0}
+.tsn-post .flow span{background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px 10px;font:600 .85em/1.4 Consolas,monospace}
+.tsn-post .flow b{color:var(--accent)}
+.tsn-post .modes td:nth-child(2){font-family:Consolas,monospace;font-size:.88em}
+.tsn-post .bar{display:flex;align-items:center;gap:8px;width:100%}
+.tsn-post .bar i{display:block;height:10px;border-radius:3px;background:var(--accent);min-width:3px}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:var(--accent-ink)}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
+</style>
+
+<h1>Streamlining Oracle Database Patching with AutoUpgrade.jar</h1>
+<div class="meta">By Sunke Nithin · December 12, 2024 &nbsp; <span class="tag">Database</span><span class="tag">Patching</span><span class="tag">Autoupgrade</span><span class="tag">Oracle</span></div>
+
+<p class="lead">Keeping Oracle databases up to date is critical for performance, security and compliance. I recently used <code>autoupgrade.jar</code> in <strong>patching mode</strong> to move a 19c database to Release Update 19.25 — it downloaded the patches, built a new Oracle home, patched the database and left a restore point behind, all from one config file. Here's the whole run.</p>
+
+<div class="why">
+<div><b>Automation</b>Less manual work and fewer errors across the whole patching process.</div>
+<div><b>Efficiency</b>Handles multiple databases in one run.</div>
+<div><b>Flexibility</b>Pre-checks, patching and post-patch tasks in one workflow.</div>
+<div><b>Resilience</b>Detailed logs, plus a guaranteed restore point to fall back to.</div>
+</div>
+
+<div class="flow"><span>load_password</span><b>→</b><span>download</span><b>→</b><span>analyze</span><b>→</b><span>deploy</span><b>→</b><span>verify</span><b>→</b><span>drop GRP</span></div>
+
+<div class="toc"><strong>Contents</strong>
+<ol>
+<li><a href="#au-cfg">The configuration file</a></li>
+<li><a href="#au-modes">Patching modes and stages</a></li>
+<li><a href="#au-mos">Load My Oracle Support credentials</a></li>
+<li><a href="#au-dl">Download the patches</a></li>
+<li><a href="#au-an">Analyze (pre-checks)</a></li>
+<li><a href="#au-dep">Deploy</a></li>
+<li><a href="#au-ver">Verify and clean up</a></li>
+</ol></div>
+
+<div class="warn"><strong>Before you start:</strong> download the latest <code>autoupgrade.jar</code> from My Oracle Support (it's updated often), test the whole process in a non-production environment first, and make sure your backups are in place.</div>
+
+<h2 id="au-cfg"><span class="num">1</span>The Configuration File</h2>
+<p>One small config file describes the database to patch and where everything goes:</p>
+<div class="code"><span class="lbl">PATCH.CFG</span><pre><code>global.global_log_dir=/u01/software/log
+global.keystore=/home/oracle/autoupgrade/keys
+upg1.sid=cdb1
+upg1.source_home=/u01/app/oracle/product/19.0.0/dbhome_1
+upg1.target_home=/u01/app/oracle/product/19.0.0/dbhome_2
+upg1.folder=/u01/software/patch
+upg1.download=YES
+upg1.patch=RECOMMENDED</code></pre></div>
+<details><summary>Show screenshot</summary><figure><img src="images/image-24.png" alt="cat autoupgrade/patch.cfg showing the global and upg1 entries listed above" loading="lazy"></figure></details>
+
+<div class="tw"><table>
+<thead><tr><th>Parameter</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>keystore</code></td><td>Secure directory that holds the AutoUpgrade keystore (your My Oracle Support credentials)</td></tr>
+<tr><td><code>source_home</code></td><td><code>ORACLE_HOME</code> the database runs from now</td></tr>
+<tr><td><code>target_home</code></td><td>Directory where AutoUpgrade creates the new, patched <code>ORACLE_HOME</code></td></tr>
+<tr><td><code>sid</code></td><td><code>ORACLE_SID</code> of the database to patch</td></tr>
+<tr><td><code>folder</code></td><td>Directory holding the patch zip files and the base image</td></tr>
+<tr><td><code>download</code></td><td><code>YES</code> lets AutoUpgrade fetch missing patches from My Oracle Support</td></tr>
+<tr><td><code>patch</code></td><td>Comma-separated list of what to install (default <code>RECOMMENDED</code>)</td></tr>
+</tbody></table></div>
+
+<h3>Values for <code>patch</code></h3>
+<div class="tw"><table>
+<thead><tr><th>Value</th><th>Installs</th></tr></thead>
+<tbody>
+<tr><td><code>RECOMMENDED</code></td><td>Alias for <code>RU,OPATCH,OJVM,DPBP</code> (the default)</td></tr>
+<tr><td><code>RU</code></td><td>Latest Release Update</td></tr>
+<tr><td><code>RU:x.y</code></td><td>A specific Release Update, e.g. <code>RU:19.24</code></td></tr>
+<tr><td><code>OPATCH</code></td><td>Latest OPatch</td></tr>
+<tr><td><code>OJVM</code></td><td>Oracle Java VM patch matching the RU</td></tr>
+<tr><td><code>OJVM:x.y</code></td><td>A specific OJVM patch, e.g. <code>OJVM:19.24</code></td></tr>
+<tr><td><code>DPBP</code></td><td>Data Pump bundle patch matching the RU</td></tr>
+<tr><td><code>&lt;number&gt;</code></td><td>A specific one-off patch</td></tr>
+</tbody></table></div>
+<div class="note">With <code>method=OUTOFPLACE</code> (out-of-place patching into a new home, as here), the list must include <code>RU,OPATCH</code>.</div>
+
+<h2 id="au-modes"><span class="num">2</span>Patching Modes and Stages</h2>
+<p>AutoUpgrade patching has three job modes, plus a <code>download</code> mode that only fetches patches. Each runs a different set of stages:</p>
+<div class="tw"><table class="modes">
+<thead><tr><th>Mode</th><th>Stages</th></tr></thead>
+<tbody>
+<tr><td><strong>analyze</strong></td><td>PRECHECKS</td></tr>
+<tr><td><strong>fixups</strong></td><td>PRECHECKS, PREFIXUPS</td></tr>
+<tr><td><strong>deploy</strong></td><td>GRP, PREACTIONS, PRECHECKS, PREFIXUPS, EXTRACT, INSTALL, ROOTSH, DBTOOLS, OPATCH, PATCHING, POSTCHECKS, POSTFIXUPS, POSTACTIONS</td></tr>
+</tbody></table></div>
+<p>Every command below runs from the AutoUpgrade directory, using the Java that ships with the database home:</p>
+<div class="code"><span class="lbl">BASH</span><pre><code>$ORACLE_HOME/jdk/jre/bin/java -jar autoupgrade.jar -patch -config patch.cfg -mode &lt;mode&gt;</code></pre></div>
+
+<h2 id="au-mos"><span class="num">3</span>Load My Oracle Support Credentials</h2>
+<p>For AutoUpgrade to download patches, store your MOS credentials in its keystore with <code>-load_password</code>. The first run creates the keystore and asks you to set a password for it:</p>
+<div class="code"><span class="lbl">BASH</span><pre><code>$ORACLE_HOME/jdk/jre/bin/java -jar autoupgrade.jar -patch -config patch.cfg -load_password
+
+<span class="cm"># Inside the MOS&gt; prompt:</span>
+MOS&gt; add -user &lt;your-mos-username&gt;    <span class="cm"># then enter your MOS password twice</span>
+MOS&gt; save
+MOS&gt; list                            <span class="cm"># "MOS Credentials Loaded - Connection Successful"</span>
+MOS&gt; exit</code></pre></div>
+<details><summary>Show output</summary>
+<figure><img src="images/image-25.png" alt="AutoUpgrade Patching Password Loader creates a new keystore after the password is entered twice, then the add -user command prompts for the MOS password" loading="lazy"></figure>
+<figure><img src="images/image-26.png" alt="MOS prompt: save, list shows MOS Credentials Loaded - Connection Successful, exit" loading="lazy"></figure>
+</details>
+
+<h2 id="au-dl"><span class="num">4</span>Download the Patches</h2>
+<div class="code"><span class="lbl">BASH</span><pre><code>$ORACLE_HOME/jdk/jre/bin/java -jar autoupgrade.jar -patch -config patch.cfg -mode download
+ls /u01/software/patch/</code></pre></div>
+<p>AutoUpgrade connected to MOS, worked out what <code>RECOMMENDED</code> means today, and downloaded and validated each file:</p>
+<div class="tw"><table>
+<thead><tr><th>Patch</th><th>File</th></tr></thead>
+<tbody>
+<tr><td>Database Release Update 19.25.0.0.0</td><td><code>p36912597_190000_Linux-x86-64.zip</code></td></tr>
+<tr><td>Data Pump Bundle Patch 19.25.0.0.0</td><td><code>p37056207_1925000DBRU_Generic.zip</code></td></tr>
+<tr><td>OJVM Release Update 19.25.0.0.0</td><td><code>p36878697_190000_Linux-x86-64.zip</code></td></tr>
+<tr><td>OPatch 12.2.0.1.44 (Oct 2024)</td><td><code>p6880880_190000_Linux-x86-64.zip</code></td></tr>
+</tbody></table></div>
+<details><summary>Show output</summary>
+<figure><img src="images/image-27.png" alt="AutoUpgrade Patching 24.8.241119 download mode: connected to MOS, four patch files downloaded to /u01/software/patch and VALIDATED" loading="lazy"></figure>
+<figure><img src="images/image-28.png" alt="ls /u01/software/patch lists the 19.3 base image LINUX.X64_193000_db_home.zip and the four patch zips" loading="lazy"></figure>
+</details>
+<p>The folder also contains <code>LINUX.X64_193000_db_home.zip</code> — the 19.3 base image AutoUpgrade unzips to build the new home.</p>
+
+<h2 id="au-an"><span class="num">5</span>Analyze: Run the Pre-Checks</h2>
+<div class="code"><span class="lbl">BASH</span><pre><code>$ORACLE_HOME/jdk/jre/bin/java -jar autoupgrade.jar -patch -config patch.cfg -mode analyze</code></pre></div>
+<p>The files are already there, so each one is reported as <code>LOCATED</code>. The job runs in the background and you get a <code>patch&gt;</code> console. Useful commands there:</p>
+<div class="code"><span class="lbl">CONSOLE</span><pre><code>lsj               <span class="cm"># list jobs and their current stage</span>
+status -job 100   <span class="cm"># details for one job: logs, stages, per-container progress</span>
+/                 <span class="cm"># repeat the last command</span>
+help              <span class="cm"># all console commands</span></code></pre></div>
+<details><summary>Show output</summary>
+<figure><img src="images/image-29.png" alt="Analyze mode: four patch files LOCATED, 1 CDB plus 1 PDB will be analyzed, lsj shows job 100 for cdb1 in PRECHECKS, RUNNING" loading="lazy"></figure>
+<figure><img src="images/image-30.png" alt="Job 100 details with log locations under /u01/software/log/cdb1/100, PRECHECKS progress per container, then Job 100 completed with 1 finished and 0 failed" loading="lazy"></figure>
+</details>
+<p>Job 100 finished with no failures. Read the pre-check report under <code>/u01/software/log/cdb1/100/prechecks</code>, and the summary at <code>/u01/software/log/cfgtoollogs/patch/auto/status/status.html</code>, before deploying.</p>
+
+<h2 id="au-dep"><span class="num">6</span>Deploy: Apply the Patches</h2>
+<div class="code"><span class="lbl">BASH</span><pre><code>$ORACLE_HOME/jdk/jre/bin/java -jar autoupgrade.jar -patch -config patch.cfg -mode deploy</code></pre></div>
+<p>Deploy mode created a guaranteed restore point (GRP), built and patched the new home, moved <code>cdb1</code> into it and ran datapatch. Job 101 took about 2 hours 20 minutes in this lab:</p>
+<div class="tw"><table>
+<colgroup><col style="width:32%"><col style="width:14%"><col></colgroup>
+<thead><tr><th>Stage</th><th>Time</th><th>Relative time</th></tr></thead>
+<tbody>
+<tr><td>GRP, PREACTIONS</td><td>&lt;1 min</td><td><div class="bar"><i style="width:2px"></i></div></td></tr>
+<tr><td>PRECHECKS</td><td>4 min</td><td><div class="bar"><i style="width:4%"></i></div></td></tr>
+<tr><td>PREFIXUPS</td><td>9 min</td><td><div class="bar"><i style="width:10%"></i></div></td></tr>
+<tr><td>EXTRACT</td><td>3 min</td><td><div class="bar"><i style="width:3%"></i></div></td></tr>
+<tr><td>INSTALL</td><td>2 min</td><td><div class="bar"><i style="width:2%"></i></div></td></tr>
+<tr><td>ROOTSH, DBTOOLS</td><td>&lt;1 min</td><td><div class="bar"><i style="width:2px"></i></div></td></tr>
+<tr><td>OPATCH</td><td>25 min</td><td><div class="bar"><i style="width:28%"></i></div></td></tr>
+<tr><td>PATCHING</td><td>~90 min</td><td><div class="bar"><i style="width:100%"></i></div></td></tr>
+</tbody></table></div>
+<details><summary>Show output</summary>
+<figure><img src="images/image-31.png" alt="Deploy mode: AutoUpgrade loads the keystore, connects to MOS and locates the four patch files" loading="lazy"></figure>
+<figure><img src="images/image-32.png" alt="lsj shows job 101 in the GRP stage; status -job 101 lists all deploy stages from PENDING to POSTACTIONS" loading="lazy"></figure>
+<figure><img src="images/image-33.png" alt="Job 101 details after 140 minutes with stage times, then Job 101 completed: 1 finished, 0 failed, and a reminder to drop the restore point AU_PATCHING_9212_CDB1193000" loading="lazy"></figure>
+</details>
+<div class="note">Because this is <strong>out-of-place</strong> patching, the database now runs from <code>dbhome_2</code>. Update <code>/etc/oratab</code> if needed and any scripts or profiles that set <code>ORACLE_HOME</code>, and keep <code>dbhome_1</code> until you're sure you won't need to fall back.</div>
+
+<h2 id="au-ver"><span class="num">7</span>Verify and Clean Up</h2>
+<p>From the new home, list the applied patches:</p>
+<div class="code"><span class="lbl">BASH</span><pre><code>$ORACLE_HOME/OPatch/opatch lspatches</code></pre></div>
+<div class="code"><span class="lbl">OUTPUT</span><pre><code>36878697;OJVM RELEASE UPDATE: 19.25.0.0.241015 (36878697)
+37056207;DATAPUMP BUNDLE PATCH 19.25.0.0.0
+36912597;Database Release Update : 19.25.0.0.241015 (36912597)
+29585399;OCW RELEASE UPDATE 19.3.0.0.0 (29585399)
+
+OPatch succeeded.</code></pre></div>
+<details><summary>Show screenshot</summary><figure><img src="images/image-34.png" alt="opatch lspatches lists OJVM 19.25, Data Pump bundle patch 19.25, Database Release Update 19.25 and OCW 19.3" loading="lazy"></figure></details>
+<p>Also confirm datapatch ran inside the database:</p>
+<div class="code"><span class="lbl">SQL</span><pre><code>SELECT patch_id, action, status, description
+FROM   dba_registry_sqlpatch
+ORDER  BY action_time;</code></pre></div>
+
+<h3>Drop the guaranteed restore point</h3>
+<p>AutoUpgrade keeps the GRP so you can roll back. A guaranteed restore point keeps flashback logs growing in the recovery area, so drop it once you're happy with the patched database:</p>
+<div class="code"><span class="lbl">SQL</span><pre><code>DROP RESTORE POINT AU_PATCHING_9212_CDB1193000;</code></pre></div>
+
+<h2>Summary</h2>
+<p>AutoUpgrade turned a multi-step manual job — downloading the right RU, OJVM, Data Pump and OPatch patches, building a new home, patching and running datapatch — into four commands driven by one config file. It's a must-have for any Oracle DBA who wants to reduce manual work and patch more consistently. If you haven't tried it yet, start with <code>-mode analyze</code> on a test system.</p>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>
