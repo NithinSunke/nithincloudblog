@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Convert Non-CDB to PDB in 19c</title>
+<title>Convert Non-CDB to CDB in 19c</title>
 </head>
 <body>
 <!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
@@ -62,7 +62,7 @@
 
 </style>
 
-<h1>Convert a Non-CDB to a PDB in Oracle 19c: A Step-by-Step Guide</h1>
+<h1>Steps to Convert a Non-CDB Database to CDB (PDB) in 19c Manually</h1>
 <div class="meta">By Sunke Nithin · June 9, 2024 &nbsp; <span class="tag">Database</span><span class="tag">Oracle</span><span class="tag">Migration</span></div>
 
 <p class="lead">Moving a 19c non-container database (non-CDB) into the multitenant architecture means plugging it into a container database (CDB) as a pluggable database (PDB). This post does it manually with the <code>DBMS_PDB</code> package: describe the non-CDB to an XML file, check compatibility, plug it in with <code>NOCOPY</code>, and run <code>noncdb_to_pdb.sql</code>.</p>
