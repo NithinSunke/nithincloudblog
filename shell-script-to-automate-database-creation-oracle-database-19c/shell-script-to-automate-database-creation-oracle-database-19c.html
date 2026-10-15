@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Automate Oracle 19c DB Creation</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#c74634;--accent-soft:#fdf1ef;--accent-ink:#a3372a;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.06em;margin:1.6em 0 .4em;padding-left:.6em;border-left:4px solid var(--accent)}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.85em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em;overflow-wrap:normal}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post .tw{overflow-x:auto;margin:.8em 0}
+.tsn-post table{width:100%;border-collapse:collapse;font-size:.93em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.3em 0}
+.tsn-post .lab{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin:1em 0}
+.tsn-post .lab div{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:#fff;font-size:.9em}
+.tsn-post .lab b{display:block;color:var(--accent-ink);font-size:.82em;text-transform:uppercase;letter-spacing:.05em}
+.tsn-post .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:.8em 0}
+.tsn-post .flow span{background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:.88em;font-weight:600}
+.tsn-post .flow b{color:var(--accent)}
+.tsn-post .shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px;margin:.8em 0 1.2em;align-items:start}
+.tsn-post .shots.one{grid-template-columns:1fr}
+.tsn-post .shots figure{margin:0}
+.tsn-post .shots img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:8px;background:#fff;transition:box-shadow .15s ease}
+.tsn-post .shots a:hover img{box-shadow:0 4px 14px rgba(0,0,0,.14)}
+.tsn-post .shots.one img{max-width:100%;width:auto;margin:0 auto}
+.tsn-post .cap{color:var(--muted);font-size:.85em;margin-top:-.6em}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:var(--accent-ink)}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
+
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .check{list-style:none;padding:0;counter-reset:c}
+.tsn-post .check>li{position:relative;padding-left:2.4em;margin:.7em 0}
+.tsn-post .check>li::before{counter-increment:c;content:counter(c);position:absolute;left:0;top:.1em;width:1.7em;height:1.7em;line-height:1.7em;text-align:center;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:.85em}
+
+</style>
+
+<h1>Shell Script to Automate Database Creation in Oracle Database 19c</h1>
+<div class="meta">By Sunke Nithin · August 16, 2025 &nbsp; <span class="tag">Automation</span><span class="tag">Scripts</span></div>
+
+<p class="lead">Creating a database through the DBCA GUI is fine once; for labs and repeatable builds, a script is better. This one runs <strong>DBCA in silent mode</strong> to create an Oracle 19c database — either a non-CDB or a CDB with one PDB — with no GUI and no response file.</p>
+
+<ul>
+<li>Database name, CDB/non-CDB and PDB name come from arguments (with defaults).</li>
+<li>Passwords come from environment variables or a hidden prompt — they're not stored in the script.</li>
+<li>One DBCA call with shared options, so the two modes can't drift apart.</li>
+</ul>
+
+<h2>create_db.sh</h2>
+<div class="code"><span class="lbl">CREATE_DB.SH</span><pre><code>#!/bin/bash
+#
+# Script : create_db.sh
+# Purpose: Create an Oracle 19c database with DBCA in silent mode
+# Usage  : ./create_db.sh [DB_NAME] [CDB_FLAG] [PDB_NAME]
+#          e.g. ./create_db.sh orcl19c true pdb1
+#
+
+# ========= CONFIGURABLE VARIABLES =========
+export ORACLE_BASE=/u01/app/oracle
+export ORACLE_HOME=$ORACLE_BASE/product/19.0.0/dbhome_1
+export PATH=$ORACLE_HOME/bin:$PATH
+
+DB_NAME=${1:-orcl19c}       # Global database name
+DB_SID=$DB_NAME             # SID
+CDB_FLAG=${2:-false}        # true = CDB with one PDB, false = non-CDB
+PDB_NAME=${3:-pdb1}         # PDB name (if CDB_FLAG=true)
+
+DATA_DIR=$ORACLE_BASE/oradata
+REDO_SIZE=200               # MB
+MEMORY_PERCENT=40           # % of server memory for the database
+# ==========================================
+
+# Passwords: take them from the environment, or prompt (never hard-code them)
+if [ -z &quot;$SYS_PWD&quot; ]; then
+    read -s -p &quot;SYS/SYSTEM password: &quot; SYS_PWD; echo
+fi
+if [ &quot;$CDB_FLAG&quot; = true ] &amp;&amp; [ -z &quot;$PDBADMIN_PWD&quot; ]; then
+    read -s -p &quot;PDBADMIN password: &quot; PDBADMIN_PWD; echo
+fi
+
+if [ ! -x &quot;$ORACLE_HOME/bin/dbca&quot; ]; then
+    echo &quot;[ERROR] dbca not found in $ORACLE_HOME/bin&quot;
+    exit 1
+fi
+
+echo &quot;=============================================&quot;
+echo &quot;   Oracle 19c Database Silent Creation&quot;
+echo &quot;   SID      : $DB_SID&quot;
+echo &quot;   DB Name  : $DB_NAME&quot;
+echo &quot;   CDB Mode : $CDB_FLAG&quot;
+echo &quot;=============================================&quot;
+
+# Options common to both modes
+COMMON_OPTS=(
+    -silent -createDatabase
+    -templateName General_Purpose.dbc
+    -gdbName &quot;$DB_NAME&quot;
+    -sid &quot;$DB_SID&quot;
+    -responseFile NO_VALUE
+    -characterSet AL32UTF8
+    -sysPassword &quot;$SYS_PWD&quot;
+    -systemPassword &quot;$SYS_PWD&quot;
+    -databaseType MULTIPURPOSE
+    -memoryPercentage &quot;$MEMORY_PERCENT&quot;
+    -storageType FS
+    -datafileDestination &quot;$DATA_DIR&quot;
+    -redoLogFileSize &quot;$REDO_SIZE&quot;
+    -emConfiguration NONE
+)
+
+if [ &quot;$CDB_FLAG&quot; = true ]; then
+    echo &quot;[INFO] Creating CDB with PDB $PDB_NAME ...&quot;
+    dbca &quot;${COMMON_OPTS[@]}&quot; \
+        -createAsContainerDatabase true \
+        -numberOfPDBs 1 \
+        -pdbName &quot;$PDB_NAME&quot; \
+        -pdbAdminPassword &quot;$PDBADMIN_PWD&quot;
+else
+    echo &quot;[INFO] Creating non-CDB database ...&quot;
+    dbca &quot;${COMMON_OPTS[@]}&quot; \
+        -createAsContainerDatabase false
+fi
+RC=$?
+
+if [ $RC -eq 0 ]; then
+    echo &quot;[SUCCESS] Database $DB_NAME created successfully.&quot;
+else
+    echo &quot;[ERROR] Database creation failed (rc=$RC). Check logs in $ORACLE_BASE/cfgtoollogs/dbca/$DB_NAME&quot;
+    exit 1
+fi</code></pre></div>
+
+<h2>Usage</h2>
+<p>Run as the <code>oracle</code> software owner:</p>
+<div class="code"><span class="lbl">BASH</span><pre><code>chmod +x create_db.sh
+
+# non-CDB called orcl19c (prompts for the password)
+./create_db.sh
+
+# CDB called cdb19c with PDB pdb1
+./create_db.sh cdb19c true pdb1
+
+# fully unattended: pass passwords through the environment
+SYS_PWD=&#x27;...&#x27; PDBADMIN_PWD=&#x27;...&#x27; ./create_db.sh cdb19c true pdb1</code></pre></div>
+
+<h2>What the Key Options Do</h2>
+<div class="tw"><table>
+<thead><tr><th>Option</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>-templateName General_Purpose.dbc</code></td><td>Start from Oracle's general-purpose template (includes pre-built data files, so creation is fast)</td></tr>
+<tr><td><code>-createAsContainerDatabase</code></td><td><code>true</code> for a CDB, <code>false</code> for a non-CDB</td></tr>
+<tr><td><code>-characterSet AL32UTF8</code></td><td>Unicode — the recommended database character set</td></tr>
+<tr><td><code>-memoryPercentage 40</code></td><td>Give the database 40% of the server's RAM</td></tr>
+<tr><td><code>-storageType FS -datafileDestination</code></td><td>Data files on the file system under <code>$ORACLE_BASE/oradata</code> (use <code>ASM</code> and <code>+DATA</code> for ASM)</td></tr>
+<tr><td><code>-redoLogFileSize 200</code></td><td>200 MB online redo logs</td></tr>
+<tr><td><code>-emConfiguration NONE</code></td><td>Skip EM Express setup</td></tr>
+</tbody></table></div>
+
+<h2>After It Finishes</h2>
+<div class="code"><span class="lbl">BASH</span><pre><code>grep orcl19c /etc/oratab          # DBCA adds the entry
+. oraenv &lt;&lt;&lt; orcl19c
+sqlplus / as sysdba &lt;&lt;&lt; &quot;select name, open_mode, cdb from v\$database;&quot;</code></pre></div>
+<div class="note">Non-CDB architecture is deprecated in 19c and desupported from 21c onward, so for anything new, create a CDB (<code>true</code>). If you build a non-CDB now, see <a href="../steps-to-convert-non-cdb-database-to-cdb-in-19c-manually/steps-to-convert-non-cdb-database-to-cdb-in-19c-manually.html">converting a non-CDB to a PDB</a>.</div>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>

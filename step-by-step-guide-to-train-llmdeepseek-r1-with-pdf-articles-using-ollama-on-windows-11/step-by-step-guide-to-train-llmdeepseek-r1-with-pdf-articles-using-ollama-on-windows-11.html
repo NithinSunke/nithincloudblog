@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chat with PDFs: DeepSeek-R1 + Ollama</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#6b3fa0;--accent-soft:#f1ebf8;--accent-ink:#56318a;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.06em;margin:1.6em 0 .4em;padding-left:.6em;border-left:4px solid var(--accent)}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.85em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em;overflow-wrap:normal}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post .tw{overflow-x:auto;margin:.8em 0}
+.tsn-post table{width:100%;border-collapse:collapse;font-size:.93em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.3em 0}
+.tsn-post .lab{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin:1em 0}
+.tsn-post .lab div{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:#fff;font-size:.9em}
+.tsn-post .lab b{display:block;color:var(--accent-ink);font-size:.82em;text-transform:uppercase;letter-spacing:.05em}
+.tsn-post .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:.8em 0}
+.tsn-post .flow span{background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:.88em;font-weight:600}
+.tsn-post .flow b{color:var(--accent)}
+.tsn-post .shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px;margin:.8em 0 1.2em;align-items:start}
+.tsn-post .shots.one{grid-template-columns:1fr}
+.tsn-post .shots figure{margin:0}
+.tsn-post .shots img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:8px;background:#fff;transition:box-shadow .15s ease}
+.tsn-post .shots a:hover img{box-shadow:0 4px 14px rgba(0,0,0,.14)}
+.tsn-post .shots.one img{max-width:100%;width:auto;margin:0 auto}
+.tsn-post .cap{color:var(--muted);font-size:.85em;margin-top:-.6em}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:var(--accent-ink)}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
+
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .check{list-style:none;padding:0;counter-reset:c}
+.tsn-post .check>li{position:relative;padding-left:2.4em;margin:.7em 0}
+.tsn-post .check>li::before{counter-increment:c;content:counter(c);position:absolute;left:0;top:.1em;width:1.7em;height:1.7em;line-height:1.7em;text-align:center;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:.85em}
+
+</style>
+
+<h1>Step-by-Step Guide: Chat with Your PDF Articles Using DeepSeek-R1 and Ollama on Windows 11</h1>
+<div class="meta">By Sunke Nithin · April 8, 2025 &nbsp; <span class="tag">AI</span><span class="tag">LAB</span></div>
+
+<p class="lead">This post builds a local "chat with your documents" app on Windows 11: point it at a folder of PDFs, ask questions, and the <strong>DeepSeek-R1</strong> model running in <strong>Ollama</strong> answers from your own content. Everything runs on your machine — no cloud API, no data leaving the PC.</p>
+
+<div class="note"><strong>Training vs RAG:</strong> this doesn't actually <em>train</em> or fine-tune the model — that needs far more data, GPU time and tooling. It uses <strong>retrieval-augmented generation (RAG)</strong>: the PDFs are split into chunks and indexed, the chunks most relevant to each question are found, and they're handed to the model along with the question. The model itself never changes, which is why adding a new PDF takes seconds rather than hours.</div>
+
+<div class="flow"><span>PDFs</span><b>→</b><span>chunk</span><b>→</b><span>embed (FAISS)</span><b>→</b><span>retrieve top-k</span><b>→</b><span>DeepSeek-R1 via Ollama</span><b>→</b><span>answer</span></div>
+
+<h2><span class="num">1</span>Check Your Hardware</h2>
+<div class="tw"><table>
+<thead><tr><th></th><th>Minimum</th><th>Better</th></tr></thead>
+<tbody>
+<tr><td>RAM</td><td>16 GB</td><td>32 GB</td></tr>
+<tr><td>GPU</td><td>None — runs on CPU, slowly</td><td>NVIDIA with 8 GB+ VRAM; Ollama uses it automatically</td></tr>
+<tr><td>Disk</td><td>~10 GB free (model ≈ 5 GB plus Python packages)</td><td>SSD</td></tr>
+</tbody></table></div>
+
+<h2><span class="num">2</span>Install Ollama and Pull DeepSeek-R1</h2>
+<p>Download and install Ollama for Windows from <a href="https://ollama.com/download">ollama.com/download</a>. It runs as a background service. Then pull the model:</p>
+<div class="code"><span class="lbl">POWERSHELL</span><pre><code>ollama pull deepseek-r1:8b
+ollama run deepseek-r1:8b &quot;Say hello in one line&quot;</code></pre></div>
+<p>The 8B model is a good fit for 16–32 GB of RAM. <code>deepseek-r1:1.5b</code> is lighter if your machine struggles; <code>14b</code> and up give better answers if you have the hardware.</p>
+
+<h2><span class="num">3</span>Set Up Python with Anaconda</h2>
+<p>Install <a href="https://www.anaconda.com/download/success">Anaconda</a>, open <strong>Start → Anaconda3 → Anaconda PowerShell Prompt</strong>, and check the versions:</p>
+<div class="code"><span class="lbl">POWERSHELL</span><pre><code>python --version
+conda --version</code></pre></div>
+<div class="shots"><figure><a href="images/image-152.png" target="_blank" rel="noopener"><img src="images/image-152.png" alt="Anaconda PowerShell Prompt: python3.exe --version shows Python 3.13.2" loading="lazy"></a></figure><figure><a href="images/image-154.png" target="_blank" rel="noopener"><img src="images/image-154.png" alt="conda --version shows conda 24.9.2" loading="lazy"></a></figure></div>
+<p>Create and activate a dedicated environment for the project. Python 3.11 or 3.12 is the safest choice for these libraries:</p>
+<div class="code"><span class="lbl">POWERSHELL</span><pre><code>conda create -n rag python=3.11 -y
+conda activate rag</code></pre></div>
+
+<h2><span class="num">4</span>Install PyTorch</h2>
+<p>Get the exact command for your setup from <a href="https://pytorch.org/get-started/locally/">pytorch.org</a> (Stable · Windows · Pip · Python · CPU, or your CUDA version). For CPU only:</p>
+<div class="code"><span class="lbl">POWERSHELL</span><pre><code>pip install torch torchvision torchaudio</code></pre></div>
+<div class="note">Older guides use <code>conda install pytorch ... -c pytorch</code>. PyTorch no longer publishes new releases to its conda channel, so use the <code>pip</code> command the site gives you.</div>
+<p>Check it works by building a random tensor:</p>
+<div class="code"><span class="lbl">PYTHON</span><pre><code>import torch
+x = torch.rand(2, 3)
+print(x)</code></pre></div>
+<div class="shots one"><figure><a href="images/image-162.png" target="_blank" rel="noopener"><img src="images/image-162.png" alt="Python 3.12.7: import torch; torch.rand(2, 3) prints a 2x3 tensor" loading="lazy"></a></figure></div>
+
+<h2><span class="num">5</span>Install the Libraries</h2>
+<div class="code"><span class="lbl">POWERSHELL</span><pre><code>pip install -U streamlit pdfplumber faiss-cpu sentence-transformers langchain langchain-community langchain-experimental langchain-huggingface langchain-ollama</code></pre></div>
+<div class="tw"><table>
+<thead><tr><th>Package</th><th>Used for</th></tr></thead>
+<tbody>
+<tr><td><code>streamlit</code></td><td>The web UI</td></tr>
+<tr><td><code>pdfplumber</code></td><td>Reading text from the PDFs</td></tr>
+<tr><td><code>langchain-experimental</code></td><td><code>SemanticChunker</code> — splits text where the meaning changes</td></tr>
+<tr><td><code>langchain-huggingface</code> + <code>sentence-transformers</code></td><td>Local embeddings</td></tr>
+<tr><td><code>faiss-cpu</code></td><td>The vector index</td></tr>
+<tr><td><code>langchain-ollama</code></td><td>Talking to the model in Ollama</td></tr>
+</tbody></table></div>
+
+<h2><span class="num">6</span>Create the App</h2>
+<div class="code"><span class="lbl">POWERSHELL</span><pre><code>mkdir rag-system
+cd rag-system</code></pre></div>
+<p>Save this as <code>app.py</code>. It loads every PDF in a folder, builds the index once (cached), and answers questions from the most relevant passages:</p>
+<div class="code"><span class="lbl">APP.PY</span><pre><code>import os
+import streamlit as st
+from langchain_community.document_loaders import PDFPlumberLoader
+from langchain_community.vectorstores import FAISS
+from langchain_experimental.text_splitter import SemanticChunker
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_ollama import OllamaLLM
+
+st.title(&quot;📄 Chatbot with homelab knowledge base&quot;)
+
+# ===== Sidebar =====
+with st.sidebar:
+    st.header(&quot;Configuration&quot;)
+    pdf_folder = st.text_input(&quot;PDF folder path&quot;, value=r&quot;D:\Nithin\aitraning&quot;)
+    top_k = st.slider(&quot;Number of passages to use&quot;, 1, 5, 3)
+    model = st.text_input(&quot;Ollama model&quot;, value=&quot;deepseek-r1:8b&quot;)
+
+# ===== Build the index once per folder (cached) =====
+@st.cache_resource(show_spinner=&quot;Reading and indexing PDFs...&quot;)
+def build_index(folder):
+    docs = []
+    for name in os.listdir(folder):
+        if name.lower().endswith(&quot;.pdf&quot;):
+            docs.extend(PDFPlumberLoader(os.path.join(folder, name)).load())
+    embeddings = HuggingFaceEmbeddings()          # all-mpnet-base-v2, runs locally
+    chunks = SemanticChunker(embeddings).split_documents(docs)
+    return FAISS.from_documents(chunks, embeddings)
+
+index = build_index(pdf_folder)
+llm = OllamaLLM(model=model)
+
+# ===== Chat =====
+question = st.text_input(&quot;Ask about your PDFs:&quot;, placeholder=&quot;Type your question here...&quot;)
+if st.button(&quot;Submit&quot;) and question:
+    with st.spinner(&quot;Searching your documents...&quot;):
+        passages = index.similarity_search(question, k=top_k)
+        context = &quot;\n\n&quot;.join(p.page_content for p in passages)
+        prompt = (
+            &quot;Answer the question using only the context below. &quot;
+            &quot;If the answer is not in the context, say you don&#x27;t know.\n\n&quot;
+            f&quot;Context:\n{context}\n\nQuestion: {question}&quot;
+        )
+        answer = llm.invoke(prompt)
+
+    st.subheader(&quot;Answer&quot;)
+    st.write(answer)
+    with st.expander(&quot;See relevant passages&quot;):
+        for i, p in enumerate(passages, 1):
+            src = os.path.basename(p.metadata.get(&quot;source&quot;, &quot;&quot;))
+            st.markdown(f&quot;**{i}. {src}** (page {p.metadata.get(&#x27;page&#x27;, &#x27;N/A&#x27;)})&quot;)
+            st.write(p.page_content[:500] + &quot;...&quot;)</code></pre></div>
+<details><summary>How it works</summary>
+<ul>
+<li><strong>Load:</strong> <code>PDFPlumberLoader</code> reads each PDF page by page.</li>
+<li><strong>Chunk:</strong> <code>SemanticChunker</code> splits the text into passages at natural topic boundaries.</li>
+<li><strong>Index:</strong> each chunk is turned into an embedding vector and stored in FAISS. <code>@st.cache_resource</code> keeps the index in memory, so it's only built once per folder.</li>
+<li><strong>Answer:</strong> the <em>top-k</em> most similar passages are put into the prompt, and DeepSeek-R1 answers from them.</li>
+</ul>
+</details>
+
+<h2><span class="num">7</span>Run It</h2>
+<div class="code"><span class="lbl">POWERSHELL</span><pre><code>conda activate rag
+streamlit run app.py --server.fileWatcherType none</code></pre></div>
+<div class="shots one"><figure><a href="images/image-164.png" target="_blank" rel="noopener"><img src="images/image-164.png" alt="streamlit run app.py: local URL http://localhost:8501, followed by a torch.classes RuntimeError traceback from the file watcher" loading="lazy"></a></figure></div>
+<div class="note">The <code>torch.classes</code> <code>RuntimeError</code> in that output comes from Streamlit's file watcher inspecting PyTorch. It's harmless, and <code>--server.fileWatcherType none</code> stops it appearing. The <code>Chain.__call__</code> deprecation warning came from the older version of the script; the version above doesn't use chains.</div>
+<p>Your browser opens <code>http://localhost:8501</code>. The first run takes a while as it downloads the embedding model and indexes the PDFs; after that, questions come back in seconds (or a minute or so on CPU):</p>
+<div class="shots one"><figure><a href="images/image-166.png" target="_blank" rel="noopener"><img src="images/image-166.png" alt="Streamlit app Chatbot with homelab knowledge base answering how to clone VMs in OCI, with DeepSeek-R1 think text" loading="lazy"></a></figure></div><p class="cap">DeepSeek-R1 answering from my homelab notes.</p>
+<p>DeepSeek-R1 is a reasoning model, so its answer starts with its thinking inside <code>&lt;think&gt;…&lt;/think&gt;</code>. To hide that, strip it before displaying: <code>answer = answer.split("&lt;/think&gt;")[-1].strip()</code>.</p>
+
+<h2>Tips</h2>
+<ul>
+<li><strong>Added new PDFs?</strong> Restart the app, or clear the cache from Streamlit's menu, so the index is rebuilt.</li>
+<li><strong>Scanned PDFs</strong> (images of pages) have no text to extract — run them through OCR first.</li>
+<li><strong>Better answers:</strong> try a bigger model, raise <em>top-k</em> to give it more context, or swap in a stronger embedding model, e.g. <code>HuggingFaceEmbeddings(model_name="BAAI/bge-base-en-v1.5")</code>.</li>
+</ul>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>
