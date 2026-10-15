@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Upgrade Non-CDB 19c to CDB 21c</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#c74634;--accent-soft:#fdf1ef;--accent-ink:#a3372a;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.05em;margin:1.5em 0 .4em}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.85em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em;overflow-wrap:normal}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post .tw{overflow-x:auto;margin:.8em 0}
+.tsn-post table{width:100%;border-collapse:collapse;font-size:.93em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post td:first-child code{white-space:nowrap}
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.3em 0}
+.tsn-post figure{margin:.8em 0 1.2em;text-align:center}
+.tsn-post figure img{max-width:100%;height:auto;border:1px solid var(--line);border-radius:8px}
+.tsn-post figcaption{color:var(--muted);font-size:.85em;margin-top:4px}
+.tsn-post details{margin:.2em 0 1.2em}
+.tsn-post summary{cursor:pointer;color:var(--muted);font-size:.88em}
+.tsn-post summary:hover{color:var(--accent-ink)}
+.tsn-post .why{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin:.8em 0}
+.tsn-post .why div{border:1px solid var(--line);border-radius:8px;padding:10px 14px;background:#fff}
+.tsn-post .why b{display:block;color:var(--accent-ink)}
+.tsn-post .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:.8em 0}
+.tsn-post .flow span{background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px 10px;font:600 .85em/1.4 Consolas,monospace}
+.tsn-post .flow b{color:var(--accent)}
+.tsn-post .modes td:nth-child(2){font-family:Consolas,monospace;font-size:.88em}
+.tsn-post .bar{display:flex;align-items:center;gap:8px;width:100%}
+.tsn-post .bar i{display:block;height:10px;border-radius:3px;background:var(--accent);min-width:3px}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:var(--accent-ink)}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
+</style>
+
+<h1>Steps to Upgrade a Non-CDB 19c Database to a CDB 21c PDB</h1>
+<div class="meta">By Sunke Nithin · May 25, 2024 &nbsp; <span class="tag">Database</span><span class="tag">Oracle</span><span class="tag">Upgrade</span><span class="tag">Migration</span></div>
+
+<p class="lead">In this post we upgrade a 19c <strong>non-container database</strong> (<code>ncdb19c</code>) to Oracle 21c and, in the same run, plug it into an existing 21c <strong>container database</strong> (<code>cdb21c</code>) as a new PDB. AutoUpgrade does both jobs — the upgrade and the non-CDB-to-PDB conversion — from one config file.</p>
+
+<figure><img src="images/image-42.png" alt="Diagram: source non-CDB ncdb19c on 19c is upgraded into target CDB cdb21c on 21c, which ends up with PDBs PDB1 and NCDB19C" loading="lazy"><figcaption>Source non-CDB 19c → target CDB 21c with PDBs PDB1 and NCDB19C</figcaption></figure>
+
+<div class="flow"><span>download autoupgrade.jar</span><b>→</b><span>config file</span><b>→</b><span>analyze</span><b>→</b><span>deploy</span><b>→</b><span>verify PDB</span></div>
+
+<h2><span class="num">0</span>Assumptions</h2>
+<ol>
+<li>A non-CDB database <code>ncdb19c</code> is already running on 19c.</li>
+<li>A fresh 21c Oracle home is installed (<code>/u01/app/oracle/product/21c/dbhome_1</code>).</li>
+<li>A container database <code>cdb21c</code> has already been created in the 21c home. It's the target the non-CDB will be plugged into.</li>
+</ol>
+<div class="warn"><strong>Take a full backup first.</strong> Once the non-CDB is converted into a PDB it can't be opened as a 19c non-CDB again. AutoUpgrade creates a guaranteed restore point during the run, but after the plug-in step the reliable way back is your RMAN backup.</div>
+<div class="note">21c is an <em>innovation</em> release with a short support window. For production, Oracle's long-term releases are 19c and 23ai (now Oracle AI Database 26ai). The steps below are the same for those targets: point <code>target_home</code> at the new home and set <code>target_version</code> to match.</div>
+
+<h2><span class="num">1</span>Get the Latest autoupgrade.jar</h2>
+<p>Download the latest <code>autoupgrade.jar</code> from <a href="https://support.oracle.com/epmos/faces/DocContentDisplay?id=2485457.1">MOS note 2485457.1</a> and replace the copy in the 21c home. If you don't have MOS access, skip this step and use the version that ships with the home.</p>
+<div class="code"><span class="lbl">BASH</span><pre><code>cd /u01/app/oracle/product/21c/dbhome_1/rdbms/admin
+mv autoupgrade.jar autoupgrade.jar_25052024
+mv /nfsshare/oracle/soft/autoupgrade.jar .</code></pre></div>
+
+<h2><span class="num">2</span>Create the Config File</h2>
+<p>Generate a sample config file:</p>
+<div class="code"><span class="lbl">BASH</span><pre><code>/u01/app/oracle/product/21c/dbhome_1/jdk/bin/java -jar \
+  /u01/app/oracle/product/21c/dbhome_1/rdbms/admin/autoupgrade.jar \
+  -create_sample_file config /nfsshare/oracle/pre_upgrade/config.txt full
+
+<span class="cm">Created sample configuration file /nfsshare/oracle/pre_upgrade/config.txt</span></code></pre></div>
+<p>Edit the entries you need and save the result as <code>/nfsshare/oracle/upgrade/ncdb19c.cfg</code>, the file used in the next steps:</p>
+<div class="code"><span class="lbl">NCDB19C.CFG</span><pre><code>global.autoupg_log_dir=/u01/app/oracle/cfgtoollogs/autoupgrade
+upg1.log_dir=/nfsshare/oracle/upgrade/ncdb19c
+upg1.sid=ncdb19c
+upg1.source_home=/u01/app/oracle/product/19.0.0/dbhome_1
+upg1.target_home=/u01/app/oracle/product/21c/dbhome_1
+upg1.target_cdb=cdb21c
+upg1.target_pdb_name=ncdb19c
+upg1.start_time=NOW
+upg1.upgrade_node=ol7_19_vagrant.scslabs.com
+#upg1.run_utlrp=yes
+upg1.timezone_upg=yes
+upg1.target_version=21</code></pre></div>
+<div class="tw"><table>
+<thead><tr><th>Parameter</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td><code>target_cdb</code></td><td>The 21c CDB to plug the upgraded database into. Setting it is what triggers the non-CDB-to-PDB conversion.</td></tr>
+<tr><td><code>target_pdb_name</code></td><td>The name the new PDB gets in the CDB.</td></tr>
+<tr><td><code>upgrade_node</code></td><td>The host to run on. Default is <code>localhost</code>.</td></tr>
+<tr><td><code>timezone_upg</code></td><td>Also upgrades the time zone file.</td></tr>
+<tr><td><code>start_time</code></td><td><code>NOW</code> starts the job straight away.</td></tr>
+</tbody></table></div>
+<div class="note">By default AutoUpgrade plugs the database in using its existing datafiles (no copy), so the conversion is fast but the original files now belong to the PDB. To keep the source files untouched, set <code>upg1.target_pdb_copy_option=file_name_convert=NONE</code> (OMF) or a <code>file_name_convert</code> pair. That copies the datafiles, so you need the extra space.</div>
+
+<h2><span class="num">3</span>Run AutoUpgrade in Analyze Mode</h2>
+<p>Analyze mode only checks the database. It changes nothing and needs no downtime.</p>
+<div class="code"><span class="lbl">BASH</span><pre><code>/u01/app/oracle/product/21c/dbhome_1/jdk/bin/java -jar \
+  /u01/app/oracle/product/21c/dbhome_1/rdbms/admin/autoupgrade.jar \
+  -config /nfsshare/oracle/upgrade/ncdb19c.cfg -mode analyze</code></pre></div>
+<div class="code"><span class="lbl">OUTPUT</span><pre><code>AutoUpgrade 24.4.240426 launched with default internal options
+Processing config file ...
++--------------------------------+
+| Starting AutoUpgrade execution |
++--------------------------------+
+1 Non-CDB(s) will be analyzed
+Type 'help' to list console commands
+
+upg&gt; lsj
++----+-------+---------+---------+-------+----------+-------+----------------------------+
+|Job#|DB_NAME|    STAGE|OPERATION| STATUS|START_TIME|UPDATED|                     MESSAGE|
++----+-------+---------+---------+-------+----------+-------+----------------------------+
+| 100|ncdb19c|PRECHECKS|EXECUTING|RUNNING|  22:35:32|25s ago|Loading database information|
++----+-------+---------+---------+-------+----------+-------+----------------------------+
+Total jobs 1
+
+upg&gt; Job 100 completed
+------------------- Final Summary --------------------
+Number of databases            [ 1 ]
+
+Jobs finished                  [1]
+Jobs failed                    [0]
+
+Please check the summary report at:
+/u01/app/oracle/cfgtoollogs/autoupgrade/cfgtoollogs/upgrade/auto/status/status.html
+/u01/app/oracle/cfgtoollogs/autoupgrade/cfgtoollogs/upgrade/auto/status/status.log</code></pre></div>
+<p>Review the summary report and the pre-check logs, and fix anything flagged as an error, before you go on.</p>
+
+<h2><span class="num">4</span>Run AutoUpgrade in Deploy Mode</h2>
+<div class="warn"><strong>Downtime starts here.</strong> Deploy mode shuts the source database down, upgrades it and converts it to a PDB.</div>
+<div class="code"><span class="lbl">BASH</span><pre><code>/u01/app/oracle/product/21c/dbhome_1/jdk/bin/java -jar \
+  /u01/app/oracle/product/21c/dbhome_1/rdbms/admin/autoupgrade.jar \
+  -config /nfsshare/oracle/upgrade/ncdb19c.cfg -mode deploy</code></pre></div>
+<p>Use <code>lsj</code> at the <code>upg&gt;</code> prompt to follow the job through its stages:</p>
+<div class="code"><span class="lbl">OUTPUT</span><pre><code>1 Non-CDB(s) will be processed
+Type 'help' to list console commands
+upg&gt; lsj
++----+-------+-----+---------+-------+----------+-------+-------+
+|Job#|DB_NAME|STAGE|OPERATION| STATUS|START_TIME|UPDATED|MESSAGE|
++----+-------+-----+---------+-------+----------+-------+-------+
+| 102|ncdb19c|  GRP|EXECUTING|RUNNING|  23:10:59| 1s ago|       |
++----+-------+-----+---------+-------+----------+-------+-------+
+
+upg&gt; lsj
++----+-------+---------+---------+-------+----------+----------+-------+
+|Job#|DB_NAME|    STAGE|OPERATION| STATUS|START_TIME|   UPDATED|MESSAGE|
++----+-------+---------+---------+-------+----------+----------+-------+
+| 102|ncdb19c|PREFIXUPS|EXECUTING|RUNNING|  23:10:59|!!195s ago|       |
++----+-------+---------+---------+-------+----------+----------+-------+
+
+upg&gt; lsj
++----+-------+---------+---------+-------+----------+-------+------------------+
+|Job#|DB_NAME|    STAGE|OPERATION| STATUS|START_TIME|UPDATED|           MESSAGE|
++----+-------+---------+---------+-------+----------+-------+------------------+
+| 102|ncdb19c|DBUPGRADE|EXECUTING|RUNNING|  23:10:59|66s ago|0%Upgraded NCDB19C|
++----+-------+---------+---------+-------+----------+-------+------------------+</code></pre></div>
+<p><code>status -job 102</code> shows the details, log locations and time spent in each stage:</p>
+<div class="code"><span class="lbl">OUTPUT</span><pre><code>upg&gt; status -job 102
+Details
+        Job No           102
+        Oracle SID       ncdb19c
+        Start Time       24/05/24 23:10:59
+        Elapsed (min):   72
+        End time:        N/A
+
+Logfiles
+        Logs Base:    /nfsshare/oracle/upgrade/ncdb19c/ncdb19c
+        Job logs:     /nfsshare/oracle/upgrade/ncdb19c/ncdb19c/102
+        Stage logs:   /nfsshare/oracle/upgrade/ncdb19c/ncdb19c/102/postfixups
+        TimeZone:     /nfsshare/oracle/upgrade/ncdb19c/ncdb19c/temp
+
+Stages
+        SETUP            &lt;1 min
+        GRP              &lt;1 min
+        PREUPGRADE       &lt;1 min
+        PRECHECKS        1 min
+        PREFIXUPS        5 min
+        DRAIN            2 min
+        DBUPGRADE        48 min
+        DISPATCH         &lt;1 min
+        NONCDBTOPDB      12 min
+        POSTCHECKS       &lt;1 min
+        POSTFIXUPS       ~2 min (RUNNING)
+        POSTUPGRADE
+        SYSUPDATES
+
+Stage-Progress Per Container
+        +--------+----------+
+        |Database|POSTFIXUPS|
+        +--------+----------+
+        | NCDB19C|     75 % |
+        +--------+----------+
+
+upg&gt; Job 102 completed
+------------------- Final Summary --------------------
+Number of databases            [ 1 ]
+
+Jobs finished                  [1]
+Jobs failed                    [0]
+Jobs restored                  [0]
+Jobs pending                   [0]</code></pre></div>
+
+<h3>Where the time went</h3>
+<p>In this lab the whole run took about 72 minutes. The upgrade itself took most of it, and the conversion to a PDB took another 12 minutes:</p>
+<div class="tw"><table>
+<thead><tr><th>Stage</th><th>Time</th><th></th></tr></thead>
+<tbody>
+<tr><td>PREFIXUPS</td><td>5 min</td><td><div class="bar"><i style="width:10%"></i></div></td></tr>
+<tr><td>DRAIN</td><td>2 min</td><td><div class="bar"><i style="width:4%"></i></div></td></tr>
+<tr><td>DBUPGRADE</td><td>48 min</td><td><div class="bar"><i style="width:100%"></i></div></td></tr>
+<tr><td>NONCDBTOPDB</td><td>12 min</td><td><div class="bar"><i style="width:25%"></i></div></td></tr>
+<tr><td>POSTFIXUPS</td><td>~2 min</td><td><div class="bar"><i style="width:4%"></i></div></td></tr>
+</tbody></table></div>
+
+<h2><span class="num">5</span>Validate the New PDB</h2>
+<p>Connect to the 21c CDB as SYSDBA (<code>ss</code> here is a shell alias for <code>sqlplus / as sysdba</code>) and check the PDBs:</p>
+<div class="code"><span class="lbl">SQL</span><pre><code>SQL*Plus: Release 21.0.0.0.0 - Production on Sat May 25 00:26:56 2024
+Version 21.3.0.0.0
+
+Connected to:
+Oracle Database 21c Enterprise Edition Release 21.0.0.0.0 - Production
+
+SQL&gt; show pdbs
+
+    CON_ID CON_NAME                       OPEN MODE  RESTRICTED
+---------- ------------------------------ ---------- ----------
+         2 PDB$SEED                       READ ONLY  NO
+         3 PDB1                           READ WRITE NO
+         4 NCDB19C                        READ WRITE NO</code></pre></div>
+<p><code>NCDB19C</code> is now a PDB in <code>cdb21c</code>, open <code>READ WRITE</code> and not restricted. A few more checks are worth running inside the PDB:</p>
+<div class="code"><span class="lbl">SQL</span><pre><code>ALTER SESSION SET CONTAINER = NCDB19C;
+
+<span class="cm">-- components should all be VALID</span>
+SELECT comp_id, version, status FROM dba_registry;
+
+<span class="cm">-- no invalid objects left behind</span>
+SELECT COUNT(*) FROM dba_objects WHERE status = 'INVALID';
+
+<span class="cm">-- any plug-in issues still open</span>
+SELECT type, message FROM pdb_plug_in_violations
+ WHERE name = 'NCDB19C' AND status &lt;&gt; 'RESOLVED';
+
+<span class="cm">-- keep the PDB open after a CDB restart</span>
+ALTER PLUGGABLE DATABASE NCDB19C SAVE STATE;</code></pre></div>
+<div class="note">After the upgrade, update your <code>tnsnames.ora</code> entries and application connection strings to use the PDB's service name (<code>ncdb19c</code>) on the 21c listener. Once you're happy with the result, back up the CDB.</div>
+
+<p style="margin-top:1.4em">Related: <a href="../streamlining-oracle-database-patching-with-autoupgrade-jar/streamlining-oracle-database-patching-with-autoupgrade-jar.html">Streamlining Oracle Database Patching with AutoUpgrade.jar</a> · <a href="../upgrading-oracle-database-12-2-0-1-pdb-to-19c/upgrading-oracle-database-12-2-0-1-pdb-to-19c.html">Upgrading an Oracle 12.2 PDB to 19c</a></p>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>
