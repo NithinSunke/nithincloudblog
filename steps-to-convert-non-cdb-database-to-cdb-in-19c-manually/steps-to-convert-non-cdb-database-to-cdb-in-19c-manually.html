@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Convert Non-CDB to PDB in 19c</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#c74634;--accent-soft:#fdf1ef;--accent-ink:#a3372a;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.06em;margin:1.6em 0 .4em;padding-left:.6em;border-left:4px solid var(--accent)}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.85em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em;overflow-wrap:normal}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post .tw{overflow-x:auto;margin:.8em 0}
+.tsn-post table{width:100%;border-collapse:collapse;font-size:.93em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.3em 0}
+.tsn-post .lab{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin:1em 0}
+.tsn-post .lab div{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:#fff;font-size:.9em}
+.tsn-post .lab b{display:block;color:var(--accent-ink);font-size:.82em;text-transform:uppercase;letter-spacing:.05em}
+.tsn-post .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:.8em 0}
+.tsn-post .flow span{background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:.88em;font-weight:600}
+.tsn-post .flow b{color:var(--accent)}
+.tsn-post .shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px;margin:.8em 0 1.2em;align-items:start}
+.tsn-post .shots.one{grid-template-columns:1fr}
+.tsn-post .shots figure{margin:0}
+.tsn-post .shots img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:8px;background:#fff;transition:box-shadow .15s ease}
+.tsn-post .shots a:hover img{box-shadow:0 4px 14px rgba(0,0,0,.14)}
+.tsn-post .shots.one img{max-width:100%;width:auto;margin:0 auto}
+.tsn-post .cap{color:var(--muted);font-size:.85em;margin-top:-.6em}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:var(--accent-ink)}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
+
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .check{list-style:none;padding:0;counter-reset:c}
+.tsn-post .check>li{position:relative;padding-left:2.4em;margin:.7em 0}
+.tsn-post .check>li::before{counter-increment:c;content:counter(c);position:absolute;left:0;top:.1em;width:1.7em;height:1.7em;line-height:1.7em;text-align:center;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:.85em}
+
+</style>
+
+<h1>Convert a Non-CDB to a PDB in Oracle 19c: A Step-by-Step Guide</h1>
+<div class="meta">By Sunke Nithin · June 9, 2024 &nbsp; <span class="tag">Database</span><span class="tag">Oracle</span><span class="tag">Migration</span></div>
+
+<p class="lead">Moving a 19c non-container database (non-CDB) into the multitenant architecture means plugging it into a container database (CDB) as a pluggable database (PDB). This post does it manually with the <code>DBMS_PDB</code> package: describe the non-CDB to an XML file, check compatibility, plug it in with <code>NOCOPY</code>, and run <code>noncdb_to_pdb.sql</code>.</p>
+
+<div class="flow"><span>read-only</span><b>→</b><span>DBMS_PDB.DESCRIBE</span><b>→</b><span>shut down</span><b>→</b><span>check compatibility</span><b>→</b><span>CREATE PLUGGABLE DATABASE</span><b>→</b><span>noncdb_to_pdb.sql</span><b>→</b><span>open</span></div>
+
+<div class="note"><strong>Test first.</strong> Always rehearse this in a non-production environment, and take a full backup of the non-CDB before you start. With <code>NOCOPY</code>, the non-CDB's own data files become the PDB's, so the backup is your way back.</div>
+
+<h2><span class="num">0</span>Prerequisites</h2>
+<ul>
+<li><strong>Version:</strong> the non-CDB must be 12.1.0.2 or later — 19c here.</li>
+<li><strong>Target CDB:</strong> an existing CDB on the same version and patch level, the same endianness, a compatible character set, and the same database options installed. Create one with DBCA if you don't have it.</li>
+<li><strong>Same host / storage:</strong> for <code>NOCOPY</code>, the CDB must be able to read the non-CDB's data files where they are. To put the files somewhere else, use <code>COPY</code> or <code>MOVE</code> with <code>FILE_NAME_CONVERT</code>.</li>
+<li><strong>Privileges:</strong> SYSDBA on both databases.</li>
+<li><strong>Downtime:</strong> from the moment the non-CDB goes read-only until the PDB is open — the time to describe, plug in and run <code>noncdb_to_pdb.sql</code>.</li>
+</ul>
+<div class="tw"><table>
+<thead><tr><th>In this lab</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Target CDB (existing PDB)</td><td><code>PRD_PDB1</code></td></tr>
+<tr><td>New PDB name</td><td><code>ONCDB</code></td></tr>
+<tr><td>XML manifest</td><td><code>/home/oracle/noncdb.xml</code></td></tr>
+</tbody></table></div>
+
+<h2><span class="num">1</span>Open the Non-CDB Read-Only</h2>
+<p>The XML manifest must describe data files that won't change, so restart the non-CDB read-only. Make sure no DDL is running first.</p>
+<div class="code"><span class="lbl">SQL · NON-CDB</span><pre><code>sqlplus / as sysdba
+SHUTDOWN IMMEDIATE;
+STARTUP OPEN READ ONLY;</code></pre></div>
+
+<h2><span class="num">2</span>Generate the XML Manifest</h2>
+<div class="code"><span class="lbl">SQL · NON-CDB</span><pre><code>BEGIN
+  DBMS_PDB.DESCRIBE(pdb_descr_file =&gt; &#x27;/home/oracle/noncdb.xml&#x27;);
+END;
+/</code></pre></div>
+<div class="shots one"><figure><a href="images/image-135.png" target="_blank" rel="noopener"><img src="images/image-135.png" alt="DBMS_PDB.DESCRIBE to /home/oracle/noncdb.xml: PL/SQL procedure successfully completed" loading="lazy"></a></figure></div>
+<p>It takes seconds and records the data files, tablespaces and other metadata the CDB needs.</p>
+
+<h3>Shut the non-CDB down</h3>
+<div class="code"><span class="lbl">SQL · NON-CDB</span><pre><code>SHUTDOWN IMMEDIATE;</code></pre></div>
+<div class="warn"><strong>Don't open the non-CDB read-write again.</strong> The manifest records each data file's checkpoint SCN. If the non-CDB writes to its files after <code>DESCRIBE</code>, the plug-in fails with <code>ORA-65139</code> — and with <code>NOCOPY</code>, both databases must never have the same files open. Keep it shut down from here on.</div>
+
+<h2><span class="num">3</span>Check Compatibility with the CDB</h2>
+<p>Connect to the CDB root and run the check:</p>
+<div class="code"><span class="lbl">SQL · CDB</span><pre><code>sqlplus / as sysdba
+ALTER SESSION SET CONTAINER = CDB$ROOT;</code></pre></div>
+<div class="code"><span class="lbl">SQL · CDB</span><pre><code>SET SERVEROUTPUT ON
+DECLARE
+  compatible CONSTANT VARCHAR2(3) :=
+    CASE DBMS_PDB.CHECK_PLUG_COMPATIBILITY(
+      pdb_descr_file =&gt; &#x27;/home/oracle/noncdb.xml&#x27;,
+      pdb_name       =&gt; &#x27;ONCDB&#x27;)
+    WHEN TRUE THEN &#x27;YES&#x27;
+    ELSE &#x27;NO&#x27;
+  END;
+BEGIN
+  DBMS_OUTPUT.PUT_LINE(compatible);
+END;
+/</code></pre></div>
+<div class="shots one"><figure><a href="images/image-137.png" target="_blank" rel="noopener"><img src="images/image-137.png" alt="DBMS_PDB.CHECK_PLUG_COMPATIBILITY for ONCDB returns YES" loading="lazy"></a></figure></div>
+<p>If it prints <code>NO</code>, look at the violations:</p>
+<div class="code"><span class="lbl">SQL · CDB</span><pre><code>SELECT name, cause, type, message, status
+  FROM pdb_plug_in_violations
+ WHERE name = &#x27;ONCDB&#x27;;</code></pre></div>
+<p>Common causes are parameter mismatches or options installed in one database but not the other. Rows of type <code>ERROR</code> must be fixed; <code>WARNING</code> rows usually just need reviewing.</p>
+
+<h2><span class="num">4</span>Plug the Non-CDB In as a PDB</h2>
+<div class="code"><span class="lbl">SQL · CDB</span><pre><code>ALTER SESSION SET CONTAINER = CDB$ROOT;
+CREATE PLUGGABLE DATABASE ONCDB USING &#x27;/home/oracle/noncdb.xml&#x27; NOCOPY TEMPFILE REUSE;</code></pre></div>
+<div class="shots one"><figure><a href="images/image-139.png" target="_blank" rel="noopener"><img src="images/image-139.png" alt="CREATE PLUGGABLE DATABASE ONCDB USING noncdb.xml NOCOPY TEMPFILE REUSE: created; show pdbs lists ONCDB as MOUNTED" loading="lazy"></a></figure></div><p class="cap">ONCDB is created and mounted.</p>
+<div class="tw"><table>
+<thead><tr><th>Clause</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>NOCOPY</code></td><td>Use the data files where they are — fast, no extra space</td></tr>
+<tr><td><code>COPY</code> / <code>MOVE</code></td><td>Copy or move the files to a new location, with <code>FILE_NAME_CONVERT</code></td></tr>
+<tr><td><code>TEMPFILE REUSE</code></td><td>Reuse the existing temp file instead of failing because it exists</td></tr>
+</tbody></table></div>
+
+<h2><span class="num">5</span>Open the PDB</h2>
+<div class="code"><span class="lbl">SQL · CDB</span><pre><code>ALTER PLUGGABLE DATABASE ONCDB OPEN;
+SHOW PDBS
+SELECT name, cause, message FROM pdb_plug_in_violations WHERE con_id = 4;</code></pre></div>
+<div class="shots one"><figure><a href="images/image-143.png" target="_blank" rel="noopener"><img src="images/image-143.png" alt="ALTER PLUGGABLE DATABASE ONCDB OPEN: Warning PDB altered with errors; ONCDB opens READ WRITE with RESTRICTED YES; violation says noncdb_to_pdb.sql must be run" loading="lazy"></a></figure></div>
+<p>The PDB opens in <strong>restricted</strong> mode with a warning. That's expected: its data dictionary is still a non-CDB's, and the violation tells you to run <code>noncdb_to_pdb.sql</code>.</p>
+
+<h2><span class="num">6</span>Run noncdb_to_pdb.sql</h2>
+<p>Run the script <em>inside</em> the new PDB:</p>
+<div class="code"><span class="lbl">SQL · CDB</span><pre><code>ALTER SESSION SET CONTAINER = ONCDB;
+@?/rdbms/admin/noncdb_to_pdb.sql</code></pre></div>
+<div class="shots"><figure><a href="images/image-145.png" target="_blank" rel="noopener"><img src="images/image-145.png" alt="ALTER SESSION SET CONTAINER=ONCDB, then @?/rdbms/admin/noncdb_to_pdb.sql starts" loading="lazy"></a></figure><figure><a href="images/image-147.png" target="_blank" rel="noopener"><img src="images/image-147.png" alt="noncdb_to_pdb.sql output finishing" loading="lazy"></a></figure></div><p class="cap">The script can run for a while — it rewrites the dictionary to use the CDB's shared objects.</p>
+<p>When it finishes, restart the PDB so it opens unrestricted, and save its state so it opens with the CDB:</p>
+<div class="code"><span class="lbl">SQL · CDB</span><pre><code>ALTER SESSION SET CONTAINER = CDB$ROOT;
+ALTER PLUGGABLE DATABASE ONCDB CLOSE IMMEDIATE;
+ALTER PLUGGABLE DATABASE ONCDB OPEN;
+ALTER PLUGGABLE DATABASE ONCDB SAVE STATE;
+
+SHOW PDBS
+SELECT name, open_mode FROM v$pdbs;</code></pre></div>
+<div class="shots one"><figure><a href="images/image-149.png" target="_blank" rel="noopener"><img src="images/image-149.png" alt="v$pdbs: PDB$SEED READ ONLY, PRD_PDB1 and ONCDB READ WRITE" loading="lazy"></a></figure></div>
+<p><code>SHOW PDBS</code> should now show <code>ONCDB</code> as <code>READ WRITE</code> with <code>RESTRICTED</code> = <code>NO</code>, and <code>pdb_plug_in_violations</code> should have no unresolved errors.</p>
+
+<h2><span class="num">7</span>Post-Conversion Tasks</h2>
+<h3>Update TNS</h3>
+<p>The PDB registers a service with its own name. Add an entry in <code>$ORACLE_HOME/network/admin/tnsnames.ora</code> (add your <code>db_domain</code> to the service name if you use one):</p>
+<div class="code"><span class="lbl">TNSNAMES.ORA</span><pre><code>ONCDB =
+  (DESCRIPTION =
+    (ADDRESS = (PROTOCOL = TCP)(HOST = &lt;hostname&gt;)(PORT = 1521))
+    (CONNECT_DATA =
+      (SERVER = DEDICATED)
+      (SERVICE_NAME = ONCDB)
+    )
+  )</code></pre></div>
+<h3>Back up the CDB</h3>
+<div class="code"><span class="lbl">RMAN</span><pre><code>rman target /
+BACKUP DATABASE PLUS ARCHIVELOG;</code></pre></div>
+<p>Pre-conversion backups of the non-CDB can't be restored into the PDB, so take a fresh backup straight away.</p>
+
+<h2><span class="num">8</span>Retire the Old Non-CDB</h2>
+<div class="warn"><strong>Don't delete the data files.</strong> With <code>NOCOPY</code>, the non-CDB's data files <em>are</em> the PDB's now. Retiring the old database only means removing its instance configuration: the <code>/etc/oratab</code> entry, its spfile/pfile and password file, and any listener or service entries. Never use <code>DROP DATABASE</code> on it.</div>
+
+<h2>Pros and Cons</h2>
+<div class="tw"><table>
+<thead><tr><th>Pros</th><th>Cons</th></tr></thead>
+<tbody>
+<tr><td><strong>Centralised management</strong> — many PDBs in one CDB</td><td><strong>Planning effort</strong> — compatibility checks and testing</td></tr>
+<tr><td><strong>Resource efficiency</strong> — shared memory and background processes</td><td><strong>Resource contention</strong> — PDBs share the CDB's resources unless you use Resource Manager</td></tr>
+<tr><td><strong>Simpler patching and upgrades</strong> — once per CDB</td><td><strong>Downtime</strong> — the non-CDB is unavailable during the conversion</td></tr>
+<tr><td><strong>Mobility</strong> — unplug and plug PDBs between CDBs</td><td></td></tr>
+</tbody></table></div>
+<div class="note">Multitenant is also the only architecture from 21c onward — non-CDBs are no longer supported — so this conversion is a prerequisite for any future upgrade.</div>
+
+<h2>Troubleshooting</h2>
+<div class="tw"><table>
+<thead><tr><th>Problem</th><th>Fix</th></tr></thead>
+<tbody>
+<tr><td><code>ORA-65139</code>: mismatch between XML metadata file and data file</td><td>The data files changed after <code>DESCRIBE</code>. Compare <code>SELECT file#, name, checkpoint_change# FROM v$datafile_header;</code> with the <code>&lt;fcpsb&gt;</code> values in the XML, then regenerate the XML with the non-CDB read-only and keep it shut down afterwards.</td></tr>
+<tr><td>File paths differ on the CDB host</td><td>Use <code>COPY</code> or <code>MOVE</code> with <code>FILE_NAME_CONVERT</code>, or <code>SOURCE_FILE_NAME_CONVERT</code> to tell the CDB where the files are.</td></tr>
+<tr><td>Permission errors on the XML or data files</td><td><code>chown oracle:oinstall /home/oracle/noncdb.xml</code> and <code>chmod 660 /home/oracle/noncdb.xml</code></td></tr>
+<tr><td>PDB stays <code>RESTRICTED</code></td><td>Check <code>pdb_plug_in_violations</code> for unresolved errors — often a missing option, or <code>noncdb_to_pdb.sql</code> not run or not finished.</td></tr>
+</tbody></table></div>
+
+<p style="margin-top:1.4em">Prefer automation? AutoUpgrade can do the upgrade and this conversion in one run — see <a href="../steps-to-upgrade-database-from-non-cdb-19c-to-cdb-21c/steps-to-upgrade-database-from-non-cdb-19c-to-cdb-21c.html">Upgrade a Non-CDB 19c Database to a CDB 21c PDB</a>.</p>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>

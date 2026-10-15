@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Convert Non-ASM Database to ASM</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#c74634;--accent-soft:#fdf1ef;--accent-ink:#a3372a;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.06em;margin:1.6em 0 .4em;padding-left:.6em;border-left:4px solid var(--accent)}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.85em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em;overflow-wrap:normal}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post .tw{overflow-x:auto;margin:.8em 0}
+.tsn-post table{width:100%;border-collapse:collapse;font-size:.93em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.3em 0}
+.tsn-post .lab{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin:1em 0}
+.tsn-post .lab div{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:#fff;font-size:.9em}
+.tsn-post .lab b{display:block;color:var(--accent-ink);font-size:.82em;text-transform:uppercase;letter-spacing:.05em}
+.tsn-post .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:.8em 0}
+.tsn-post .flow span{background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:.88em;font-weight:600}
+.tsn-post .flow b{color:var(--accent)}
+.tsn-post .shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px;margin:.8em 0 1.2em;align-items:start}
+.tsn-post .shots.one{grid-template-columns:1fr}
+.tsn-post .shots figure{margin:0}
+.tsn-post .shots img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:8px;background:#fff;transition:box-shadow .15s ease}
+.tsn-post .shots a:hover img{box-shadow:0 4px 14px rgba(0,0,0,.14)}
+.tsn-post .shots.one img{max-width:100%;width:auto;margin:0 auto}
+.tsn-post .cap{color:var(--muted);font-size:.85em;margin-top:-.6em}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:var(--accent-ink)}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
+
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .check{list-style:none;padding:0;counter-reset:c}
+.tsn-post .check>li{position:relative;padding-left:2.4em;margin:.7em 0}
+.tsn-post .check>li::before{counter-increment:c;content:counter(c);position:absolute;left:0;top:.1em;width:1.7em;height:1.7em;line-height:1.7em;text-align:center;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:.85em}
+
+</style>
+
+<h1>Steps to Convert a Non-ASM Database to ASM</h1>
+<div class="meta">By Sunke Nithin · June 24, 2019 &nbsp; <span class="tag">Database</span><span class="tag">Oracle</span><span class="tag">Migration</span></div>
+
+<p class="lead">This post moves a database from file-system storage into Oracle ASM using RMAN: the control file, data files, temp file and online redo logs all end up in ASM disk groups, and the fast recovery area moves to <code>+FRA</code>. The example is an 11.2.0.4 database called <code>ASMRAC</code>; the same RMAN steps work on 12c and 19c.</p>
+
+<div class="flow"><span>check space</span><b>→</b><span>back up spfile</span><b>→</b><span>set parameters</span><b>→</b><span>restore control file</span><b>→</b><span>backup as copy</span><b>→</b><span>switch to copy</span><b>→</b><span>open</span><b>→</b><span>move redo</span></div>
+
+<div class="tw"><table>
+<thead><tr><th>What</th><th>Before</th><th>After</th></tr></thead>
+<tbody>
+<tr><td>Control file</td><td><code>/o01/home/oracle/oradata/asmrac/control01.ctl</code></td><td><code>+DATA</code></td></tr>
+<tr><td>Data files &amp; temp file</td><td><code>/o01/home/oracle/oradata/asmrac/</code></td><td><code>+DATA</code></td></tr>
+<tr><td>Online redo logs</td><td><code>/o01/home/oracle/oradata/asmrac/</code></td><td><code>+DATA</code></td></tr>
+<tr><td>Fast recovery area</td><td><code>/o01/home/oracle/fra</code></td><td><code>+FRA</code></td></tr>
+</tbody></table></div>
+<div class="warn"><strong>Downtime:</strong> the database is down from step 7 until it's opened in step 11 — roughly as long as RMAN takes to copy the data files. Take a full backup before you start.</div>
+
+<h2><span class="num">1</span>Set the Environment</h2>
+<div class="code"><span class="lbl">BASH · ORACLE</span><pre><code>. oraenv
+ORACLE_SID = [racdv] ? asmrac</code></pre></div>
+
+<h2><span class="num">2</span>Check the Size of the Database</h2>
+<div class="code"><span class="lbl">SQL</span><pre><code>SELECT db.name,
+       d.df_gbytes             datafile_gbytes,
+       t.tf_gbytes             tempfile_gbytes,
+       d.df_gbytes + t.tf_gbytes total_gbytes
+  FROM (SELECT SUM(bytes)/1024/1024/1024 df_gbytes FROM v$datafile) d,
+       (SELECT SUM(bytes)/1024/1024/1024 tf_gbytes FROM v$tempfile) t,
+       v$database db;
+
+NAME      DATAFILE_GBYTES TEMPFILE_GBYTES TOTAL_GBYTES
+--------- --------------- --------------- ------------
+ASMRAC         1.55090332      .01953125   1.57043457</code></pre></div>
+
+<h2><span class="num">3</span>Check Free Space in ASM</h2>
+<p>As the <code>grid</code> user, confirm the disk groups have room for the database:</p>
+<div class="code"><span class="lbl">BASH · GRID</span><pre><code>sudo su - grid
+. oraenv
+ORACLE_SID = [grid] ? +ASM1
+asmcmd lsdg</code></pre></div>
+<div class="code"><span class="lbl">OUTPUT</span><pre><code>State    Type    ... Total_MB  Free_MB  Usable_file_MB  Voting_files  Name
+MOUNTED  EXTERN  ...     5087     4691            4691  Y             CRS/
+MOUNTED  EXTERN  ...     5087     3068            3068  N             DATA/
+MOUNTED  EXTERN  ...     5087     4757            4757  N             FRA/</code></pre></div>
+<p><code>+DATA</code> has about 3 GB usable — plenty for a 1.6 GB database.</p>
+
+<h2><span class="num">4</span>Note the Current File Locations</h2>
+<div class="code"><span class="lbl">SQL</span><pre><code>show parameter control_files
+select name from v$datafile;
+select member from v$logfile;
+select name from v$tempfile;</code></pre></div>
+<div class="code"><span class="lbl">OUTPUT</span><pre><code>control_files  /o01/home/oracle/oradata/asmrac/control01.ctl,
+               /o01/home/oracle/fra/asmrac/control02.ctl
+
+/o01/home/oracle/oradata/asmrac/system01.dbf
+/o01/home/oracle/oradata/asmrac/sysaux01.dbf
+/o01/home/oracle/oradata/asmrac/undotbs01.dbf
+/o01/home/oracle/oradata/asmrac/users01.dbf
+/o01/home/oracle/oradata/asmrac/example01.dbf
+
+/o01/home/oracle/oradata/asmrac/redo03.log
+/o01/home/oracle/oradata/asmrac/redo02.log
+/o01/home/oracle/oradata/asmrac/redo01.log
+
+/o01/home/oracle/oradata/asmrac/temp01.dbf</code></pre></div>
+
+<h2><span class="num">5</span>Back Up the spfile and pfile</h2>
+<div class="code"><span class="lbl">SQL / BASH</span><pre><code>SQL&gt; create pfile from spfile;
+
+cd $ORACLE_HOME/dbs
+cp spfileasmrac.ora initasmrac.ora /home/oracle/</code></pre></div>
+
+<h2><span class="num">6</span>Point the Parameters at ASM</h2>
+<div class="code"><span class="lbl">SQL</span><pre><code>alter system set control_files=&#x27;+DATA&#x27; scope=spfile;
+alter system set db_create_file_dest=&#x27;+DATA&#x27; scope=spfile;
+alter system set db_recovery_file_dest=&#x27;+FRA&#x27; scope=spfile;</code></pre></div>
+<p><code>db_create_file_dest</code> makes new files (data files, redo, temp) Oracle-managed files in <code>+DATA</code>, which is why later commands can just say <code>'+DATA'</code>.</p>
+
+<h2><span class="num">7</span>Restart in NOMOUNT</h2>
+<div class="code"><span class="lbl">SQL</span><pre><code>shutdown immediate
+startup nomount</code></pre></div>
+
+<h2><span class="num">8</span>Restore the Control File into ASM</h2>
+<div class="code"><span class="lbl">RMAN</span><pre><code>rman target /
+RMAN&gt; restore controlfile from &#x27;/o01/home/oracle/oradata/asmrac/control01.ctl&#x27;;</code></pre></div>
+<div class="code"><span class="lbl">OUTPUT</span><pre><code>channel ORA_DISK_1: copied control file copy
+output file name=+DATA/asmrac/controlfile/current.269.1011814247
+Finished restore at 24-JUN-19</code></pre></div>
+
+<h2><span class="num">9</span>Mount the Database</h2>
+<div class="code"><span class="lbl">RMAN</span><pre><code>RMAN&gt; alter database mount;</code></pre></div>
+
+<h2><span class="num">10</span>Copy the Data Files into ASM</h2>
+<div class="code"><span class="lbl">RMAN</span><pre><code>RMAN&gt; backup as copy database format &#x27;+DATA&#x27;;</code></pre></div>
+<div class="code"><span class="lbl">OUTPUT</span><pre><code>input datafile file number=00001 name=/o01/home/oracle/oradata/asmrac/system01.dbf
+output file name=+DATA/asmrac/datafile/system.270.1011814335 tag=TAG20190624T193214
+input datafile file number=00002 name=/o01/home/oracle/oradata/asmrac/sysaux01.dbf
+output file name=+DATA/asmrac/datafile/sysaux.271.1011814451 tag=TAG20190624T193214
+input datafile file number=00005 name=/o01/home/oracle/oradata/asmrac/example01.dbf
+output file name=+DATA/asmrac/datafile/example.272.1011814497 tag=TAG20190624T193214
+input datafile file number=00003 name=/o01/home/oracle/oradata/asmrac/undotbs01.dbf
+output file name=+DATA/asmrac/datafile/undotbs1.273.1011814531 tag=TAG20190624T193214
+input datafile file number=00004 name=/o01/home/oracle/oradata/asmrac/users01.dbf
+output file name=+DATA/asmrac/datafile/users.274.1011814547 tag=TAG20190624T193214
+Finished backup at 24-JUN-19</code></pre></div>
+
+<h2><span class="num">11</span>Switch to the Copies and Open</h2>
+<div class="code"><span class="lbl">RMAN</span><pre><code>RMAN&gt; switch database to copy;
+
+RMAN&gt; run {
+  set newname for tempfile 1 to &#x27;+DATA&#x27;;
+  switch tempfile all;
+}
+
+RMAN&gt; alter database open;</code></pre></div>
+<div class="code"><span class="lbl">OUTPUT</span><pre><code>datafile 1 switched to datafile copy &quot;+DATA/asmrac/datafile/system.270.1011814335&quot;
+datafile 2 switched to datafile copy &quot;+DATA/asmrac/datafile/sysaux.271.1011814451&quot;
+datafile 3 switched to datafile copy &quot;+DATA/asmrac/datafile/undotbs1.273.1011814531&quot;
+datafile 4 switched to datafile copy &quot;+DATA/asmrac/datafile/users.274.1011814547&quot;
+datafile 5 switched to datafile copy &quot;+DATA/asmrac/datafile/example.272.1011814497&quot;
+
+renamed tempfile 1 to +DATA in control file</code></pre></div>
+<p>Because the database was shut down cleanly before the copy, no recovery is needed — it opens straight away, and the temp file is created in <code>+DATA</code> on open.</p>
+
+<h2><span class="num">12</span>Move the Online Redo Logs</h2>
+<p>Add an ASM member to each redo group:</p>
+<div class="code"><span class="lbl">SQL</span><pre><code>alter database add logfile member &#x27;+DATA&#x27; to group 1;
+alter database add logfile member &#x27;+DATA&#x27; to group 2;
+alter database add logfile member &#x27;+DATA&#x27; to group 3;</code></pre></div>
+<p>Then drop the file-system members. A member can only be dropped when its group isn't current or still needed for crash recovery, so switch logs (and checkpoint) between drops:</p>
+<div class="code"><span class="lbl">SQL</span><pre><code>alter system switch logfile;
+alter system checkpoint;
+
+alter database drop logfile member &#x27;/o01/home/oracle/oradata/asmrac/redo01.log&#x27;;
+alter database drop logfile member &#x27;/o01/home/oracle/oradata/asmrac/redo02.log&#x27;;
+
+alter system switch logfile;
+alter system checkpoint;
+alter database drop logfile member &#x27;/o01/home/oracle/oradata/asmrac/redo03.log&#x27;;</code></pre></div>
+<div class="tw"><table>
+<thead><tr><th>Error</th><th>Meaning</th><th>Fix</th></tr></thead>
+<tbody>
+<tr><td><code>ORA-00362</code> / <code>ORA-01517</code></td><td>The new ASM member isn't usable yet — the group hasn't been written since you added it</td><td>Switch logs until each group has been current once</td></tr>
+<tr><td><code>ORA-01609</code></td><td>The group is the current log</td><td><code>alter system switch logfile</code>, then retry</td></tr>
+</tbody></table></div>
+<div class="code"><span class="lbl">OUTPUT</span><pre><code>SQL&gt; select member from v$logfile;
+
++DATA/asmrac/onlinelog/group_1.279.1011816477
++DATA/asmrac/onlinelog/group_2.280.1011816489
++DATA/asmrac/onlinelog/group_3.281.1011816497</code></pre></div>
+
+<h2><span class="num">13</span>Check the Fast Recovery Area</h2>
+<div class="code"><span class="lbl">SQL</span><pre><code>show parameter db_recovery
+
+db_recovery_file_dest       string       +FRA
+db_recovery_file_dest_size  big integer  4182M</code></pre></div>
+<p>New archived logs and backups now go to <code>+FRA</code>. Anything already in the old <code>/o01/home/oracle/fra</code> stays there — keep it until it's no longer needed for recovery.</p>
+
+<h2><span class="num">14</span>Verify Everything Is in ASM</h2>
+<div class="code"><span class="lbl">SQL</span><pre><code>show parameter control_files
+select name from v$datafile;
+select name from v$tempfile;
+select member from v$logfile;</code></pre></div>
+<div class="code"><span class="lbl">OUTPUT</span><pre><code>control_files  +DATA/asmrac/controlfile/current.269.1011814247
+
++DATA/asmrac/datafile/system.270.1011814335
++DATA/asmrac/datafile/sysaux.271.1011814451
++DATA/asmrac/datafile/undotbs1.273.1011814531
++DATA/asmrac/datafile/users.274.1011814547
++DATA/asmrac/datafile/example.272.1011814497
+
++DATA/asmrac/tempfile/temp.278.1011816197
+
++DATA/asmrac/onlinelog/group_1.279.1011816477
++DATA/asmrac/onlinelog/group_2.280.1011816489
++DATA/asmrac/onlinelog/group_3.281.1011816497</code></pre></div>
+
+<h2>Finishing Touches</h2>
+<ul>
+<li><strong>Multiplex the control file.</strong> There's only one control file now. Add a second copy in <code>+FRA</code>: set <code>control_files='+DATA/asmrac/controlfile/current.269.1011814247','+FRA'</code> in the spfile, restart in NOMOUNT, <code>restore controlfile from '+DATA/asmrac/controlfile/current.269.1011814247'</code> in RMAN, then update <code>control_files</code> with the new <code>+FRA</code> file name RMAN reports and open the database.</li>
+<li><strong>Move the spfile into ASM (optional):</strong> <code>create spfile='+DATA/asmrac/spfileasmrac.ora' from pfile;</code> and leave a one-line pfile in <code>$ORACLE_HOME/dbs</code> pointing to it. If the database is registered with Clusterware or Oracle Restart, update it with <code>srvctl modify database -d asmrac -p +DATA/asmrac/spfileasmrac.ora</code>.</li>
+<li><strong>Take a fresh backup</strong> now that the files have moved.</li>
+<li><strong>Clean up</strong> the old data files, temp file and redo logs under <code>/o01/home/oracle/oradata/asmrac/</code> once you've verified the database — after the switch RMAN catalogues them as data file copies, so <code>RMAN&gt; delete datafilecopy all;</code> removes them cleanly (the temp file and redo logs are removed by hand).</li>
+</ul>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>
