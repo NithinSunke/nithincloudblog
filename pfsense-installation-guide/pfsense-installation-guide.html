@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pfSense Installation Guide</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#0a5c8a;--accent-soft:#e8f2f8;--accent-ink:#0a4d73;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.06em;margin:1.6em 0 .4em;padding-left:.6em;border-left:4px solid var(--accent)}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.85em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em;overflow-wrap:normal}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post .tw{overflow-x:auto;margin:.8em 0}
+.tsn-post table{width:100%;border-collapse:collapse;font-size:.93em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.3em 0}
+.tsn-post .lab{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin:1em 0}
+.tsn-post .lab div{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:#fff;font-size:.9em}
+.tsn-post .lab b{display:block;color:var(--accent-ink);font-size:.82em;text-transform:uppercase;letter-spacing:.05em}
+.tsn-post .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:.8em 0}
+.tsn-post .flow span{background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:.88em;font-weight:600}
+.tsn-post .flow b{color:var(--accent)}
+.tsn-post .shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px;margin:.8em 0 1.2em;align-items:start}
+.tsn-post .shots.one{grid-template-columns:1fr}
+.tsn-post .shots figure{margin:0}
+.tsn-post .shots img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:8px;background:#fff;transition:box-shadow .15s ease}
+.tsn-post .shots a:hover img{box-shadow:0 4px 14px rgba(0,0,0,.14)}
+.tsn-post .shots.one img{max-width:100%;width:auto;margin:0 auto}
+.tsn-post .cap{color:var(--muted);font-size:.85em;margin-top:-.6em}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:var(--accent-ink)}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
+
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .check{list-style:none;padding:0;counter-reset:c}
+.tsn-post .check>li{position:relative;padding-left:2.4em;margin:.7em 0}
+.tsn-post .check>li::before{counter-increment:c;content:counter(c);position:absolute;left:0;top:.1em;width:1.7em;height:1.7em;line-height:1.7em;text-align:center;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:.85em}
+
+.tsn-post details{margin:.6em 0 1.2em}
+.tsn-post summary{cursor:pointer;color:var(--accent-ink);font-weight:600;font-size:.95em}
+.tsn-post .code pre.tall{max-height:640px;overflow:auto}
+</style>
+
+<h1>pfSense Installation Guide: A Firewall for Your Home Lab</h1>
+<div class="meta">By Sunke Nithin · April 16, 2025 &nbsp; <span class="tag">Virtualization</span><span class="tag">Network</span></div>
+
+<p class="lead"><strong>pfSense</strong> is an open-source firewall and router built on FreeBSD — routing, firewalling, VPN, DHCP and DNS in one box. In this post I install pfSense Community Edition as a VM in VMware Workstation and use it to route between two lab networks, <code>192.168.10.0/24</code> and <code>192.168.20.0/24</code>, with the home network as WAN.</p>
+
+<div class="tw"><table>
+<thead><tr><th>pfSense interface</th><th>NIC</th><th>VMware network</th><th>Address</th></tr></thead>
+<tbody>
+<tr><td>WAN</td><td>em0</td><td>VMnet0 (bridged to the home network)</td><td>192.168.1.9/24, gateway 192.168.1.1</td></tr>
+<tr><td>LAN10</td><td>em1</td><td>VMnet1 (host-only)</td><td>192.168.10.1/24</td></tr>
+<tr><td>LAN20</td><td>em2</td><td>VMnet2 (host-only)</td><td>192.168.20.1/24</td></tr>
+</tbody></table></div>
+
+<h2>Prerequisites</h2>
+<ul>
+<li>A VM (or physical box) with <strong>1 GB RAM or more</strong> (2 GB recommended), 8 GB+ disk, and at least two network adapters.</li>
+<li>The pfSense CE installer from <a href="https://www.pfsense.org/download/">pfsense.org/download</a>.</li>
+</ul>
+<div class="note"><strong>Versions:</strong> I used pfSense CE 2.6.0 with the offline ISO. Newer CE releases are installed with the Netgate Installer, which downloads the system during installation, so the download page and the first few installer screens look different. The configuration steps afterwards are the same.</div>
+
+<h2><span class="num">1</span>Download pfSense</h2>
+<p>Choose the <strong>AMD64</strong> architecture, the <strong>ISO installer</strong> and the nearest mirror. The download is gzip-compressed — extract the <code>.iso</code> before attaching it to the VM.</p>
+<div class="shots"><figure><a href="images/image-310.png" target="_blank" rel="noopener"><img src="images/image-310.png" alt="Google search for download pfsense" loading="lazy"></a></figure><figure><a href="images/image-312.png" target="_blank" rel="noopener"><img src="images/image-312.png" alt="pfSense download page: version 2.6.0, AMD64, DVD Image (ISO) Installer, mirror Singapore" loading="lazy"></a></figure><figure><a href="images/image-314.png" target="_blank" rel="noopener"><img src="images/image-314.png" alt="Saving pfSense-CE-2.6.0-RELEASE-amd64.iso.gz" loading="lazy"></a></figure></div>
+
+<h2><span class="num">2</span>Create the Lab Networks in VMware Workstation</h2>
+<p>Open <strong>Edit → Virtual Network Editor</strong> and add two <strong>host-only</strong> networks: VMnet1 on <code>192.168.10.0/24</code> and VMnet2 on <code>192.168.20.0/24</code>. Untick <em>Use local DHCP service</em> on both — pfSense will be the router, and VMware's DHCP would hand out addresses without pfSense as the gateway.</p>
+<div class="shots"><figure><a href="images/image-316.png" target="_blank" rel="noopener"><img src="images/image-316.png" alt="VMware Workstation Edit menu: Virtual Network Editor" loading="lazy"></a></figure><figure><a href="images/image-317.png" target="_blank" rel="noopener"><img src="images/image-317.png" alt="Virtual Network Editor with VMnet0 bridged and VMnet8 NAT" loading="lazy"></a></figure><figure><a href="images/image-318.png" target="_blank" rel="noopener"><img src="images/image-318.png" alt="Add a Virtual Network: VMnet1" loading="lazy"></a></figure><figure><a href="images/image-319.png" target="_blank" rel="noopener"><img src="images/image-319.png" alt="VMnet1 host-only, subnet 192.168.10.0/24, host adapter connected, DHCP off" loading="lazy"></a></figure><figure><a href="images/image-320.png" target="_blank" rel="noopener"><img src="images/image-320.png" alt="Add a Virtual Network: VMnet2" loading="lazy"></a></figure><figure><a href="images/image-321.png" target="_blank" rel="noopener"><img src="images/image-321.png" alt="VMnet0, VMnet8, VMnet1 192.168.10.0 and VMnet2 192.168.20.0" loading="lazy"></a></figure></div>
+<div class="note">In my screenshots DHCP is still enabled on VMnet2. Turn it off so clients on LAN20 don't pick up VMware's DHCP settings.</div>
+
+<h2><span class="num">3</span>Give the Host Adapters Static IPs</h2>
+<p>Windows gets a virtual adapter for each host-only network. In <strong>Network Connections</strong>, rename them (VLAN-10, VLAN-20) and give each a static address in its network, with pfSense as the gateway:</p>
+<div class="shots"><figure><a href="images/image-322.png" target="_blank" rel="noopener"><img src="images/image-322.png" alt="Windows Network and Sharing Center: Change adapter settings" loading="lazy"></a></figure><figure><a href="images/image-323.png" target="_blank" rel="noopener"><img src="images/image-323.png" alt="Network Connections: VMware Network Adapter VMnet1 and VMnet2" loading="lazy"></a></figure><figure><a href="images/image-324.png" target="_blank" rel="noopener"><img src="images/image-324.png" alt="Renaming VMware Network Adapter VMnet2" loading="lazy"></a></figure><figure><a href="images/image-325.png" target="_blank" rel="noopener"><img src="images/image-325.png" alt="VLAN-10 adapter IPv4: 192.168.10.100/24, gateway 192.168.10.1" loading="lazy"></a></figure><figure><a href="images/image-326.png" target="_blank" rel="noopener"><img src="images/image-326.png" alt="VLAN-20 adapter IPv4: 192.168.20.100/24, gateway 192.168.20.1, DNS 192.168.1.8" loading="lazy"></a></figure></div>
+<div class="tw"><table>
+<thead><tr><th>Host adapter</th><th>IP address</th><th>Gateway</th></tr></thead>
+<tbody>
+<tr><td>VLAN-10 (VMnet1)</td><td>192.168.10.100/24</td><td>192.168.10.1</td></tr>
+<tr><td>VLAN-20 (VMnet2)</td><td>192.168.20.100/24</td><td>192.168.20.1</td></tr>
+</tbody></table></div>
+
+<h2><span class="num">4</span>Create the pfSense VM</h2>
+<p>Create a FreeBSD 64-bit VM with the ISO attached, then give it three network adapters: VMnet0 (WAN), VMnet1 and VMnet2:</p>
+<div class="shots"><figure><a href="images/image-327.png" target="_blank" rel="noopener"><img src="images/image-327.png" alt="PFSENSE VM: 256 MB memory, 1 processor, 20 GB disk, CD/DVD ISO" loading="lazy"></a></figure><figure><a href="images/image-328.png" target="_blank" rel="noopener"><img src="images/image-328.png" alt="VM settings: three network adapters on VMnet0, VMnet1 and VMnet2" loading="lazy"></a></figure></div>
+<div class="note">My VM has 256 MB of RAM, which boots but is below Netgate's 1 GB minimum. Give it at least 1 GB, especially if you plan to add packages.</div>
+
+<h2><span class="num">5</span>Install pfSense</h2>
+<p>Power on the VM and accept the defaults: <strong>Install</strong>, default keymap, <strong>Auto (ZFS)</strong>, stripe on the single disk, confirm, and reboot when it finishes.</p>
+<div class="shots"><figure><a href="images/image-329.png" target="_blank" rel="noopener"><img src="images/image-329.png" alt="pfSense boot menu" loading="lazy"></a></figure><figure><a href="images/image-330.png" target="_blank" rel="noopener"><img src="images/image-330.png" alt="Copyright and distribution notice: Accept" loading="lazy"></a></figure><figure><a href="images/image-331.png" target="_blank" rel="noopener"><img src="images/image-331.png" alt="pfSense Installer: Install" loading="lazy"></a></figure><figure><a href="images/image-332.png" target="_blank" rel="noopener"><img src="images/image-332.png" alt="Keymap selection: continue with default keymap" loading="lazy"></a></figure><figure><a href="images/image-333.png" target="_blank" rel="noopener"><img src="images/image-333.png" alt="Partitioning: Auto (ZFS)" loading="lazy"></a></figure><figure><a href="images/image-334.png" target="_blank" rel="noopener"><img src="images/image-334.png" alt="ZFS configuration: Proceed with Installation" loading="lazy"></a></figure><figure><a href="images/image-335.png" target="_blank" rel="noopener"><img src="images/image-335.png" alt="ZFS virtual device type: stripe" loading="lazy"></a></figure><figure><a href="images/image-336.png" target="_blank" rel="noopener"><img src="images/image-336.png" alt="Select disk da0" loading="lazy"></a></figure><figure><a href="images/image-337.png" target="_blank" rel="noopener"><img src="images/image-337.png" alt="Last chance: destroy contents of da0? YES" loading="lazy"></a></figure><figure><a href="images/image-338.png" target="_blank" rel="noopener"><img src="images/image-338.png" alt="Fetching distribution files" loading="lazy"></a></figure><figure><a href="images/image-339.png" target="_blank" rel="noopener"><img src="images/image-339.png" alt="Installation finished: open a shell? No" loading="lazy"></a></figure></div>
+
+<h2><span class="num">6</span>Set the LAN Address from the Console</h2>
+<p>After the reboot, the console shows the interface assignments and a menu. pfSense picked up a DHCP address on WAN, and LAN defaults to <code>192.168.1.1</code> — the same network as my home LAN. Choose option <strong>2</strong> and set LAN (em1) to <code>192.168.10.1/24</code>, with no DHCP server and HTTP for the web interface:</p>
+<div class="shots"><figure><a href="images/image-340.png" target="_blank" rel="noopener"><img src="images/image-340.png" alt="pfSense 2.6.0 console menu: WAN em0 192.168.1.150 via DHCP, LAN em1 192.168.1.1" loading="lazy"></a></figure><figure><a href="images/image-341.png" target="_blank" rel="noopener"><img src="images/image-341.png" alt="Option 2: set LAN (em1) IPv4 to 192.168.10.1/24" loading="lazy"></a></figure><figure><a href="images/image-342.png" target="_blank" rel="noopener"><img src="images/image-342.png" alt="No DHCP on LAN; webConfigurator at http://192.168.10.1/" loading="lazy"></a></figure></div>
+
+<h2><span class="num">7</span>Run the Setup Wizard</h2>
+<p>From the host, browse to <code>http://192.168.10.1</code> and sign in with the default credentials <strong>admin / pfsense</strong>. The setup wizard starts:</p>
+<div class="shots"><figure><a href="images/image-343.png" target="_blank" rel="noopener"><img src="images/image-343.png" alt="pfSense web sign-in page at 192.168.10.1" loading="lazy"></a></figure><figure><a href="images/image-345.png" target="_blank" rel="noopener"><img src="images/image-345.png" alt="Setup wizard welcome page" loading="lazy"></a></figure></div>
+<div class="tw"><table>
+<thead><tr><th>Wizard step</th><th>My setting</th></tr></thead>
+<tbody>
+<tr><td>General information</td><td>Hostname <code>pfSense</code>, domain <code>snvcloud.ind</code>, DNS 192.168.1.8 and 8.8.8.8</td></tr>
+<tr><td>Time server</td><td><code>2.pfsense.pool.ntp.org</code>, Asia/Kolkata</td></tr>
+<tr><td>WAN interface</td><td>Static 192.168.1.9/24, gateway 192.168.1.1</td></tr>
+<tr><td>LAN interface</td><td>192.168.10.1/24</td></tr>
+<tr><td>Admin password</td><td>Change it from the default</td></tr>
+</tbody></table></div>
+<div class="shots"><figure><a href="images/image-346.png" target="_blank" rel="noopener"><img src="images/image-346.png" alt="General information: hostname pfSense, domain snvcloud.ind, DNS 192.168.1.8 and 8.8.8.8" loading="lazy"></a></figure><figure><a href="images/image-347.png" target="_blank" rel="noopener"><img src="images/image-347.png" alt="Time server 2.pfsense.pool.ntp.org, timezone Asia/Kolkata" loading="lazy"></a></figure><figure><a href="images/image-348.png" target="_blank" rel="noopener"><img src="images/image-348.png" alt="WAN interface type: Static" loading="lazy"></a></figure><figure><a href="images/image-349.png" target="_blank" rel="noopener"><img src="images/image-349.png" alt="WAN static IP 192.168.1.9/24, gateway 192.168.1.1" loading="lazy"></a></figure><figure><a href="images/image-350.png" target="_blank" rel="noopener"><img src="images/image-350.png" alt="Block RFC1918 private networks and bogon networks on WAN" loading="lazy"></a></figure><figure><a href="images/image-351.png" target="_blank" rel="noopener"><img src="images/image-351.png" alt="LAN IP 192.168.10.1/24" loading="lazy"></a></figure><figure><a href="images/image-352.png" target="_blank" rel="noopener"><img src="images/image-352.png" alt="Set admin WebGUI password" loading="lazy"></a></figure><figure><a href="images/image-353.png" target="_blank" rel="noopener"><img src="images/image-353.png" alt="Reload configuration" loading="lazy"></a></figure></div>
+<div class="warn"><strong>Block RFC1918 on WAN:</strong> the wizard ticks "Block private networks" on WAN. That's right on a real internet connection, but here the WAN is itself a private network (192.168.1.0/24), so traffic coming <em>from</em> the home network is dropped. Untick it under <strong>Interfaces → WAN</strong> if you need home-network devices to reach the lab.</div>
+
+<h2><span class="num">8</span>Add the Second LAN</h2>
+<p>The dashboard shows WAN and LAN up. Go to <strong>Interfaces → Assignments</strong>:</p>
+<div class="shots"><figure><a href="images/image-354.png" target="_blank" rel="noopener"><img src="images/image-354.png" alt="Dashboard: pfSense 2.6.0, WAN 192.168.1.9, LAN 192.168.10.1" loading="lazy"></a></figure><figure><a href="images/image-355.png" target="_blank" rel="noopener"><img src="images/image-355.png" alt="Interfaces menu: Assignments" loading="lazy"></a></figure><figure><a href="images/image-356.png" target="_blank" rel="noopener"><img src="images/image-356.png" alt="Interface assignments: WAN em0, LAN em1, em2 available" loading="lazy"></a></figure></div>
+<p>Rename LAN to <strong>LAN10</strong>, then <strong>Add</strong> em2 (it appears as OPT1), enable it, rename it <strong>LAN20</strong> and give it the static address <code>192.168.20.1/24</code>. Apply the changes after each one:</p>
+<div class="shots"><figure><a href="images/image-357.png" target="_blank" rel="noopener"><img src="images/image-357.png" alt="LAN (em1) renamed LAN-10" loading="lazy"></a></figure><figure><a href="images/image-358.png" target="_blank" rel="noopener"><img src="images/image-358.png" alt="Reserved networks options unticked for the LAN interface" loading="lazy"></a></figure><figure><a href="images/image-359.png" target="_blank" rel="noopener"><img src="images/image-359.png" alt="LAN10 configuration changed: Apply Changes" loading="lazy"></a></figure><figure><a href="images/image-360.png" target="_blank" rel="noopener"><img src="images/image-360.png" alt="Adding em2" loading="lazy"></a></figure><figure><a href="images/image-361.png" target="_blank" rel="noopener"><img src="images/image-361.png" alt="Interface added: OPT1 on em2" loading="lazy"></a></figure><figure><a href="images/image-362.png" target="_blank" rel="noopener"><img src="images/image-362.png" alt="OPT1 (em2) renamed LAN20, static IPv4" loading="lazy"></a></figure><figure><a href="images/image-363.png" target="_blank" rel="noopener"><img src="images/image-363.png" alt="LAN20 static IPv4 192.168.20.1/24" loading="lazy"></a></figure><figure><a href="images/image-364.png" target="_blank" rel="noopener"><img src="images/image-364.png" alt="LAN20 configuration changed: Apply Changes" loading="lazy"></a></figure></div>
+
+<h2><span class="num">9</span>Add Firewall Rules</h2>
+<p>Go to <strong>Firewall → Rules</strong>. WAN blocks everything inbound by default, and LAN10 (the original LAN) comes with an allow-any rule. But a new interface like LAN20 has <strong>no rules, so everything from it is blocked</strong>:</p>
+<div class="shots"><figure><a href="images/image-365.png" target="_blank" rel="noopener"><img src="images/image-365.png" alt="Firewall menu: Rules" loading="lazy"></a></figure><figure><a href="images/image-366.png" target="_blank" rel="noopener"><img src="images/image-366.png" alt="WAN rules: block private and bogon networks, no pass rules" loading="lazy"></a></figure><figure><a href="images/image-367.png" target="_blank" rel="noopener"><img src="images/image-367.png" alt="LAN10 rules: anti-lockout and default allow LAN to any" loading="lazy"></a></figure><figure><a href="images/image-368.png" target="_blank" rel="noopener"><img src="images/image-368.png" alt="LAN20 has no rules: all incoming traffic blocked" loading="lazy"></a></figure></div>
+<p>On LAN20, click <strong>Add</strong>: action <strong>Pass</strong>, interface LAN20, IPv4, protocol any, source <strong>LAN20 net</strong>, destination any, description "Allow LAN 20". Save and <strong>Apply Changes</strong>:</p>
+<div class="shots"><figure><a href="images/image-369.png" target="_blank" rel="noopener"><img src="images/image-369.png" alt="Edit firewall rule: Pass, interface LAN20, IPv4, any protocol" loading="lazy"></a></figure><figure><a href="images/image-370.png" target="_blank" rel="noopener"><img src="images/image-370.png" alt="Source LAN20 net, destination any, description Allow LAN 20" loading="lazy"></a></figure><figure><a href="images/image-371.png" target="_blank" rel="noopener"><img src="images/image-371.png" alt="Firewall rules changed: Apply Changes" loading="lazy"></a></figure></div>
+
+<h2><span class="num">10</span>Test</h2>
+<p>From the host, both pfSense gateways answer:</p>
+<div class="shots one"><figure><a href="images/image-372.png" target="_blank" rel="noopener"><img src="images/image-372.png" alt="Windows host pings 192.168.10.1 and 192.168.20.1 successfully" loading="lazy"></a></figure></div>
+<p>Now put VMs on VMnet1 or VMnet2 with pfSense as their gateway — they can talk to each other through the firewall and reach the internet through WAN, and you can tighten the rules to control exactly what crosses between the networks.</p>
+<p style="margin-top:1.4em">Related: <a href="../steps-to-create-hostonly-network-in-oracle-virtual-box-from-command-line-in-windows/steps-to-create-hostonly-network-in-oracle-virtual-box-from-command-line-in-windows.html">Host-only networks in VirtualBox from the command line</a></p>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>
