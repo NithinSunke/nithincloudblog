@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fundamentals of OCI</title>
+</head>
+<body>
+<style>
+.ocif{max-width:860px;margin:0 auto;padding:0 16px 40px;font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;--red:#C74634;--blue:#2F6FB0;--ink:#312D2A;--mute:#6b625c;--line:#e6e0dc;--soft:#f8f6f4;--amber:#F6B04B;color:var(--ink);line-height:1.7;font-size:16px}
+.ocif *{box-sizing:border-box}
+.ocif h2{font-size:1.5em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:3px solid var(--red);color:var(--ink)}
+.ocif h3{font-size:1.2em;margin:1.8em 0 .5em;color:var(--blue)}
+.ocif p{margin:.7em 0}
+.ocif ul,.ocif ol{margin:.6em 0 .6em 1.3em;padding:0}
+.ocif li{margin:.3em 0}
+.ocif .meta{color:var(--mute);font-size:.9em}
+.ocif .toc{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:14px 18px;margin:1.2em 0}
+.ocif .toc b{display:block;margin-bottom:6px}
+.ocif .toc a{color:var(--blue);text-decoration:none}
+.ocif .toc ol{columns:2;column-gap:28px;margin-left:1.2em}
+.ocif .box{border-left:5px solid var(--blue);background:#EAF2FB;border-radius:6px;padding:12px 16px;margin:1.1em 0}
+.ocif .box.dba{border-color:#3d8b5a;background:#EAF6EE}
+.ocif .box.exam{border-color:var(--red);background:#FBEDEA}
+.ocif .box.warn{border-color:var(--amber);background:#FFF4E2}
+.ocif .box b:first-child{display:block;margin-bottom:2px}
+.ocif .tbl{overflow-x:auto;margin:1em 0}
+.ocif table{border-collapse:collapse;width:100%;min-width:520px;font-size:.93em}
+.ocif th{background:var(--ink);color:#fff;text-align:left;padding:9px 10px}
+.ocif td{border-bottom:1px solid var(--line);padding:9px 10px;vertical-align:top}
+.ocif tr:nth-child(even) td{background:var(--soft)}
+.ocif figure{margin:1.4em 0;text-align:center}
+.ocif figure svg{width:100%;height:auto;max-width:720px}
+.ocif figcaption{color:var(--mute);font-size:.88em;margin-top:6px}
+.ocif .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:1em 0}
+.ocif .card{border:1px solid var(--line);border-top:4px solid var(--blue);border-radius:8px;padding:12px 14px;background:#fff}
+.ocif .card b{display:block;color:var(--blue)}
+.ocif .card span{font-size:.92em;color:var(--mute)}
+.ocif .steps{counter-reset:s;list-style:none;margin-left:0}
+.ocif .steps li{counter-increment:s;position:relative;padding-left:42px;margin:.8em 0}
+.ocif .steps li:before{content:counter(s);position:absolute;left:0;top:0;width:28px;height:28px;border-radius:50%;background:var(--red);color:#fff;text-align:center;line-height:28px;font-weight:700;font-size:.9em}
+.ocif code{background:var(--soft);border:1px solid var(--line);border-radius:4px;padding:1px 5px;font-size:.9em}
+.ocif-q{border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:14px 0;background:#fff}
+.ocif-qt{font-weight:600;margin:0 0 10px}
+.ocif-qt span{color:var(--red)}
+.ocif-opts{display:grid;gap:8px}
+.ocif-opt{all:unset;cursor:pointer;display:block;border:1px solid var(--line);border-radius:8px;padding:9px 12px;background:var(--soft);font-size:.95em;line-height:1.4}
+.ocif-opt:hover{border-color:var(--blue)}
+.ocif-opt.ok{background:#EAF6EE;border-color:#3d8b5a}
+.ocif-opt.bad{background:#FBEDEA;border-color:var(--red)}
+.ocif-q.done .ocif-opt{cursor:default}
+.ocif-exp{display:none;margin:10px 0 0;font-size:.92em;color:var(--mute)}
+.ocif-q.done .ocif-exp{display:block}
+.ocif-score{font-weight:700;padding:12px 16px;border-radius:8px;background:var(--ink);color:#fff;text-align:center}
+.ocif-reset{all:unset;cursor:pointer;color:var(--blue);font-size:.9em;display:inline-block;margin-top:8px}
+</style>
+
+<div class="ocif">
+
+<h1 style="font-size:1.9em;line-height:1.25;margin:.6em 0 .3em">Fundamentals of OCI: Cloud Basics, Regions, Compartments and Core Services</h1>
+
+<p class="meta">Oct 11, 2026 · Nithin Sunke · OCI Foundations series, Part 1</p>
+
+<p><b>Oracle Cloud Infrastructure (OCI)</b> is Oracle's public cloud: compute, storage, networking, database and security services you rent on demand and pay for by use. This post covers the building blocks every other OCI topic depends on, so it is the right place to start for the <b>OCI Foundations Associate</b> exam.</p>
+
+<div class="box"><b>Who this is for</b>Beginners, DBAs and sysadmins moving from on-premises data centers, and anyone starting the OCI Foundations certification path.</div>
+
+<p><b>By the end you will be able to:</b></p>
+<ul>
+<li>Explain what cloud computing is and the IaaS, PaaS and SaaS models</li>
+<li>Describe OCI's physical architecture: regions, availability domains and fault domains</li>
+<li>Explain tenancies and compartments and why they matter</li>
+<li>Name OCI's core service categories and what each is for</li>
+<li>Sign in to the OCI Console and create your first compartment</li>
+</ul>
+
+<div class="toc"><b>In this post</b>
+<ol>
+<li><a href="#ocif-1">What is cloud computing?</a></li>
+<li><a href="#ocif-2">IaaS, PaaS, SaaS</a></li>
+<li><a href="#ocif-3">Deployment models</a></li>
+<li><a href="#ocif-4">Regions, ADs, fault domains</a></li>
+<li><a href="#ocif-5">Tenancy and compartments</a></li>
+<li><a href="#ocif-6">Core service categories</a></li>
+<li><a href="#ocif-7">What makes OCI different</a></li>
+<li><a href="#ocif-8">Pricing and Free Tier</a></li>
+<li><a href="#ocif-9">Shared responsibility</a></li>
+<li><a href="#ocif-lab">Hands-on lab</a></li>
+<li><a href="#ocif-tips">Exam tips</a></li>
+<li><a href="#ocif-quiz">Quiz</a></li>
+</ol></div>
+
+<h2 id="ocif-1">1. What is cloud computing?</h2>
+<p>Cloud computing means using IT resources (servers, storage, databases, networks) over the internet, on demand, and paying only for what you use. You don't buy hardware or run a data center. The provider does that, and you provision resources in minutes from a web console, CLI or API.</p>
+
+<h3>The five characteristics (NIST definition)</h3>
+<div class="grid">
+<div class="card"><b>On-demand self-service</b><span>Provision resources yourself, with no ticket to a vendor.</span></div>
+<div class="card"><b>Broad network access</b><span>Reach services from anywhere over the network.</span></div>
+<div class="card"><b>Resource pooling</b><span>Many customers share the provider's hardware securely.</span></div>
+<div class="card"><b>Rapid elasticity</b><span>Scale up or down quickly as demand changes.</span></div>
+<div class="card"><b>Measured service</b><span>Usage is metered; you pay for what you consume.</span></div>
+</div>
+
+<div class="box exam"><b>CapEx vs OpEx</b>On-premises IT is <b>capital expenditure</b> (buy servers upfront). Cloud is <b>operational expenditure</b> (pay monthly for use). This is one of the most common exam themes.</div>
+
+<h2 id="ocif-2">2. Service models: IaaS, PaaS, SaaS</h2>
+<p>The service model decides who manages what. Think of it as: <i>how much of the stack does the provider run for me?</i></p>
+
+<figure>
+<svg viewBox="0 0 720 470" role="img" aria-label="Who manages each layer in on-premises, IaaS, PaaS and SaaS" xmlns="http://www.w3.org/2000/svg" font-family="inherit"><text x="128" y="28" text-anchor="middle" font-size="16" font-weight="700" fill="#312D2A">On-premises</text><rect x="58" y="44" width="140" height="34" rx="6" fill="#F6B04B"/><text x="128" y="66" text-anchor="middle" font-size="12" fill="#3a2a00">Applications</text><rect x="58" y="84" width="140" height="34" rx="6" fill="#F6B04B"/><text x="128" y="106" text-anchor="middle" font-size="12" fill="#3a2a00">Data</text><rect x="58" y="124" width="140" height="34" rx="6" fill="#F6B04B"/><text x="128" y="146" text-anchor="middle" font-size="12" fill="#3a2a00">Runtime</text><rect x="58" y="164" width="140" height="34" rx="6" fill="#F6B04B"/><text x="128" y="186" text-anchor="middle" font-size="12" fill="#3a2a00">Middleware</text><rect x="58" y="204" width="140" height="34" rx="6" fill="#F6B04B"/><text x="128" y="226" text-anchor="middle" font-size="12" fill="#3a2a00">Operating system</text><rect x="58" y="244" width="140" height="34" rx="6" fill="#F6B04B"/><text x="128" y="266" text-anchor="middle" font-size="12" fill="#3a2a00">Virtualization</text><rect x="58" y="284" width="140" height="34" rx="6" fill="#F6B04B"/><text x="128" y="306" text-anchor="middle" font-size="12" fill="#3a2a00">Servers</text><rect x="58" y="324" width="140" height="34" rx="6" fill="#F6B04B"/><text x="128" y="346" text-anchor="middle" font-size="12" fill="#3a2a00">Storage</text><rect x="58" y="364" width="140" height="34" rx="6" fill="#F6B04B"/><text x="128" y="386" text-anchor="middle" font-size="12" fill="#3a2a00">Networking</text><text x="283" y="28" text-anchor="middle" font-size="16" font-weight="700" fill="#312D2A">IaaS</text><rect x="213" y="44" width="140" height="34" rx="6" fill="#F6B04B"/><text x="283" y="66" text-anchor="middle" font-size="12" fill="#3a2a00">Applications</text><rect x="213" y="84" width="140" height="34" rx="6" fill="#F6B04B"/><text x="283" y="106" text-anchor="middle" font-size="12" fill="#3a2a00">Data</text><rect x="213" y="124" width="140" height="34" rx="6" fill="#F6B04B"/><text x="283" y="146" text-anchor="middle" font-size="12" fill="#3a2a00">Runtime</text><rect x="213" y="164" width="140" height="34" rx="6" fill="#F6B04B"/><text x="283" y="186" text-anchor="middle" font-size="12" fill="#3a2a00">Middleware</text><rect x="213" y="204" width="140" height="34" rx="6" fill="#F6B04B"/><text x="283" y="226" text-anchor="middle" font-size="12" fill="#3a2a00">Operating system</text><rect x="213" y="244" width="140" height="34" rx="6" fill="#2F6FB0"/><text x="283" y="266" text-anchor="middle" font-size="12" fill="#ffffff">Virtualization</text><rect x="213" y="284" width="140" height="34" rx="6" fill="#2F6FB0"/><text x="283" y="306" text-anchor="middle" font-size="12" fill="#ffffff">Servers</text><rect x="213" y="324" width="140" height="34" rx="6" fill="#2F6FB0"/><text x="283" y="346" text-anchor="middle" font-size="12" fill="#ffffff">Storage</text><rect x="213" y="364" width="140" height="34" rx="6" fill="#2F6FB0"/><text x="283" y="386" text-anchor="middle" font-size="12" fill="#ffffff">Networking</text><text x="438" y="28" text-anchor="middle" font-size="16" font-weight="700" fill="#312D2A">PaaS</text><rect x="368" y="44" width="140" height="34" rx="6" fill="#F6B04B"/><text x="438" y="66" text-anchor="middle" font-size="12" fill="#3a2a00">Applications</text><rect x="368" y="84" width="140" height="34" rx="6" fill="#F6B04B"/><text x="438" y="106" text-anchor="middle" font-size="12" fill="#3a2a00">Data</text><rect x="368" y="124" width="140" height="34" rx="6" fill="#2F6FB0"/><text x="438" y="146" text-anchor="middle" font-size="12" fill="#ffffff">Runtime</text><rect x="368" y="164" width="140" height="34" rx="6" fill="#2F6FB0"/><text x="438" y="186" text-anchor="middle" font-size="12" fill="#ffffff">Middleware</text><rect x="368" y="204" width="140" height="34" rx="6" fill="#2F6FB0"/><text x="438" y="226" text-anchor="middle" font-size="12" fill="#ffffff">Operating system</text><rect x="368" y="244" width="140" height="34" rx="6" fill="#2F6FB0"/><text x="438" y="266" text-anchor="middle" font-size="12" fill="#ffffff">Virtualization</text><rect x="368" y="284" width="140" height="34" rx="6" fill="#2F6FB0"/><text x="438" y="306" text-anchor="middle" font-size="12" fill="#ffffff">Servers</text><rect x="368" y="324" width="140" height="34" rx="6" fill="#2F6FB0"/><text x="438" y="346" text-anchor="middle" font-size="12" fill="#ffffff">Storage</text><rect x="368" y="364" width="140" height="34" rx="6" fill="#2F6FB0"/><text x="438" y="386" text-anchor="middle" font-size="12" fill="#ffffff">Networking</text><text x="593" y="28" text-anchor="middle" font-size="16" font-weight="700" fill="#312D2A">SaaS</text><rect x="523" y="44" width="140" height="34" rx="6" fill="#2F6FB0"/><text x="593" y="66" text-anchor="middle" font-size="12" fill="#ffffff">Applications</text><rect x="523" y="84" width="140" height="34" rx="6" fill="#F6B04B"/><text x="593" y="106" text-anchor="middle" font-size="12" fill="#3a2a00">Data</text><rect x="523" y="124" width="140" height="34" rx="6" fill="#2F6FB0"/><text x="593" y="146" text-anchor="middle" font-size="12" fill="#ffffff">Runtime</text><rect x="523" y="164" width="140" height="34" rx="6" fill="#2F6FB0"/><text x="593" y="186" text-anchor="middle" font-size="12" fill="#ffffff">Middleware</text><rect x="523" y="204" width="140" height="34" rx="6" fill="#2F6FB0"/><text x="593" y="226" text-anchor="middle" font-size="12" fill="#ffffff">Operating system</text><rect x="523" y="244" width="140" height="34" rx="6" fill="#2F6FB0"/><text x="593" y="266" text-anchor="middle" font-size="12" fill="#ffffff">Virtualization</text><rect x="523" y="284" width="140" height="34" rx="6" fill="#2F6FB0"/><text x="593" y="306" text-anchor="middle" font-size="12" fill="#ffffff">Servers</text><rect x="523" y="324" width="140" height="34" rx="6" fill="#2F6FB0"/><text x="593" y="346" text-anchor="middle" font-size="12" fill="#ffffff">Storage</text><rect x="523" y="364" width="140" height="34" rx="6" fill="#2F6FB0"/><text x="593" y="386" text-anchor="middle" font-size="12" fill="#ffffff">Networking</text><rect x="58" y="424" width="18" height="18" rx="4" fill="#F6B04B"/><text x="84" y="438" font-size="13" fill="#312D2A">You manage</text><rect x="210" y="424" width="18" height="18" rx="4" fill="#2F6FB0"/><text x="236" y="438" font-size="13" fill="#312D2A">Oracle manages</text><text x="390" y="438" font-size="12" fill="#6b625c">SaaS: you still own your data and user access</text></svg>
+<figcaption>Figure 1. The more you move to the right, the more of the stack Oracle runs for you.</figcaption>
+</figure>
+
+<div class="tbl"><table>
+<tr><th>Model</th><th>Provider manages</th><th>You manage</th><th>OCI examples</th></tr>
+<tr><td><b>IaaS</b></td><td>Physical hardware, network, virtualization</td><td>OS, middleware, runtime, data, apps</td><td>Compute VMs, Block Volume, VCN</td></tr>
+<tr><td><b>PaaS</b></td><td>Everything up to the runtime</td><td>Your data and applications</td><td>Autonomous Database, OKE, Functions</td></tr>
+<tr><td><b>SaaS</b></td><td>The entire application</td><td>Your data and user access</td><td>Oracle Fusion ERP, HCM, NetSuite</td></tr>
+</table></div>
+
+<div class="box dba"><b>DBA analogy</b>Running Oracle Database on a Compute VM is <b>IaaS</b> (you patch and back up). Autonomous Database is <b>PaaS</b> (Oracle patches, tunes and backs it up).</div>
+
+<h2 id="ocif-3">3. Deployment models</h2>
+<div class="grid">
+<div class="card"><b>Public cloud</b><span>Shared provider infrastructure (standard OCI regions).</span></div>
+<div class="card"><b>Private cloud</b><span>Dedicated to one organization. OCI Dedicated Region runs OCI in your own data center.</span></div>
+<div class="card"><b>Hybrid cloud</b><span>On-premises plus cloud, connected through FastConnect or VPN.</span></div>
+<div class="card"><b>Multicloud</b><span>OCI used with another cloud, e.g. Oracle Database@Azure, @AWS, @Google Cloud.</span></div>
+</div>
+
+<h2 id="ocif-4">4. OCI physical architecture</h2>
+<p>This is the most tested area of this topic. OCI is organized in three nested layers:</p>
+
+<figure>
+<svg viewBox="0 0 720 360" role="img" aria-label="A region contains availability domains, and each availability domain contains three fault domains" xmlns="http://www.w3.org/2000/svg" font-family="inherit"><rect x="6" y="6" width="708" height="346" rx="14" fill="#FBEDEA" stroke="#C74634" stroke-width="2"/><text x="24" y="34" font-size="16" font-weight="700" fill="#C74634">Region · e.g. India South (Hyderabad)</text><rect x="24" y="52" width="208" height="284" rx="10" fill="#FFFFFF" stroke="#2F6FB0" stroke-width="2"/><text x="128" y="76" text-anchor="middle" font-size="14" font-weight="700" fill="#2F6FB0">Availability Domain 1</text><text x="128" y="94" text-anchor="middle" font-size="11" fill="#6b625c">own power · cooling · network</text><rect x="34" y="108" width="60" height="214" rx="8" fill="#EAF2FB" stroke="#9DBBE0" stroke-dasharray="4 3"/><text x="64" y="128" text-anchor="middle" font-size="12" font-weight="700" fill="#312D2A">FD 1</text><rect x="44" y="142" width="40" height="30" rx="4" fill="#312D2A"/><line x1="50" y1="152" x2="78" y2="152" stroke="#9DBBE0" stroke-width="2"/><circle cx="76" cy="163" r="2.5" fill="#6FD08C"/><rect x="44" y="184" width="40" height="30" rx="4" fill="#312D2A"/><line x1="50" y1="194" x2="78" y2="194" stroke="#9DBBE0" stroke-width="2"/><circle cx="76" cy="205" r="2.5" fill="#6FD08C"/><rect x="44" y="226" width="40" height="30" rx="4" fill="#312D2A"/><line x1="50" y1="236" x2="78" y2="236" stroke="#9DBBE0" stroke-width="2"/><circle cx="76" cy="247" r="2.5" fill="#6FD08C"/><rect x="44" y="268" width="40" height="30" rx="4" fill="#312D2A"/><line x1="50" y1="278" x2="78" y2="278" stroke="#9DBBE0" stroke-width="2"/><circle cx="76" cy="289" r="2.5" fill="#6FD08C"/><rect x="98" y="108" width="60" height="214" rx="8" fill="#EAF2FB" stroke="#9DBBE0" stroke-dasharray="4 3"/><text x="128" y="128" text-anchor="middle" font-size="12" font-weight="700" fill="#312D2A">FD 2</text><rect x="108" y="142" width="40" height="30" rx="4" fill="#312D2A"/><line x1="114" y1="152" x2="142" y2="152" stroke="#9DBBE0" stroke-width="2"/><circle cx="140" cy="163" r="2.5" fill="#6FD08C"/><rect x="108" y="184" width="40" height="30" rx="4" fill="#312D2A"/><line x1="114" y1="194" x2="142" y2="194" stroke="#9DBBE0" stroke-width="2"/><circle cx="140" cy="205" r="2.5" fill="#6FD08C"/><rect x="108" y="226" width="40" height="30" rx="4" fill="#312D2A"/><line x1="114" y1="236" x2="142" y2="236" stroke="#9DBBE0" stroke-width="2"/><circle cx="140" cy="247" r="2.5" fill="#6FD08C"/><rect x="108" y="268" width="40" height="30" rx="4" fill="#312D2A"/><line x1="114" y1="278" x2="142" y2="278" stroke="#9DBBE0" stroke-width="2"/><circle cx="140" cy="289" r="2.5" fill="#6FD08C"/><rect x="162" y="108" width="60" height="214" rx="8" fill="#EAF2FB" stroke="#9DBBE0" stroke-dasharray="4 3"/><text x="192" y="128" text-anchor="middle" font-size="12" font-weight="700" fill="#312D2A">FD 3</text><rect x="172" y="142" width="40" height="30" rx="4" fill="#312D2A"/><line x1="178" y1="152" x2="206" y2="152" stroke="#9DBBE0" stroke-width="2"/><circle cx="204" cy="163" r="2.5" fill="#6FD08C"/><rect x="172" y="184" width="40" height="30" rx="4" fill="#312D2A"/><line x1="178" y1="194" x2="206" y2="194" stroke="#9DBBE0" stroke-width="2"/><circle cx="204" cy="205" r="2.5" fill="#6FD08C"/><rect x="172" y="226" width="40" height="30" rx="4" fill="#312D2A"/><line x1="178" y1="236" x2="206" y2="236" stroke="#9DBBE0" stroke-width="2"/><circle cx="204" cy="247" r="2.5" fill="#6FD08C"/><rect x="172" y="268" width="40" height="30" rx="4" fill="#312D2A"/><line x1="178" y1="278" x2="206" y2="278" stroke="#9DBBE0" stroke-width="2"/><circle cx="204" cy="289" r="2.5" fill="#6FD08C"/><rect x="256" y="52" width="208" height="284" rx="10" fill="#FFFFFF" stroke="#2F6FB0" stroke-width="2"/><text x="360" y="76" text-anchor="middle" font-size="14" font-weight="700" fill="#2F6FB0">Availability Domain 2</text><text x="360" y="94" text-anchor="middle" font-size="11" fill="#6b625c">own power · cooling · network</text><rect x="266" y="108" width="60" height="214" rx="8" fill="#EAF2FB" stroke="#9DBBE0" stroke-dasharray="4 3"/><text x="296" y="128" text-anchor="middle" font-size="12" font-weight="700" fill="#312D2A">FD 1</text><rect x="276" y="142" width="40" height="30" rx="4" fill="#312D2A"/><line x1="282" y1="152" x2="310" y2="152" stroke="#9DBBE0" stroke-width="2"/><circle cx="308" cy="163" r="2.5" fill="#6FD08C"/><rect x="276" y="184" width="40" height="30" rx="4" fill="#312D2A"/><line x1="282" y1="194" x2="310" y2="194" stroke="#9DBBE0" stroke-width="2"/><circle cx="308" cy="205" r="2.5" fill="#6FD08C"/><rect x="276" y="226" width="40" height="30" rx="4" fill="#312D2A"/><line x1="282" y1="236" x2="310" y2="236" stroke="#9DBBE0" stroke-width="2"/><circle cx="308" cy="247" r="2.5" fill="#6FD08C"/><rect x="276" y="268" width="40" height="30" rx="4" fill="#312D2A"/><line x1="282" y1="278" x2="310" y2="278" stroke="#9DBBE0" stroke-width="2"/><circle cx="308" cy="289" r="2.5" fill="#6FD08C"/><rect x="330" y="108" width="60" height="214" rx="8" fill="#EAF2FB" stroke="#9DBBE0" stroke-dasharray="4 3"/><text x="360" y="128" text-anchor="middle" font-size="12" font-weight="700" fill="#312D2A">FD 2</text><rect x="340" y="142" width="40" height="30" rx="4" fill="#312D2A"/><line x1="346" y1="152" x2="374" y2="152" stroke="#9DBBE0" stroke-width="2"/><circle cx="372" cy="163" r="2.5" fill="#6FD08C"/><rect x="340" y="184" width="40" height="30" rx="4" fill="#312D2A"/><line x1="346" y1="194" x2="374" y2="194" stroke="#9DBBE0" stroke-width="2"/><circle cx="372" cy="205" r="2.5" fill="#6FD08C"/><rect x="340" y="226" width="40" height="30" rx="4" fill="#312D2A"/><line x1="346" y1="236" x2="374" y2="236" stroke="#9DBBE0" stroke-width="2"/><circle cx="372" cy="247" r="2.5" fill="#6FD08C"/><rect x="340" y="268" width="40" height="30" rx="4" fill="#312D2A"/><line x1="346" y1="278" x2="374" y2="278" stroke="#9DBBE0" stroke-width="2"/><circle cx="372" cy="289" r="2.5" fill="#6FD08C"/><rect x="394" y="108" width="60" height="214" rx="8" fill="#EAF2FB" stroke="#9DBBE0" stroke-dasharray="4 3"/><text x="424" y="128" text-anchor="middle" font-size="12" font-weight="700" fill="#312D2A">FD 3</text><rect x="404" y="142" width="40" height="30" rx="4" fill="#312D2A"/><line x1="410" y1="152" x2="438" y2="152" stroke="#9DBBE0" stroke-width="2"/><circle cx="436" cy="163" r="2.5" fill="#6FD08C"/><rect x="404" y="184" width="40" height="30" rx="4" fill="#312D2A"/><line x1="410" y1="194" x2="438" y2="194" stroke="#9DBBE0" stroke-width="2"/><circle cx="436" cy="205" r="2.5" fill="#6FD08C"/><rect x="404" y="226" width="40" height="30" rx="4" fill="#312D2A"/><line x1="410" y1="236" x2="438" y2="236" stroke="#9DBBE0" stroke-width="2"/><circle cx="436" cy="247" r="2.5" fill="#6FD08C"/><rect x="404" y="268" width="40" height="30" rx="4" fill="#312D2A"/><line x1="410" y1="278" x2="438" y2="278" stroke="#9DBBE0" stroke-width="2"/><circle cx="436" cy="289" r="2.5" fill="#6FD08C"/><rect x="488" y="52" width="208" height="284" rx="10" fill="#FFFFFF" stroke="#2F6FB0" stroke-width="2"/><text x="592" y="76" text-anchor="middle" font-size="14" font-weight="700" fill="#2F6FB0">Availability Domain 3</text><text x="592" y="94" text-anchor="middle" font-size="11" fill="#6b625c">own power · cooling · network</text><rect x="498" y="108" width="60" height="214" rx="8" fill="#EAF2FB" stroke="#9DBBE0" stroke-dasharray="4 3"/><text x="528" y="128" text-anchor="middle" font-size="12" font-weight="700" fill="#312D2A">FD 1</text><rect x="508" y="142" width="40" height="30" rx="4" fill="#312D2A"/><line x1="514" y1="152" x2="542" y2="152" stroke="#9DBBE0" stroke-width="2"/><circle cx="540" cy="163" r="2.5" fill="#6FD08C"/><rect x="508" y="184" width="40" height="30" rx="4" fill="#312D2A"/><line x1="514" y1="194" x2="542" y2="194" stroke="#9DBBE0" stroke-width="2"/><circle cx="540" cy="205" r="2.5" fill="#6FD08C"/><rect x="508" y="226" width="40" height="30" rx="4" fill="#312D2A"/><line x1="514" y1="236" x2="542" y2="236" stroke="#9DBBE0" stroke-width="2"/><circle cx="540" cy="247" r="2.5" fill="#6FD08C"/><rect x="508" y="268" width="40" height="30" rx="4" fill="#312D2A"/><line x1="514" y1="278" x2="542" y2="278" stroke="#9DBBE0" stroke-width="2"/><circle cx="540" cy="289" r="2.5" fill="#6FD08C"/><rect x="562" y="108" width="60" height="214" rx="8" fill="#EAF2FB" stroke="#9DBBE0" stroke-dasharray="4 3"/><text x="592" y="128" text-anchor="middle" font-size="12" font-weight="700" fill="#312D2A">FD 2</text><rect x="572" y="142" width="40" height="30" rx="4" fill="#312D2A"/><line x1="578" y1="152" x2="606" y2="152" stroke="#9DBBE0" stroke-width="2"/><circle cx="604" cy="163" r="2.5" fill="#6FD08C"/><rect x="572" y="184" width="40" height="30" rx="4" fill="#312D2A"/><line x1="578" y1="194" x2="606" y2="194" stroke="#9DBBE0" stroke-width="2"/><circle cx="604" cy="205" r="2.5" fill="#6FD08C"/><rect x="572" y="226" width="40" height="30" rx="4" fill="#312D2A"/><line x1="578" y1="236" x2="606" y2="236" stroke="#9DBBE0" stroke-width="2"/><circle cx="604" cy="247" r="2.5" fill="#6FD08C"/><rect x="572" y="268" width="40" height="30" rx="4" fill="#312D2A"/><line x1="578" y1="278" x2="606" y2="278" stroke="#9DBBE0" stroke-width="2"/><circle cx="604" cy="289" r="2.5" fill="#6FD08C"/><rect x="626" y="108" width="60" height="214" rx="8" fill="#EAF2FB" stroke="#9DBBE0" stroke-dasharray="4 3"/><text x="656" y="128" text-anchor="middle" font-size="12" font-weight="700" fill="#312D2A">FD 3</text><rect x="636" y="142" width="40" height="30" rx="4" fill="#312D2A"/><line x1="642" y1="152" x2="670" y2="152" stroke="#9DBBE0" stroke-width="2"/><circle cx="668" cy="163" r="2.5" fill="#6FD08C"/><rect x="636" y="184" width="40" height="30" rx="4" fill="#312D2A"/><line x1="642" y1="194" x2="670" y2="194" stroke="#9DBBE0" stroke-width="2"/><circle cx="668" cy="205" r="2.5" fill="#6FD08C"/><rect x="636" y="226" width="40" height="30" rx="4" fill="#312D2A"/><line x1="642" y1="236" x2="670" y2="236" stroke="#9DBBE0" stroke-width="2"/><circle cx="668" cy="247" r="2.5" fill="#6FD08C"/><rect x="636" y="268" width="40" height="30" rx="4" fill="#312D2A"/><line x1="642" y1="278" x2="670" y2="278" stroke="#9DBBE0" stroke-width="2"/><circle cx="668" cy="289" r="2.5" fill="#6FD08C"/><line x1="232" y1="200" x2="256" y2="200" stroke="#C74634" stroke-width="3"/><line x1="464" y1="200" x2="488" y2="200" stroke="#C74634" stroke-width="3"/><text x="360" y="348" text-anchor="middle" font-size="11" fill="#C74634">ADs are linked by a low-latency, high-bandwidth network</text></svg>
+<figcaption>Figure 2. Region → Availability Domain → Fault Domain. Some regions have three ADs; many have only one.</figcaption>
+</figure>
+
+<ul>
+<li><b>Region:</b> a localized geographic area, such as India South (Hyderabad) or India West (Mumbai). Each region is independent. Choose regions by proximity to users, data residency laws and service availability.</li>
+<li><b>Availability Domain (AD):</b> one or more isolated data centers inside a region. ADs don't share power or cooling, so a failure in one shouldn't affect another.</li>
+<li><b>Fault Domain (FD):</b> a grouping of hardware inside an AD. <b>Every AD has three fault domains.</b> Spreading instances across FDs protects you from a single hardware failure or planned maintenance.</li>
+</ul>
+
+<div class="box exam"><b>Key points for the exam</b>
+<ul>
+<li>ADs in a region are linked by a low-latency, high-bandwidth network, so you can replicate data synchronously between them.</li>
+<li>In a <b>single-AD region</b>, get high availability by spreading resources across the three fault domains.</li>
+<li>For <b>disaster recovery</b>, replicate to a second region. OCI offers region pairs in many countries for this.</li>
+<li><b>Realm:</b> a logical collection of regions (commercial or government realms). Realms don't share data.</li>
+</ul></div>
+
+<div class="tbl"><table>
+<tr><th>Protect against…</th><th>Use</th></tr>
+<tr><td>A single server or rack failing / planned maintenance</td><td>Multiple fault domains</td></tr>
+<tr><td>A whole data center going down</td><td>Multiple availability domains</td></tr>
+<tr><td>An entire region going down</td><td>A second region (DR)</td></tr>
+</table></div>
+
+<h2 id="ocif-5">5. Tenancy and compartments</h2>
+<p>When you sign up, OCI creates a <b>tenancy</b>: your secure, isolated account. The tenancy is also the <b>root compartment</b>.</p>
+<p>A <b>compartment</b> is a logical container used to organize and isolate resources and to control access with IAM policies.</p>
+
+<figure>
+<svg viewBox="0 0 720 330" role="img" aria-label="Tenancy as root compartment with Network, Security and Projects compartments; Projects contains Dev, Test and Prod" xmlns="http://www.w3.org/2000/svg" font-family="inherit"><rect x="260" y="10" width="200" height="50" rx="8" fill="#312D2A" stroke="#312D2A" stroke-width="2"/><text x="360.0" y="32" text-anchor="middle" font-size="14" font-weight="700" fill="#ffffff">Tenancy</text><text x="360.0" y="50" text-anchor="middle" font-size="11" fill="#ffffff">root compartment</text><path d="M360 60 V90.0 H140 V120" fill="none" stroke="#9a8f88" stroke-width="2"/><rect x="40" y="120" width="200" height="50" rx="8" fill="#EAF2FB" stroke="#2F6FB0" stroke-width="2"/><text x="140.0" y="142" text-anchor="middle" font-size="14" font-weight="700" fill="#312D2A">Network</text><text x="140.0" y="160" text-anchor="middle" font-size="11" fill="#312D2A">VCNs, gateways</text><path d="M360 60 V90.0 H360 V120" fill="none" stroke="#9a8f88" stroke-width="2"/><rect x="260" y="120" width="200" height="50" rx="8" fill="#EAF2FB" stroke="#2F6FB0" stroke-width="2"/><text x="360.0" y="142" text-anchor="middle" font-size="14" font-weight="700" fill="#312D2A">Security</text><text x="360.0" y="160" text-anchor="middle" font-size="11" fill="#312D2A">Vault, Cloud Guard</text><path d="M360 60 V90.0 H580 V120" fill="none" stroke="#9a8f88" stroke-width="2"/><rect x="480" y="120" width="200" height="50" rx="8" fill="#EAF2FB" stroke="#2F6FB0" stroke-width="2"/><text x="580.0" y="142" text-anchor="middle" font-size="14" font-weight="700" fill="#312D2A">Projects</text><text x="580.0" y="160" text-anchor="middle" font-size="11" fill="#312D2A">app workloads</text><path d="M580 170 V202.5 H385 V235" fill="none" stroke="#9a8f88" stroke-width="2"/><rect x="330" y="235" width="110" height="50" rx="8" fill="#FFF4E2" stroke="#F6B04B" stroke-width="2"/><text x="385.0" y="257" text-anchor="middle" font-size="14" font-weight="700" fill="#312D2A">Dev</text><text x="385.0" y="275" text-anchor="middle" font-size="11" fill="#312D2A">developers</text><path d="M580 170 V202.5 H515 V235" fill="none" stroke="#9a8f88" stroke-width="2"/><rect x="460" y="235" width="110" height="50" rx="8" fill="#FFF4E2" stroke="#F6B04B" stroke-width="2"/><text x="515.0" y="257" text-anchor="middle" font-size="14" font-weight="700" fill="#312D2A">Test</text><text x="515.0" y="275" text-anchor="middle" font-size="11" fill="#312D2A">QA team</text><path d="M580 170 V202.5 H645 V235" fill="none" stroke="#9a8f88" stroke-width="2"/><rect x="590" y="235" width="110" height="50" rx="8" fill="#FFF4E2" stroke="#F6B04B" stroke-width="2"/><text x="645.0" y="257" text-anchor="middle" font-size="14" font-weight="700" fill="#312D2A">Prod</text><text x="645.0" y="275" text-anchor="middle" font-size="11" fill="#312D2A">ops / DBAs</text><path d="M30 70 V290" stroke="#C74634" stroke-width="3" marker-end="url(#ar)"/><defs><marker id="ar" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#C74634"/></marker></defs><text x="44" y="262" font-size="12" fill="#C74634">Policies on a parent</text><text x="44" y="278" font-size="12" fill="#C74634">are inherited by children</text><text x="44" y="300" font-size="11" fill="#6b625c">(up to 6 levels deep, global across regions)</text></svg>
+<figcaption>Figure 3. A typical compartment layout. Each team gets only the access it needs.</figcaption>
+</figure>
+
+<ul>
+<li>Every resource belongs to exactly one compartment.</li>
+<li>Compartments can be nested up to <b>six levels</b> deep.</li>
+<li>Compartments are <b>global</b>: they span all regions in your tenancy.</li>
+<li>A resource can be moved to another compartment.</li>
+<li>Policies attached to a parent compartment are inherited by its children.</li>
+</ul>
+
+<div class="box dba"><b>DBA analogy</b>A compartment is like a schema. It groups objects, and privileges decide who can touch them.</div>
+
+<h2 id="ocif-6">6. OCI core service categories</h2>
+<div class="tbl"><table>
+<tr><th>Category</th><th>What it does</th><th>Key services</th></tr>
+<tr><td><b>Compute</b></td><td>Run workloads</td><td>VM, Bare Metal, Dedicated Host, Container Instances, Functions</td></tr>
+<tr><td><b>Storage</b></td><td>Keep data</td><td>Block Volume, Object Storage, File Storage, Archive Storage</td></tr>
+<tr><td><b>Networking</b></td><td>Connect resources</td><td>Virtual Cloud Network (VCN), Load Balancer, FastConnect, VPN, DRG</td></tr>
+<tr><td><b>Database</b></td><td>Managed databases</td><td>Autonomous Database, Base Database, Exadata Database Service, MySQL HeatWave, NoSQL</td></tr>
+<tr><td><b>Security &amp; Identity</b></td><td>Protect and control access</td><td>IAM, Vault, Cloud Guard, Security Zones, WAF</td></tr>
+<tr><td><b>Observability &amp; Mgmt</b></td><td>Monitor and operate</td><td>Monitoring, Logging, Events, Notifications</td></tr>
+<tr><td><b>Governance</b></td><td>Control cost and usage</td><td>Budgets, Cost Analysis, Tagging, Quotas</td></tr>
+</table></div>
+
+<h2 id="ocif-7">7. What makes OCI different</h2>
+<ul>
+<li><b>Off-box network virtualization:</b> network and I/O virtualization run on separate hardware, isolating tenants and freeing host CPU.</li>
+<li><b>Flat, non-oversubscribed network:</b> predictable latency and bandwidth.</li>
+<li><b>Consistent global pricing:</b> the same price in every commercial region.</li>
+<li><b>First-class Oracle Database support:</b> Exadata and Autonomous Database are native services.</li>
+<li><b>Generous Free Tier:</b> a 30-day trial credit plus Always Free resources that never expire.</li>
+</ul>
+
+<h2 id="ocif-8">8. Pricing and the Free Tier</h2>
+<p>Two consumption options: <b>Pay As You Go</b> (no commitment, billed on use) and <b>Annual Universal Credits</b> (committed spend, usually at a discount).</p>
+<div class="grid">
+<div class="card"><b>Free trial</b><span>US$300 in credits for 30 days to try most services.</span></div>
+<div class="card"><b>Always Free</b><span>No time limit: small Compute VMs (AMD micro, Arm Ampere A1), two Autonomous Databases, Block Volume, Object Storage and a Load Balancer.</span></div>
+</div>
+<div class="box warn"><b>Heads up</b>Limits change over time. Check Oracle's Free Tier page for current allowances before you build.</div>
+
+<h2 id="ocif-9">9. Shared responsibility model</h2>
+<p>Security is shared. Oracle secures the <b>cloud itself</b>: data centers, hardware, hypervisor and network. You secure <b>what you put in the cloud</b>: your data, user access, IAM policies, OS patching on IaaS, and network rules.</p>
+<figure>
+<svg viewBox="0 0 720 230" role="img" aria-label="Oracle takes on more responsibility moving from IaaS to PaaS to SaaS" xmlns="http://www.w3.org/2000/svg" font-family="inherit"><text x="70" y="48" text-anchor="end" font-size="15" font-weight="700" fill="#312D2A">IaaS</text><rect x="84" y="20" width="190.4" height="44" rx="6" fill="#2F6FB0"/><rect x="274.4" y="20" width="369.6" height="44" rx="6" fill="#F6B04B"/><text x="94" y="47" font-size="12" fill="#fff">Oracle: the cloud itself</text><text x="636" y="47" text-anchor="end" font-size="11" fill="#3a2a00">You: data, access, OS patching, network rules</text><text x="70" y="110" text-anchor="end" font-size="15" font-weight="700" fill="#312D2A">PaaS</text><rect x="84" y="82" width="324.8" height="44" rx="6" fill="#2F6FB0"/><rect x="408.8" y="82" width="235.2" height="44" rx="6" fill="#F6B04B"/><text x="94" y="109" font-size="12" fill="#fff">Oracle: the cloud itself</text><text x="636" y="109" text-anchor="end" font-size="11" fill="#3a2a00">You: data, access, app config</text><text x="70" y="172" text-anchor="end" font-size="15" font-weight="700" fill="#312D2A">SaaS</text><rect x="84" y="144" width="403.2" height="44" rx="6" fill="#2F6FB0"/><rect x="487.2" y="144" width="156.8" height="44" rx="6" fill="#F6B04B"/><text x="94" y="171" font-size="12" fill="#fff">Oracle: the cloud itself</text><text x="636" y="171" text-anchor="end" font-size="11" fill="#3a2a00">You: data, user access</text><text x="84" y="212" font-size="12" fill="#6b625c">Higher service model → Oracle takes on more. (Bar widths are illustrative, not exact percentages.)</text></svg>
+<figcaption>Figure 4. The higher the service model, the more Oracle takes on.</figcaption>
+</figure>
+
+<h2 id="ocif-lab">Hands-on lab: create your first compartment</h2>
+<p>Time: about 10 minutes. Cost: free (compartments themselves cost nothing).</p>
+<ol class="steps">
+<li>Sign up at <b>oracle.com/cloud/free</b> if you haven't already, and pick a <b>home region</b> close to you (e.g. India South – Hyderabad). The home region can't be changed later.</li>
+<li>Sign in to the OCI Console. Note your <b>tenancy name</b> and the region shown in the top bar.</li>
+<li>Open the navigation menu → <b>Identity &amp; Security</b> → <b>Compartments</b>. You'll see your tenancy listed as the root (root).</li>
+<li>Click <b>Create Compartment</b>. Name: <code>Sandbox</code>; Description: <code>Learning labs</code>; Parent: your root compartment. Click <b>Create</b>.</li>
+<li>Repeat to create <code>Dev</code> with <code>Sandbox</code> as its parent. You now have a two-level hierarchy.</li>
+<li>Open any service page (e.g. Compute → Instances) and use the <b>Compartment</b> picker on the left to switch into <code>Sandbox</code>. Every lab from now on lives here.</li>
+</ol>
+<div class="box"><b>Check yourself</b>Switch the region in the top bar. Is your <code>Sandbox</code> compartment still there? (It should be. Compartments are global.)</div>
+
+<h2 id="ocif-tips">Exam tips</h2>
+<ul>
+<li>Know the hierarchy cold: <b>Region → Availability Domain → Fault Domain</b>, with three FDs per AD.</li>
+<li>Single-AD region + high availability = spread across fault domains.</li>
+<li>Disaster recovery = a second region.</li>
+<li>Compartments are global; most resources are regional; some (like a compute instance) are AD-specific.</li>
+<li>The tenancy is the root compartment.</li>
+<li>CapEx → OpEx and "pay only for what you use" appear often in cloud-benefit questions.</li>
+<li>Watch for distractors that confuse availability domains with regions.</li>
+</ul>
+
+<h2 id="ocif-quiz">Quiz: test yourself</h2>
+<p>Click an answer to see if you're right. Your score appears at the end.</p>
+<div id="ocif-quiz-wrap">
+<div class="ocif-q" data-a="2"><p class="ocif-qt"><span>Q1.</span> How many fault domains does every availability domain have?</p><div class="ocif-opts"><button type="button" class="ocif-opt" data-i="0"><b>A.</b> One</button><button type="button" class="ocif-opt" data-i="1"><b>B.</b> Two</button><button type="button" class="ocif-opt" data-i="2"><b>C.</b> Three</button><button type="button" class="ocif-opt" data-i="3"><b>D.</b> It depends on the region</button></div><p class="ocif-exp">Every AD contains exactly three fault domains.</p></div>
+<div class="ocif-q" data-a="1"><p class="ocif-qt"><span>Q2.</span> A region has only one availability domain. How do you make an application highly available there?</p><div class="ocif-opts"><button type="button" class="ocif-opt" data-i="0"><b>A.</b> Use a second tenancy</button><button type="button" class="ocif-opt" data-i="1"><b>B.</b> Spread instances across the three fault domains</button><button type="button" class="ocif-opt" data-i="2"><b>C.</b> Use a bigger VM shape</button><button type="button" class="ocif-opt" data-i="3"><b>D.</b> You can&#x27;t</button></div><p class="ocif-exp">In single-AD regions, high availability comes from placing resources in different fault domains.</p></div>
+<div class="ocif-q" data-a="2"><p class="ocif-qt"><span>Q3.</span> What protects you against the loss of an entire region?</p><div class="ocif-opts"><button type="button" class="ocif-opt" data-i="0"><b>A.</b> Multiple fault domains</button><button type="button" class="ocif-opt" data-i="1"><b>B.</b> Multiple compartments</button><button type="button" class="ocif-opt" data-i="2"><b>C.</b> Replicating to a second region</button><button type="button" class="ocif-opt" data-i="3"><b>D.</b> Always Free resources</button></div><p class="ocif-exp">Disaster recovery for a regional outage means a second region, often a region pair in the same country.</p></div>
+<div class="ocif-q" data-a="1"><p class="ocif-qt"><span>Q4.</span> Autonomous Database is an example of which service model?</p><div class="ocif-opts"><button type="button" class="ocif-opt" data-i="0"><b>A.</b> IaaS</button><button type="button" class="ocif-opt" data-i="1"><b>B.</b> PaaS</button><button type="button" class="ocif-opt" data-i="2"><b>C.</b> SaaS</button><button type="button" class="ocif-opt" data-i="3"><b>D.</b> On-premises</button></div><p class="ocif-exp">Oracle patches, tunes and backs up Autonomous Database for you, which makes it PaaS.</p></div>
+<div class="ocif-q" data-a="0"><p class="ocif-qt"><span>Q5.</span> You install Oracle Database yourself on a Compute VM. Which model is this?</p><div class="ocif-opts"><button type="button" class="ocif-opt" data-i="0"><b>A.</b> IaaS</button><button type="button" class="ocif-opt" data-i="1"><b>B.</b> PaaS</button><button type="button" class="ocif-opt" data-i="2"><b>C.</b> SaaS</button><button type="button" class="ocif-opt" data-i="3"><b>D.</b> Hybrid</button></div><p class="ocif-exp">You manage the OS and database on rented infrastructure: IaaS.</p></div>
+<div class="ocif-q" data-a="3"><p class="ocif-qt"><span>Q6.</span> What is the scope of a compartment?</p><div class="ocif-opts"><button type="button" class="ocif-opt" data-i="0"><b>A.</b> One fault domain</button><button type="button" class="ocif-opt" data-i="1"><b>B.</b> One availability domain</button><button type="button" class="ocif-opt" data-i="2"><b>C.</b> One region</button><button type="button" class="ocif-opt" data-i="3"><b>D.</b> Global, across all regions in the tenancy</button></div><p class="ocif-exp">Compartments are global; the resources inside them are mostly regional.</p></div>
+<div class="ocif-q" data-a="1"><p class="ocif-qt"><span>Q7.</span> What is the root compartment called?</p><div class="ocif-opts"><button type="button" class="ocif-opt" data-i="0"><b>A.</b> Realm</button><button type="button" class="ocif-opt" data-i="1"><b>B.</b> Tenancy</button><button type="button" class="ocif-opt" data-i="2"><b>C.</b> Home region</button><button type="button" class="ocif-opt" data-i="3"><b>D.</b> Default</button></div><p class="ocif-exp">When you sign up, the tenancy is created and acts as the root compartment.</p></div>
+<div class="ocif-q" data-a="2"><p class="ocif-qt"><span>Q8.</span> How deep can compartments be nested?</p><div class="ocif-opts"><button type="button" class="ocif-opt" data-i="0"><b>A.</b> Two levels</button><button type="button" class="ocif-opt" data-i="1"><b>B.</b> Four levels</button><button type="button" class="ocif-opt" data-i="2"><b>C.</b> Six levels</button><button type="button" class="ocif-opt" data-i="3"><b>D.</b> Unlimited</button></div><p class="ocif-exp">Compartments can be nested up to six levels.</p></div>
+<div class="ocif-q" data-a="1"><p class="ocif-qt"><span>Q9.</span> Moving from buying servers upfront to paying monthly for usage is a shift from…</p><div class="ocif-opts"><button type="button" class="ocif-opt" data-i="0"><b>A.</b> OpEx to CapEx</button><button type="button" class="ocif-opt" data-i="1"><b>B.</b> CapEx to OpEx</button><button type="button" class="ocif-opt" data-i="2"><b>C.</b> PaaS to IaaS</button><button type="button" class="ocif-opt" data-i="3"><b>D.</b> Public to private cloud</button></div><p class="ocif-exp">Cloud turns capital expenditure into operational expenditure.</p></div>
+<div class="ocif-q" data-a="1"><p class="ocif-qt"><span>Q10.</span> On a Compute VM, who patches the guest operating system?</p><div class="ocif-opts"><button type="button" class="ocif-opt" data-i="0"><b>A.</b> Oracle</button><button type="button" class="ocif-opt" data-i="1"><b>B.</b> The customer</button><button type="button" class="ocif-opt" data-i="2"><b>C.</b> Both equally</button><button type="button" class="ocif-opt" data-i="3"><b>D.</b> Nobody; it is automatic</button></div><p class="ocif-exp">Under the shared responsibility model, OS patching on IaaS is the customer&#x27;s job.</p></div>
+</div>
+<div class="ocif-score" id="ocif-score">Answered 0 / 10</div>
+<button type="button" class="ocif-reset" id="ocif-reset">↺ Reset quiz</button>
+
+<p style="margin-top:2em"><b>Next up:</b> IAM in OCI: users, groups, policies and dynamic groups.</p>
+
+</div>
+
+<script>
+(function(){
+  var wrap=document.getElementById('ocif-quiz-wrap');if(!wrap)return;
+  var qs=wrap.querySelectorAll('.ocif-q'),total=qs.length,score=document.getElementById('ocif-score');
+  function update(){var d=0,c=0;for(var i=0;i<qs.length;i++){if(qs[i].className.indexOf('done')>-1){d++;if(qs[i].getAttribute('data-ok')==='1')c++;}}
+    score.textContent=d<total?('Answered '+d+' / '+total+' · Correct '+c):('Final score: '+c+' / '+total+(c>=8?' 🎉 Exam-ready!':c>=5?' 👍 Review the weak spots.':' 📖 Re-read the post and try again.'));}
+  for(var i=0;i<qs.length;i++)(function(q){
+    var opts=q.querySelectorAll('.ocif-opt'),a=+q.getAttribute('data-a');
+    for(var j=0;j<opts.length;j++)opts[j].onclick=function(){
+      if(q.className.indexOf('done')>-1)return;
+      var k=+this.getAttribute('data-i');q.className+=' done';q.setAttribute('data-ok',k===a?'1':'0');
+      opts[a].className+=' ok';if(k!==a)this.className+=' bad';update();};
+  })(qs[i]);
+  document.getElementById('ocif-reset').onclick=function(){
+    for(var i=0;i<qs.length;i++){qs[i].className='ocif-q';qs[i].removeAttribute('data-ok');
+      var o=qs[i].querySelectorAll('.ocif-opt');for(var j=0;j<o.length;j++)o[j].className='ocif-opt';}update();};
+})();
+</script>
+</body>
+</html>
