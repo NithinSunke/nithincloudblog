@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create a Linux VM in Proxmox VE</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#d35400;--accent-soft:#fdf0e7;--accent-ink:#a84300;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.06em;margin:1.6em 0 .4em;padding-left:.6em;border-left:4px solid var(--accent)}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.85em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em;overflow-wrap:normal}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post .tw{overflow-x:auto;margin:.8em 0}
+.tsn-post table{width:100%;border-collapse:collapse;font-size:.93em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.3em 0}
+.tsn-post .lab{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin:1em 0}
+.tsn-post .lab div{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:#fff;font-size:.9em}
+.tsn-post .lab b{display:block;color:var(--accent-ink);font-size:.82em;text-transform:uppercase;letter-spacing:.05em}
+.tsn-post .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:.8em 0}
+.tsn-post .flow span{background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:.88em;font-weight:600}
+.tsn-post .flow b{color:var(--accent)}
+.tsn-post .shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px;margin:.8em 0 1.2em;align-items:start}
+.tsn-post .shots.one{grid-template-columns:1fr}
+.tsn-post .shots figure{margin:0}
+.tsn-post .shots img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:8px;background:#fff;transition:box-shadow .15s ease}
+.tsn-post .shots a:hover img{box-shadow:0 4px 14px rgba(0,0,0,.14)}
+.tsn-post .shots.one img{max-width:100%;width:auto;margin:0 auto}
+.tsn-post .cap{color:var(--muted);font-size:.85em;margin-top:-.6em}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:var(--accent-ink)}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
+
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .check{list-style:none;padding:0;counter-reset:c}
+.tsn-post .check>li{position:relative;padding-left:2.4em;margin:.7em 0}
+.tsn-post .check>li::before{counter-increment:c;content:counter(c);position:absolute;left:0;top:.1em;width:1.7em;height:1.7em;line-height:1.7em;text-align:center;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:.85em}
+
+.tsn-post details{margin:.6em 0 1.2em}
+.tsn-post summary{cursor:pointer;color:var(--accent-ink);font-weight:600;font-size:.95em}
+.tsn-post .code pre.tall{max-height:640px;overflow:auto}
+</style>
+
+<h1>How to Create a Linux Virtual Machine (VM) in Proxmox VE</h1>
+<div class="meta">By Sunke Nithin · April 22, 2025 &nbsp; <span class="tag">Virtualization</span><span class="tag">Proxmox</span></div>
+<p class="lead">With Proxmox VE installed, the first real task is usually a Linux VM. This walk-through creates an Oracle Linux 8 VM through the <strong>Create VM</strong> wizard; the same steps work for Ubuntu, Debian, Rocky and the rest.</p>
+<h2>Prerequisites</h2>
+<ul><li>A running Proxmox VE host</li><li>A Linux ISO uploaded to an ISO-capable storage</li><li>A VM storage — here the <code>vmdata</code> thin pool from <a href="../how-to-add-additional-storage-disks-to-proxmox-ve/how-to-add-additional-storage-disks-to-proxmox-ve.html">Add Storage Disks to Proxmox VE</a></li></ul>
+<h2><span class="num">1</span>Upload the ISO</h2>
+<p>Download the ISO from the distribution's site, then in the GUI: <strong>(your node) → local → ISO Images → Upload</strong>. You can also use <strong>Download from URL</strong> to let the host fetch it directly.</p>
+<h2><span class="num">2</span>General</h2>
+<p>Click <strong>Create VM</strong> (top right). Pick the node, keep or set the <strong>VM ID</strong>, and give it a name — <code>oel8</code> here. Tick <strong>Advanced</strong> at the bottom to see every option.</p>
+<div class="shots one"><figure><a href="images/image-439.png" target="_blank" rel="noopener"><img src="images/image-439.png" alt="Create Virtual Machine, General: node pve, VM ID 100, name oel8" loading="lazy"></a></figure></div>
+<h2><span class="num">3</span>OS</h2>
+<p>Select the ISO, Guest OS type <strong>Linux</strong>, version <strong>6.x – 2.6 Kernel</strong>.</p>
+<div class="shots one"><figure><a href="images/image-441.png" target="_blank" rel="noopener"><img src="images/image-441.png" alt="OS: ISO OracleLinux-R8-U8-x86_64-dvd.iso on local, Linux 6.x - 2.6 kernel" loading="lazy"></a></figure></div>
+<h2><span class="num">4</span>System</h2>
+<p>Defaults are fine: SeaBIOS, machine i440fx, SCSI controller <strong>VirtIO SCSI single</strong>. Tick <strong>Qemu Agent</strong> if you'll install the guest agent (recommended). For UEFI choose <strong>OVMF</strong> and add an EFI disk.</p>
+<div class="shots one"><figure><a href="images/image-443.png" target="_blank" rel="noopener"><img src="images/image-443.png" alt="System: default graphics, i440fx machine, SeaBIOS, VirtIO SCSI single" loading="lazy"></a></figure></div>
+<h2><span class="num">5</span>Disks</h2>
+<p>Bus <strong>SCSI</strong>, storage <code>vmdata</code>, 50 GiB, <strong>IO thread</strong> on. On thin or SSD storage tick <strong>Discard</strong> so space freed in the guest is returned to the pool.</p>
+<div class="shots one"><figure><a href="images/image-445.png" target="_blank" rel="noopener"><img src="images/image-445.png" alt="Disks: SCSI, storage vmdata, 50 GiB, IO thread" loading="lazy"></a></figure></div>
+<h2><span class="num">6</span>CPU</h2>
+<p>1 socket, 2 cores. The default type <code>x86-64-v2-AES</code> keeps live migration between different CPUs possible; <strong>host</strong> gives the best performance on a single host.</p>
+<div class="shots one"><figure><a href="images/image-447.png" target="_blank" rel="noopener"><img src="images/image-447.png" alt="CPU: 1 socket, 2 cores, type x86-64-v2-AES" loading="lazy"></a></figure></div>
+<h2><span class="num">7</span>Memory</h2>
+<p>8192 MiB here. With <strong>Ballooning Device</strong> on, a lower <strong>Minimum memory</strong> lets Proxmox reclaim RAM from the guest when the host is under pressure.</p>
+<div class="shots one"><figure><a href="images/image-449.png" target="_blank" rel="noopener"><img src="images/image-449.png" alt="Memory: 8192 MiB with ballooning" loading="lazy"></a></figure></div>
+<h2><span class="num">8</span>Network</h2>
+<p>Bridge <code>vmbr0</code>, model <strong>VirtIO (paravirtualized)</strong>.</p>
+<div class="shots one"><figure><a href="images/image-451.png" target="_blank" rel="noopener"><img src="images/image-451.png" alt="Network: bridge vmbr0, VirtIO (paravirtualized), firewall on" loading="lazy"></a></figure></div>
+<h2><span class="num">9</span>Confirm</h2>
+<p>Review and click <strong>Finish</strong> (or tick <strong>Start after created</strong>).</p>
+<div class="shots one"><figure><a href="images/image-452.png" target="_blank" rel="noopener"><img src="images/image-452.png" alt="Confirm: summary of the VM settings" loading="lazy"></a></figure></div>
+<h2><span class="num">10</span>Start and Install</h2>
+<p>Select the VM, click <strong>Start</strong>, open <strong>Console</strong> and run the installer as usual.</p>
+<div class="shots"><figure><a href="images/image-454.png" target="_blank" rel="noopener"><img src="images/image-454.png" alt="VM 100 summary with the Start button highlighted" loading="lazy"></a></figure><figure><a href="images/image-456.png" target="_blank" rel="noopener"><img src="images/image-456.png" alt="Console: Oracle Linux 8.8 installer boot menu" loading="lazy"></a></figure></div>
+<p>After installation, add the guest agent so Proxmox can see the IP address and shut the VM down cleanly:</p>
+<div class="code"><span class="lbl">BASH</span><pre><code># inside the guest after installation
+sudo dnf install -y qemu-guest-agent      # apt install qemu-guest-agent on Ubuntu/Debian
+sudo systemctl enable --now qemu-guest-agent
+# then: VM → Options → QEMU Guest Agent → Enabled, and restart the VM</code></pre></div>
+<h2>Convert to a Template (Optional)</h2>
+<p>To reuse this VM as a base image, shut it down and choose <strong>Convert to template</strong>. Clean it first — see <a href="../how-to-configure-cloud-init-in-proxmox-ve/how-to-configure-cloud-init-in-proxmox-ve.html">Cloud-Init in Proxmox VE</a> for the steps.</p>
+<div class="shots one"><figure><a href="images/image-458.png" target="_blank" rel="noopener"><img src="images/image-458.png" alt="Right-click VM 100: Convert to template" loading="lazy"></a></figure></div>
+<p style="margin-top:1.4em">Proxmox series: <a href="../how-to-install-proxmox-ve-on-a-bare-metal-server-or-virtual-machine/how-to-install-proxmox-ve-on-a-bare-metal-server-or-virtual-machine.html">Install Proxmox VE</a> · <a href="../how-to-add-additional-storage-disks-to-proxmox-ve/how-to-add-additional-storage-disks-to-proxmox-ve.html">Add storage</a> · <a href="../how-to-create-a-linux-virtual-machine-vm-in-proxmox-ve/how-to-create-a-linux-virtual-machine-vm-in-proxmox-ve.html">Linux VM</a> · <a href="../how-to-create-a-windows-virtual-machine-vm-in-proxmox-ve/how-to-create-a-windows-virtual-machine-vm-in-proxmox-ve.html">Windows VM</a> · <a href="../how-to-configure-cloud-init-in-proxmox-ve/how-to-configure-cloud-init-in-proxmox-ve.html">Cloud-Init templates</a> · <a href="../install-and-configure-proxmox-backup-server-pbs-step-by-step-guide/install-and-configure-proxmox-backup-server-pbs-step-by-step-guide.html">Proxmox Backup Server</a></p>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>
