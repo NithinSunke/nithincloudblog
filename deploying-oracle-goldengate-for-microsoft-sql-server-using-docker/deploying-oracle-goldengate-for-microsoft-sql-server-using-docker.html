@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GoldenGate for SQL Server on Docker</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#1d63ed;--accent-soft:#e8effd;--accent-ink:#1650c4;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.06em;margin:1.6em 0 .4em;padding-left:.6em;border-left:4px solid var(--accent)}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.85em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em;overflow-wrap:normal}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post .tw{overflow-x:auto;margin:.8em 0}
+.tsn-post table{width:100%;border-collapse:collapse;font-size:.93em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.3em 0}
+.tsn-post .lab{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin:1em 0}
+.tsn-post .lab div{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:#fff;font-size:.9em}
+.tsn-post .lab b{display:block;color:var(--accent-ink);font-size:.82em;text-transform:uppercase;letter-spacing:.05em}
+.tsn-post .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:.8em 0}
+.tsn-post .flow span{background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:.88em;font-weight:600}
+.tsn-post .flow b{color:var(--accent)}
+.tsn-post .shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px;margin:.8em 0 1.2em;align-items:start}
+.tsn-post .shots.one{grid-template-columns:1fr}
+.tsn-post .shots figure{margin:0}
+.tsn-post .shots img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:8px;background:#fff;transition:box-shadow .15s ease}
+.tsn-post .shots a:hover img{box-shadow:0 4px 14px rgba(0,0,0,.14)}
+.tsn-post .shots.one img{max-width:100%;width:auto;margin:0 auto}
+.tsn-post .cap{color:var(--muted);font-size:.85em;margin-top:-.6em}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:var(--accent-ink)}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
+
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .check{list-style:none;padding:0;counter-reset:c}
+.tsn-post .check>li{position:relative;padding-left:2.4em;margin:.7em 0}
+.tsn-post .check>li::before{counter-increment:c;content:counter(c);position:absolute;left:0;top:.1em;width:1.7em;height:1.7em;line-height:1.7em;text-align:center;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:.85em}
+
+.tsn-post details{margin:.6em 0 1.2em}
+.tsn-post summary{cursor:pointer;color:var(--accent-ink);font-weight:600;font-size:.95em}
+.tsn-post .code pre.tall{max-height:640px;overflow:auto}
+</style>
+
+<h1>Deploying Oracle GoldenGate for Microsoft SQL Server Using Docker</h1>
+<div class="meta">By Sunke Nithin · August 11, 2025 &nbsp; <span class="tag">Replication</span><span class="tag">Goldengate</span><span class="tag">Docker</span><span class="tag">MSSQL</span></div>
+<p class="lead">Oracle publishes a ready-made container of <strong>GoldenGate for SQL Server (Free edition)</strong> on the Oracle Container Registry. With Docker Compose you get a full GoldenGate Microservices deployment — Service Manager, Administration Server, web UI behind Nginx — in a few minutes, ideal for a POC or LAB of SQL Server replication.</p>
+<h2>Prerequisites</h2>
+<ul><li>Docker Engine with the Compose v2 plugin (see <a href="../steps-to-install-docker-on-oel8-using-curl/steps-to-install-docker-on-oel8-using-curl.html">Install Docker on OEL 8</a>)</li><li>An Oracle account for <a href="https://container-registry.oracle.com" target="_blank" rel="noopener">container-registry.oracle.com</a></li><li>A SQL Server instance to replicate from or to</li></ul>
+<h2><span class="num">1</span>Create a Registry Auth Token</h2>
+<p>Since mid-2025 the Oracle Container Registry accepts only <strong>auth tokens</strong>, not account passwords, for <code>docker login</code> / <code>podman login</code>:</p>
+<ol><li>Sign in at container-registry.oracle.com, open your profile menu → <strong>Auth Token</strong>.</li><li><strong>Generate Secret Key</strong> and copy it — it's shown only once. If lost, delete it and generate a new one.</li><li>Find <em>GoldenGate → goldengate-sqlserver-free</em> and accept the licence terms if asked.</li></ol>
+<h2><span class="num">2</span>Log In and Pull</h2>
+<div class="code"><span class="lbl">BASH</span><pre><code># Oracle account e-mail as user name, the auth token as password
+docker login container-registry.oracle.com
+Username: &lt;your-oracle-account-email&gt;
+Password: &lt;auth-token&gt;
+Login Succeeded</code></pre></div>
+<div class="code"><span class="lbl">BASH</span><pre><code>docker pull container-registry.oracle.com/goldengate/goldengate-sqlserver-free:latest</code></pre></div>
+<h2><span class="num">3</span>Docker Compose File</h2>
+<div class="code"><span class="lbl">DOCKER-COMPOSE.YML</span><pre><code>services:
+  ogg-mssqlsrv:
+    image: container-registry.oracle.com/goldengate/goldengate-sqlserver-free:latest
+    container_name: ogg-mssqlsrv
+    ports:
+      - &quot;8081:80&quot;     # HTTP  (host:container)
+      - &quot;5443:443&quot;    # HTTPS
+    environment:
+      OGG_ADMIN: oggadmin
+      OGG_ADMIN_PWD: &quot;&lt;admin-password&gt;&quot;
+      OGG_DEPLOYMENT: mssqlsrv
+    volumes:
+      - u02_data:/u02
+      - u03_data:/u03
+      - certs:/etc/nginx/cert
+    restart: unless-stopped
+
+volumes:
+  u02_data:
+  u03_data:
+  certs:</code></pre></div>
+<p><code>/u02</code> holds the deployment configuration and <code>/u03</code> the trail files — both on named volumes so they survive container rebuilds. Put your own certificate and key in the <code>certs</code> volume to replace the self-signed one.</p>
+<h2><span class="num">4</span>Start It</h2>
+<div class="code"><span class="lbl">BASH</span><pre><code>docker compose up -d
+[+] Running 5/5
+ ✔ Network mssqlsrv_default    Created
+ ✔ Volume &quot;mssqlsrv_u03_data&quot;  Created
+ ✔ Volume &quot;mssqlsrv_certs&quot;     Created
+ ✔ Volume &quot;mssqlsrv_u02_data&quot;  Created
+ ✔ Container ogg-mssqlsrv      Started
+
+docker compose logs -f        # wait until the deployment reports it is ready</code></pre></div>
+<h2><span class="num">5</span>Open the Web UI</h2>
+<p>Browse to <code>https://&lt;host-ip&gt;:5443</code> (or <code>http://&lt;host-ip&gt;:8081</code>) and log in with <code>OGG_ADMIN</code> / <code>OGG_ADMIN_PWD</code>. The Service Manager shows the <code>mssqlsrv</code> deployment; open its <strong>Administration Server</strong> to add database connections, Extracts and Replicats.</p>
+<h2><span class="num">6</span>Prepare SQL Server</h2>
+<p>GoldenGate captures from SQL Server through Change Data Capture:</p>
+<div class="code"><span class="lbl">SQL</span><pre><code>-- on SQL Server, for the database you capture from
+EXEC sys.sp_cdc_enable_db;
+-- then add trandata / heartbeat from the GoldenGate UI or adminclient</code></pre></div>
+<p>The SQL Server Agent must be running for CDC. Then add a connection in the Administration Server and enable supplemental logging (TRANDATA) for the tables to replicate.</p>
+<h2>Useful Commands</h2>
+<div class="code"><span class="lbl">BASH</span><pre><code>docker compose ps             # status
+docker compose logs -f        # follow logs
+docker compose restart        # restart
+docker compose down           # stop and remove the container (volumes are kept)
+docker volume ls              # the persistent volumes</code></pre></div>
+<h2>Before Using It Seriously</h2>
+<ul><li>Use HTTPS only, with a proper certificate, and restrict ports 8081/5443 to admin networks with firewall rules.</li><li>Use a strong admin password, and don't keep it in a compose file under version control — use an <code>.env</code> file or Docker secrets.</li><li>The <strong>Free</strong> edition is for development and smaller workloads and has usage limits; check Oracle's licence terms before production use.</li></ul>
+<p>Related: <a href="../understand-oracle-goldengate-architecture-purposeuse-cases/understand-oracle-goldengate-architecture-purposeuse-cases.html">GoldenGate architecture</a> · <a href="../oracle-goldengate-23ai-building-a-docker-image-from-oracle-github/oracle-goldengate-23ai-building-a-docker-image-from-oracle-github.html">Build a GoldenGate 23ai Docker image</a>.</p>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>
