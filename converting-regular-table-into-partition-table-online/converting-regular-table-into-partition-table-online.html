@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Convert a Table to Partitioned Online</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#c74634;--accent-soft:#fdf1ef;--accent-ink:#a3372a;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.06em;margin:1.6em 0 .4em;padding-left:.6em;border-left:4px solid var(--accent)}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.85em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em;overflow-wrap:normal}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post .tw{overflow-x:auto;margin:.8em 0}
+.tsn-post table{width:100%;border-collapse:collapse;font-size:.93em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.3em 0}
+.tsn-post .lab{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin:1em 0}
+.tsn-post .lab div{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:#fff;font-size:.9em}
+.tsn-post .lab b{display:block;color:var(--accent-ink);font-size:.82em;text-transform:uppercase;letter-spacing:.05em}
+.tsn-post .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:.8em 0}
+.tsn-post .flow span{background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:.88em;font-weight:600}
+.tsn-post .flow b{color:var(--accent)}
+.tsn-post .shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px;margin:.8em 0 1.2em;align-items:start}
+.tsn-post .shots.one{grid-template-columns:1fr}
+.tsn-post .shots figure{margin:0}
+.tsn-post .shots img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:8px;background:#fff;transition:box-shadow .15s ease}
+.tsn-post .shots a:hover img{box-shadow:0 4px 14px rgba(0,0,0,.14)}
+.tsn-post .shots.one img{max-width:100%;width:auto;margin:0 auto}
+.tsn-post .cap{color:var(--muted);font-size:.85em;margin-top:-.6em}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:var(--accent-ink)}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
+
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .check{list-style:none;padding:0;counter-reset:c}
+.tsn-post .check>li{position:relative;padding-left:2.4em;margin:.7em 0}
+.tsn-post .check>li::before{counter-increment:c;content:counter(c);position:absolute;left:0;top:.1em;width:1.7em;height:1.7em;line-height:1.7em;text-align:center;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:.85em}
+
+.tsn-post details{margin:.6em 0 1.2em}
+.tsn-post summary{cursor:pointer;color:var(--accent-ink);font-weight:600;font-size:.95em}
+.tsn-post .code pre.tall{max-height:640px;overflow:auto}
+</style>
+
+<h1>Converting a Regular Table to a Partitioned Table Online</h1>
+<div class="meta">By Sunke Nithin · June 5, 2024 &nbsp; <span class="tag">Database</span><span class="tag">Oracle</span></div>
+<p class="lead">Since Oracle 12.2 a non-partitioned table can be converted to a partitioned one with a single <code>ALTER TABLE ... MODIFY PARTITION BY</code> — and with the <code>ONLINE</code> keyword, inserts, updates and deletes keep running during the conversion. No more <code>DBMS_REDEFINITION</code> for this common request.</p>
+<h2><span class="num">1</span>A Test Table</h2>
+<div class="code"><span class="lbl">SQL</span><pre><code>create table cust_data (
+  customer_id   number,
+  customer_name varchar2(100),
+  phone_number  varchar2(20),
+  cust_date     date
+);
+create index cust_data_date_ix on cust_data(cust_date);</code></pre></div>
+<p>Fill it with set-based SQL (a row-by-row PL/SQL loop is far slower):</p>
+<div class="code"><span class="lbl">SQL</span><pre><code>-- 10 million rows of test data, March 2009 - February 2018
+insert /*+ append */ into cust_data
+select level,
+       &#x27;Customer_&#x27; || level,
+       &#x27;123-456-&#x27; || lpad(trunc(dbms_random.value(0, 9999)), 4, &#x27;0&#x27;),
+       date &#x27;2009-03-01&#x27; + trunc(dbms_random.value(0, date &#x27;2018-02-28&#x27; - date &#x27;2009-03-01&#x27;))
+from   dual connect by level &lt;= 1e7;
+commit;
+exec dbms_stats.gather_table_stats(user, &#x27;CUST_DATA&#x27;)</code></pre></div>
+<h2><span class="num">2</span>Convert Online</h2>
+<p>Monthly <strong>interval</strong> partitioning: you define only the first partition, and Oracle creates one per month automatically as data arrives:</p>
+<div class="code"><span class="lbl">SQL</span><pre><code>alter table cust_data modify
+  partition by range (cust_date)
+  interval (numtoyminterval(1, &#x27;MONTH&#x27;))
+  ( partition p_before_2009_03 values less than (date &#x27;2009-03-01&#x27;) )
+  online
+  update indexes ( cust_data_date_ix local );</code></pre></div>
+<ul><li><strong><code>ONLINE</code></strong> is what keeps DML running. Without it the conversion is offline and the table is locked for the duration — the version in my original post left it out.</li><li><code>UPDATE INDEXES</code> chooses which indexes become <code>LOCAL</code> (partitioned like the table); the others stay global and remain usable.</li><li>Fixed ranges work too: <code>partition by range (cust_date) ( partition p2009 values less than (date '2010-01-01'), ..., partition pmax values less than (maxvalue) )</code>.</li></ul>
+<h2><span class="num">3</span>Check the Result</h2>
+<div class="code"><span class="lbl">SQL</span><pre><code>select partition_name, high_value, num_rows
+from   user_tab_partitions
+where  table_name = &#x27;CUST_DATA&#x27;
+order  by partition_position
+fetch first 5 rows only;
+
+select index_name, partitioned from user_indexes where table_name = &#x27;CUST_DATA&#x27;;</code></pre></div>
+<div class="note">Online conversion needs roughly the table's size in free space, because the data is copied into the new partitions. It's an Enterprise Edition feature and needs the Partitioning option. Run it at a quiet time on large tables.</div>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>

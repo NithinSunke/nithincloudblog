@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clone a Linux VM in OCI</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#c74634;--accent-soft:#fdf1ef;--accent-ink:#a3372a;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.06em;margin:1.6em 0 .4em;padding-left:.6em;border-left:4px solid var(--accent)}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.85em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em;overflow-wrap:normal}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post .tw{overflow-x:auto;margin:.8em 0}
+.tsn-post table{width:100%;border-collapse:collapse;font-size:.93em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.3em 0}
+.tsn-post .lab{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin:1em 0}
+.tsn-post .lab div{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:#fff;font-size:.9em}
+.tsn-post .lab b{display:block;color:var(--accent-ink);font-size:.82em;text-transform:uppercase;letter-spacing:.05em}
+.tsn-post .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:.8em 0}
+.tsn-post .flow span{background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:.88em;font-weight:600}
+.tsn-post .flow b{color:var(--accent)}
+.tsn-post .shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px;margin:.8em 0 1.2em;align-items:start}
+.tsn-post .shots.one{grid-template-columns:1fr}
+.tsn-post .shots figure{margin:0}
+.tsn-post .shots img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:8px;background:#fff;transition:box-shadow .15s ease}
+.tsn-post .shots a:hover img{box-shadow:0 4px 14px rgba(0,0,0,.14)}
+.tsn-post .shots.one img{max-width:100%;width:auto;margin:0 auto}
+.tsn-post .cap{color:var(--muted);font-size:.85em;margin-top:-.6em}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:var(--accent-ink)}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
+
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .check{list-style:none;padding:0;counter-reset:c}
+.tsn-post .check>li{position:relative;padding-left:2.4em;margin:.7em 0}
+.tsn-post .check>li::before{counter-increment:c;content:counter(c);position:absolute;left:0;top:.1em;width:1.7em;height:1.7em;line-height:1.7em;text-align:center;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:.85em}
+
+.tsn-post details{margin:.6em 0 1.2em}
+.tsn-post summary{cursor:pointer;color:var(--accent-ink);font-weight:600;font-size:.95em}
+.tsn-post .code pre.tall{max-height:640px;overflow:auto}
+</style>
+
+<h1>Three Ways to Clone a Linux VM in OCI</h1>
+<div class="meta">By Sunke Nithin · January 9, 2025 &nbsp; <span class="tag">CLOUD</span><span class="tag">OCI</span></div>
+<p class="lead">OCI has no single "clone VM" button, but there are three good ways to make a copy of a compute instance: <strong>clone its volumes</strong>, <strong>back up and restore</strong> them, or create a <strong>custom image</strong>. To show the copy really is a copy, I first put a small web page on the source VM, <code>demo-vm</code>.</p>
+<div class="tw"><table><thead><tr><th>Method</th><th>Best for</th><th>Speed</th></tr></thead><tbody><tr><td>Volume (group) clone</td><td>A quick copy in the same region</td><td>Minutes; the clone is usable almost at once</td></tr><tr><td>Backup + restore</td><td>A copy from a point in time, kept in Object Storage; can be copied to other regions</td><td>Slower; backup must finish first</td></tr><tr><td>Custom image</td><td>A template for many identical VMs; can be exported or shared</td><td>Instance goes offline while the image is taken</td></tr></tbody></table></div>
+<h2>The Source VM</h2>
+<div class="shots one"><figure><a href="images/image-2.png" target="_blank" rel="noopener"><img src="images/image-2.png" alt="Instance details for demo-vm (running), public IP hidden" loading="lazy"></a></figure></div>
+<p>On <code>demo-vm</code> (Oracle Linux 8) install Apache, open the port in the OS firewall, and write a page that names the server:</p>
+<div class="code"><span class="lbl">BASH</span><pre><code>sudo dnf install -y httpd
+sudo systemctl enable --now httpd
+
+sudo firewall-cmd --permanent --add-service=http
+sudo firewall-cmd --reload
+
+echo &#x27;&lt;h1&gt;this server is demo-vm&lt;/h1&gt;&#x27; | sudo tee /var/www/html/index.html</code></pre></div>
+<div class="shots"><figure><a href="images/image-3.png" target="_blank" rel="noopener"><img src="images/image-3.png" alt="yum install httpd -y" loading="lazy"></a></figure><figure><a href="images/image-4.png" target="_blank" rel="noopener"><img src="images/image-4.png" alt="httpd packages installed" loading="lazy"></a></figure></div><div class="shots"><figure><a href="images/image-5.png" target="_blank" rel="noopener"><img src="images/image-5.png" alt="systemctl status httpd: active (running)" loading="lazy"></a></figure><figure><a href="images/image-7.png" target="_blank" rel="noopener"><img src="images/image-7.png" alt="firewall-cmd --permanent --add-service=http, reload, list services" loading="lazy"></a></figure></div>
+<p>Allow port 80 in the subnet's <strong>security list</strong> — only from my own public IP, not the whole internet:</p>
+<div class="shots one"><figure><a href="images/image-6.png" target="_blank" rel="noopener"><img src="images/image-6.png" alt="Security list ingress rule: TCP port 80 from my public IP only (hidden)" loading="lazy"></a></figure></div>
+<div class="shots"><figure><a href="images/image-8.png" target="_blank" rel="noopener"><img src="images/image-8.png" alt="Apache test page in the browser" loading="lazy"></a></figure><figure><a href="images/image-9.png" target="_blank" rel="noopener"><img src="images/image-9.png" alt="Custom index.html: &quot;this server is demo-vm&quot;" loading="lazy"></a></figure></div><div class="shots one"><figure><a href="images/image-10.png" target="_blank" rel="noopener"><img src="images/image-10.png" alt="Browser shows &quot;this server is demo-vm&quot;" loading="lazy"></a></figure></div>
+<p>For a clean, consistent copy, <strong>stop the instance</strong> first (clones of a running VM are crash-consistent, like pulling the power plug):</p>
+<div class="shots"><figure><a href="images/image-11.png" target="_blank" rel="noopener"><img src="images/image-11.png" alt="Stopping demo-vm" loading="lazy"></a></figure><figure><a href="images/image-12.png" target="_blank" rel="noopener"><img src="images/image-12.png" alt="demo-vm stopped" loading="lazy"></a></figure></div>
+<h2>Method 1: Clone a Volume Group</h2>
+<p>A <strong>volume group</strong> bundles the boot volume and any block volumes so they are cloned or backed up at the same instant. <strong>Storage → Volume Groups → Create volume group</strong>, add the boot volume:</p>
+<div class="shots"><figure><a href="images/image-13.png" target="_blank" rel="noopener"><img src="images/image-13.png" alt="Storage menu: Volume Groups" loading="lazy"></a></figure><figure><a href="images/image-14.png" target="_blank" rel="noopener"><img src="images/image-14.png" alt="Volume Groups page, empty" loading="lazy"></a></figure></div><div class="shots"><figure><a href="images/image-15.png" target="_blank" rel="noopener"><img src="images/image-15.png" alt="Create volume group: name demo-vg" loading="lazy"></a></figure><figure><a href="images/image-16.png" target="_blank" rel="noopener"><img src="images/image-16.png" alt="Add volumes: demo-vm boot volume" loading="lazy"></a></figure></div><div class="shots"><figure><a href="images/image-17.png" target="_blank" rel="noopener"><img src="images/image-17.png" alt="Cross region replication off" loading="lazy"></a></figure><figure><a href="images/image-18.png" target="_blank" rel="noopener"><img src="images/image-18.png" alt="Backup policies: none" loading="lazy"></a></figure></div><div class="shots"><figure><a href="images/image-19.png" target="_blank" rel="noopener"><img src="images/image-19.png" alt="Summary" loading="lazy"></a></figure><figure><a href="images/image-20.png" target="_blank" rel="noopener"><img src="images/image-20.png" alt="Volume group demo-vg with the boot volume" loading="lazy"></a></figure></div>
+<p>Open the group → <strong>Volume group clones → Create volume group clone</strong>:</p>
+<div class="shots"><figure><a href="images/image-21.png" target="_blank" rel="noopener"><img src="images/image-21.png" alt="Create volume group clone: demo-vg-clone" loading="lazy"></a></figure><figure><a href="images/image-23.png" target="_blank" rel="noopener"><img src="images/image-23.png" alt="Volume group clones list: demo-vg-clone available" loading="lazy"></a></figure></div><div class="shots"><figure><a href="images/image-24.png" target="_blank" rel="noopener"><img src="images/image-24.png" alt="Volume groups: demo-vg and demo-vg-clone" loading="lazy"></a></figure><figure><a href="images/image-25.png" target="_blank" rel="noopener"><img src="images/image-25.png" alt="demo-vg-clone boot volumes" loading="lazy"></a></figure></div>
+<p>Open the cloned boot volume and click <strong>Create instance</strong>. The image is the cloned boot volume; pick shape, subnet and SSH key as usual:</p>
+<div class="shots"><figure><a href="images/image-26.png" target="_blank" rel="noopener"><img src="images/image-26.png" alt="Cloned boot volume details with Create instance" loading="lazy"></a></figure><figure><a href="images/image-27.png" target="_blank" rel="noopener"><img src="images/image-27.png" alt="Create compute instance: demo-clone-vm" loading="lazy"></a></figure></div><div class="shots"><figure><a href="images/image-28.png" target="_blank" rel="noopener"><img src="images/image-28.png" alt="Image: the cloned boot volume; shape VM.Standard.E5.Flex" loading="lazy"></a></figure><figure><a href="images/image-29.png" target="_blank" rel="noopener"><img src="images/image-29.png" alt="Primary VNIC in the public subnet of Jeddah_VCN" loading="lazy"></a></figure></div><div class="shots"><figure><a href="images/image-30.png" target="_blank" rel="noopener"><img src="images/image-30.png" alt="Automatically assign a public IPv4 address" loading="lazy"></a></figure><figure><a href="images/image-31.png" target="_blank" rel="noopener"><img src="images/image-31.png" alt="Paste the SSH public key" loading="lazy"></a></figure></div><div class="shots"><figure><a href="images/image-32.png" target="_blank" rel="noopener"><img src="images/image-32.png" alt="Block volumes: none; Create" loading="lazy"></a></figure><figure><a href="images/image-33.png" target="_blank" rel="noopener"><img src="images/image-33.png" alt="demo-clone-vm running (public IP hidden)" loading="lazy"></a></figure></div>
+<p>Browsing to the new VM shows the page from the source — it's a full copy, hostname included:</p>
+<div class="shots one"><figure><a href="images/image-34.png" target="_blank" rel="noopener"><img src="images/image-34.png" alt="Browser on the clone shows &quot;this server is demo-vm&quot;" loading="lazy"></a></figure></div>
+<div class="code"><span class="lbl">BASH</span><pre><code># inside the new VM
+sudo hostnamectl set-hostname demo-clone-vm
+ip -br addr        # new private IP from the subnet</code></pre></div>
+<div class="note">A boot volume can only be attached to one instance at a time, so a clone is the only way to start a second VM from it. If the source used a reserved public IP, the clone gets a new one.</div>
+<h2>Method 2: Back Up and Restore</h2>
+<p><strong>Volume group → Volume group backups → Create</strong> (full backup); it is stored in Object Storage:</p>
+<div class="shots"><figure><a href="images/image-35.png" target="_blank" rel="noopener"><img src="images/image-35.png" alt="Volume group demo-vg" loading="lazy"></a></figure><figure><a href="images/image-36.png" target="_blank" rel="noopener"><img src="images/image-36.png" alt="Create volume group backup: demo-vg-bkp, full" loading="lazy"></a></figure></div><div class="shots"><figure><a href="images/image-37.png" target="_blank" rel="noopener"><img src="images/image-37.png" alt="Backup committing" loading="lazy"></a></figure><figure><a href="images/image-38.png" target="_blank" rel="noopener"><img src="images/image-38.png" alt="Backup available" loading="lazy"></a></figure></div>
+<p>Open the backup → <strong>Restore volume group</strong>, then create an instance from the restored boot volume exactly as in method 1:</p>
+<div class="shots"><figure><a href="images/image-39.png" target="_blank" rel="noopener"><img src="images/image-39.png" alt="Volume group backup details with Restore volume group" loading="lazy"></a></figure><figure><a href="images/image-40.png" target="_blank" rel="noopener"><img src="images/image-40.png" alt="Restore volume group: demo-vg-restore" loading="lazy"></a></figure></div><div class="shots"><figure><a href="images/image-41.png" target="_blank" rel="noopener"><img src="images/image-41.png" alt="Cross region replication off" loading="lazy"></a></figure><figure><a href="images/image-42.png" target="_blank" rel="noopener"><img src="images/image-42.png" alt="Backup policies: none" loading="lazy"></a></figure></div><div class="shots"><figure><a href="images/image-43.png" target="_blank" rel="noopener"><img src="images/image-43.png" alt="Summary" loading="lazy"></a></figure><figure><a href="images/image-44.png" target="_blank" rel="noopener"><img src="images/image-44.png" alt="Restored boot volume" loading="lazy"></a></figure></div><div class="shots one"><figure><a href="images/image-45.png" target="_blank" rel="noopener"><img src="images/image-45.png" alt="Restored boot volume details with Create instance" loading="lazy"></a></figure></div>
+<h2>Method 3: Custom Image</h2>
+<p>Instance → <strong>More actions → Create custom image</strong>. The instance goes offline for a few minutes while the image is taken:</p>
+<div class="shots"><figure><a href="images/image-46.png" target="_blank" rel="noopener"><img src="images/image-46.png" alt="Instance More actions: Create custom image" loading="lazy"></a></figure><figure><a href="images/image-47.png" target="_blank" rel="noopener"><img src="images/image-47.png" alt="Create custom image: web-server" loading="lazy"></a></figure></div><div class="shots one"><figure><a href="images/image-48.png" target="_blank" rel="noopener"><img src="images/image-48.png" alt="Custom images: web-server provisioning" loading="lazy"></a></figure></div>
+<p>When it's <em>Available</em>, create instances from it with <strong>Change image → My images → Custom images</strong>:</p>
+<div class="shots"><figure><a href="images/image-50.png" target="_blank" rel="noopener"><img src="images/image-50.png" alt="Create compute instance: Change image" loading="lazy"></a></figure><figure><a href="images/image-51.png" target="_blank" rel="noopener"><img src="images/image-51.png" alt="My images: Custom images, web-server (tenancy name hidden)" loading="lazy"></a></figure></div>
+<h2>From the CLI</h2>
+<div class="code"><span class="lbl">BASH</span><pre><code># clone a boot volume with the OCI CLI
+oci bv boot-volume create --source-boot-volume-id &lt;boot-volume-ocid&gt; \
+   --availability-domain &lt;AD&gt; --display-name demo-vm-clone-bv
+
+# custom image from an instance
+oci compute image create --instance-id &lt;instance-ocid&gt; \
+   --compartment-id &lt;compartment-ocid&gt; --display-name web-server</code></pre></div>
+<p>Clean up the clones, backups and images you don't need — they all cost storage. Related: <a href="../how-to-create-a-compute-instance-in-oracle-cloud-infrastructure-oci-using-terraform/how-to-create-a-compute-instance-in-oracle-cloud-infrastructure-oci-using-terraform.html">Create an instance with Terraform</a>.</p>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>
