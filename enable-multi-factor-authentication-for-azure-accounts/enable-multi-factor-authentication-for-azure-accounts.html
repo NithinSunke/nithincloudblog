@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Enable MFA for Azure Accounts</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#0078d4;--accent-soft:#e6f2fb;--accent-ink:#005a9e;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.06em;margin:1.6em 0 .4em;padding-left:.6em;border-left:4px solid var(--accent)}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.85em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em;overflow-wrap:normal}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post .tw{overflow-x:auto;margin:.8em 0}
+.tsn-post table{width:100%;border-collapse:collapse;font-size:.93em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.3em 0}
+.tsn-post .lab{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin:1em 0}
+.tsn-post .lab div{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:#fff;font-size:.9em}
+.tsn-post .lab b{display:block;color:var(--accent-ink);font-size:.82em;text-transform:uppercase;letter-spacing:.05em}
+.tsn-post .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:.8em 0}
+.tsn-post .flow span{background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:.88em;font-weight:600}
+.tsn-post .flow b{color:var(--accent)}
+.tsn-post .shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px;margin:.8em 0 1.2em;align-items:start}
+.tsn-post .shots.one{grid-template-columns:1fr}
+.tsn-post .shots figure{margin:0}
+.tsn-post .shots img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:8px;background:#fff;transition:box-shadow .15s ease}
+.tsn-post .shots a:hover img{box-shadow:0 4px 14px rgba(0,0,0,.14)}
+.tsn-post .shots.one img{max-width:100%;width:auto;margin:0 auto}
+.tsn-post .cap{color:var(--muted);font-size:.85em;margin-top:-.6em}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:var(--accent-ink)}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
+
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .check{list-style:none;padding:0;counter-reset:c}
+.tsn-post .check>li{position:relative;padding-left:2.4em;margin:.7em 0}
+.tsn-post .check>li::before{counter-increment:c;content:counter(c);position:absolute;left:0;top:.1em;width:1.7em;height:1.7em;line-height:1.7em;text-align:center;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:.85em}
+
+.tsn-post details{margin:.6em 0 1.2em}
+.tsn-post summary{cursor:pointer;color:var(--accent-ink);font-weight:600;font-size:.95em}
+.tsn-post .code pre.tall{max-height:640px;overflow:auto}
+</style>
+
+<h1>Enable Multi-Factor Authentication for Azure Accounts</h1>
+<div class="meta">By Sunke Nithin · May 20, 2020 &nbsp; <span class="tag">CLOUD</span><span class="tag">Azure</span><span class="tag">Security</span></div>
+<p class="lead">Multi-factor authentication (MFA) means a stolen password alone can't open your Azure account: users also confirm sign-in with an app, a security key or another factor. Microsoft's identity service — Azure Active Directory, now called <strong>Microsoft Entra ID</strong> — offers several ways to require it.</p>
+<div class="note"><strong>Azure now enforces MFA for its admin portals.</strong> Since 2024–2025 Microsoft requires MFA to sign in to the Azure portal, Entra admin center and Intune admin center, and is extending it to Azure CLI, PowerShell and other management tools. Setting it up yourself first avoids being forced through it at an awkward time.</div>
+<h2>Which Method to Use</h2>
+<div class="tw"><table><thead><tr><th>Method</th><th>Use it when</th><th>Licence</th></tr></thead><tbody><tr><td><strong>Security defaults</strong></td><td>Small tenants and LABs — one switch requires MFA registration for everyone and MFA for admins</td><td>Free</td></tr><tr><td><strong>Conditional Access</strong></td><td>You need rules: by user group, app, location or device</td><td>Entra ID P1/P2</td></tr><tr><td><strong>Per-user MFA</strong> (legacy)</td><td>Only for older setups; Microsoft recommends the two options above</td><td>Free</td></tr></tbody></table></div>
+<h2>Option 1: Turn On Security Defaults</h2>
+<ol><li>Sign in to the <a href="https://entra.microsoft.com" target="_blank" rel="noopener">Microsoft Entra admin center</a> (or Azure portal → <strong>Microsoft Entra ID</strong>).</li><li><strong>Identity → Overview → Properties → Manage security defaults</strong>.</li><li>Set <strong>Security defaults</strong> to <em>Enabled</em> and save.</li></ol>
+<p>Users get 14 days to register for MFA the next time they sign in. Security defaults can't be used together with Conditional Access policies.</p>
+<h2>Option 2: A Conditional Access Policy</h2>
+<ol><li><strong>Protection → Conditional Access → Create new policy</strong> (or start from the template <em>Require multifactor authentication for all users</em>).</li><li><strong>Users:</strong> all users, <em>excluding</em> one or two emergency ("break-glass") accounts.</li><li><strong>Target resources:</strong> all cloud apps.</li><li><strong>Grant:</strong> <em>Require multifactor authentication</em> (or an authentication strength such as phishing-resistant MFA for admins).</li><li>Start in <strong>Report-only</strong> mode, check the sign-in logs, then switch it <strong>On</strong>.</li></ol>
+<h2>Option 3: Per-User MFA (Legacy)</h2>
+<p>Entra ID → <strong>Users → Per-user MFA</strong>, select the user and click <strong>Enable</strong>. This is the method from my original 2020 post; it still works, but it's harder to manage and Microsoft is moving people to the options above.</p>
+<h2>Register the Microsoft Authenticator App</h2>
+<ol><li>Install <strong>Microsoft Authenticator</strong> on your phone (App Store or Google Play).</li><li>Go to <a href="https://aka.ms/mysecurityinfo" target="_blank" rel="noopener">aka.ms/mysecurityinfo</a> (or wait for the prompt at sign-in) → <strong>Add sign-in method → Microsoft Authenticator</strong>.</li><li>In the app tap <strong>+ → Work or school account → Scan a QR code</strong>, and scan the code on screen.</li><li>Approve the test notification.</li><li>Add a second method (phone number or another app/key) so you aren't locked out if you lose the phone.</li></ol>
+<p>From now on, signing in asks you to approve a notification and enter the number shown on screen.</p>
+<h2>Good Practice</h2>
+<ul><li>Keep two <strong>break-glass</strong> Global Administrator accounts excluded from Conditional Access, with long passwords (or FIDO2 keys) stored safely and sign-in alerts on them.</li><li>Use phishing-resistant methods — passkeys/FIDO2 keys or Windows Hello for Business — for administrators.</li><li>Prefer the Authenticator app over SMS and voice calls.</li></ul>
+<p class="cap">Based on Microsoft's documentation: <a href="https://learn.microsoft.com/en-us/entra/identity/authentication/concept-mfa-howitworks" target="_blank" rel="noopener">How Microsoft Entra multifactor authentication works</a>. Previous post: <a href="../getting-started-with-free-azure-subscription/getting-started-with-free-azure-subscription.html">Getting started with a free Azure subscription</a>.</p>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>
