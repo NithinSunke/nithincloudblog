@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Database Migration to ASM with Short Downtime</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#c74634;--accent-soft:#fdf1ef;--accent-ink:#a3372a;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.06em;margin:1.6em 0 .4em;padding-left:.6em;border-left:4px solid var(--accent)}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.85em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em;overflow-wrap:normal}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post .tw{overflow-x:auto;margin:.8em 0}
+.tsn-post table{width:100%;border-collapse:collapse;font-size:.93em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.3em 0}
+.tsn-post .lab{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin:1em 0}
+.tsn-post .lab div{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:#fff;font-size:.9em}
+.tsn-post .lab b{display:block;color:var(--accent-ink);font-size:.82em;text-transform:uppercase;letter-spacing:.05em}
+.tsn-post .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:.8em 0}
+.tsn-post .flow span{background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:.88em;font-weight:600}
+.tsn-post .flow b{color:var(--accent)}
+.tsn-post .shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px;margin:.8em 0 1.2em;align-items:start}
+.tsn-post .shots.one{grid-template-columns:1fr}
+.tsn-post .shots figure{margin:0}
+.tsn-post .shots img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:8px;background:#fff;transition:box-shadow .15s ease}
+.tsn-post .shots a:hover img{box-shadow:0 4px 14px rgba(0,0,0,.14)}
+.tsn-post .shots.one img{max-width:100%;width:auto;margin:0 auto}
+.tsn-post .cap{color:var(--muted);font-size:.85em;margin-top:-.6em}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:var(--accent-ink)}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
+
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .check{list-style:none;padding:0;counter-reset:c}
+.tsn-post .check>li{position:relative;padding-left:2.4em;margin:.7em 0}
+.tsn-post .check>li::before{counter-increment:c;content:counter(c);position:absolute;left:0;top:.1em;width:1.7em;height:1.7em;line-height:1.7em;text-align:center;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:.85em}
+
+.tsn-post details{margin:.6em 0 1.2em}
+.tsn-post summary{cursor:pointer;color:var(--accent-ink);font-weight:600;font-size:.95em}
+.tsn-post .code pre.tall{max-height:640px;overflow:auto}
+</style>
+
+<h1>Migrating a Database from File System to ASM with a Short Downtime</h1>
+<div class="meta">By Sunke Nithin · August 4, 2022 &nbsp; <span class="tag">Database</span><span class="tag">Oracle</span><span class="tag">Migration</span></div>
+<p class="lead">Moving a database from file-system storage into ASM doesn't need a long outage. RMAN copies the data files into ASM while the database stays open; the downtime is just a restart, a switch to the copies and a quick recovery of the changes made meanwhile. Here the database <code>snd</code> moves from <code>/h01/oracle/oradata</code> into the disk groups <code>+SRD_DATA</code> and <code>+SRD_FRA</code>.</p>
+<h2><span class="num">1</span>Record Where Everything Is</h2>
+<div class="code"><span class="lbl">SQL</span><pre><code>show parameter control_files
+select name from v$datafile;
+select member from v$logfile;
+select name from v$tempfile;
+show parameter db_recovery_file_dest
+archive log list</code></pre></div>
+<p>Control files, five data files, three redo groups and a temp file are all on the file system; the database is in archive log mode (required for an online copy).</p>
+<h2><span class="num">2</span>Check the Disk Groups</h2>
+<div class="code"><span class="lbl">SQL</span><pre><code>select name, state, type, total_mb, free_mb,
+       round((1-free_mb/total_mb)*100,2) pct_used
+from   v$asm_diskgroup where total_mb &gt; 0 order by name;
+
+NAME       STATE    TYPE    TOTAL_MB  FREE_MB  PCT_USED
+CRS        MOUNTED  EXTERN     30720    24874     19.03
+SRD_DATA   MOUNTED  EXTERN     10240     2715     73.49
+SRD_FRA    MOUNTED  EXTERN     10240     2904     71.64</code></pre></div>
+<p>Make sure the data disk group has room for all data files, and the FRA disk group for archive logs and backups.</p>
+<h2><span class="num">3</span>Copy the Data Files Into ASM — Online</h2>
+<div class="code"><span class="lbl">RMAN</span><pre><code>RMAN&gt; backup as copy database format &#x27;+SRD_DATA&#x27;;
+
+input datafile file number=00001 name=/h01/oracle/oradata/snd/system01.dbf
+output file name=+SRD_DATA/SND/DATAFILE/system.289.1111865763 tag=TAG20220804T193517
+...
+Finished backup at 04-AUG-22</code></pre></div>
+<p>Image copies of every data file land in <code>+SRD_DATA</code>. Users keep working; this takes as long as the copy does.</p>
+<h2><span class="num">4</span>Point New Files at ASM and Move the spfile</h2>
+<div class="code"><span class="lbl">SQL</span><pre><code>alter system set db_recovery_file_dest=&#x27;+SRD_FRA&#x27;;
+alter system set db_create_file_dest=&#x27;+SRD_DATA&#x27;;
+alter system set db_create_online_log_dest_1=&#x27;+SRD_DATA&#x27;;
+alter system set db_create_online_log_dest_2=&#x27;+SRD_FRA&#x27;;
+create spfile=&#x27;+SRD_DATA&#x27; from memory;</code></pre></div>
+<div class="code"><span class="lbl">BASH</span><pre><code># replace the spfile in $ORACLE_HOME/dbs with a pointer (single instance)
+cd $ORACLE_HOME/dbs
+mv spfilesnd.ora spfilesnd.ora.old
+echo &quot;SPFILE=&#x27;+SRD_DATA/SND/PARAMETERFILE/spfile.xxx.xxxxxxxxx&#x27;&quot; &gt; initsnd.ora
+
+# Grid Infrastructure / RAC: register it with the clusterware instead
+srvctl modify database -db snd -spfile &#x27;+SRD_DATA/SND/PARAMETERFILE/spfile.xxx.xxxxxxxxx&#x27;</code></pre></div>
+<p>Find the spfile's generated name with <code>asmcmd ls +SRD_DATA/SND/PARAMETERFILE</code>. (Creating it under an alias like <code>+SRD_DATA/spfilesnd.ora</code>, as I originally did, also works.)</p>
+<h2><span class="num">5</span>Downtime Starts: Relocate the Control Files</h2>
+<div class="code"><span class="lbl">SQL</span><pre><code>shutdown immediate
+startup nomount
+alter system set control_files=&#x27;+SRD_DATA&#x27;,&#x27;+SRD_FRA&#x27; scope=spfile;
+shutdown immediate
+startup nomount</code></pre></div>
+<h2><span class="num">6</span>Switch to the Copies and Recover</h2>
+<div class="code"><span class="lbl">RMAN</span><pre><code>rman target /
+
+RMAN&gt; restore controlfile from &#x27;/h01/oracle/oradata/snd/control01.ctl&#x27;;
+output file name=+SRD_DATA/SND/CONTROLFILE/current.296.1111868457
+output file name=+SRD_FRA/SND/CONTROLFILE/current.476.1111868457
+
+RMAN&gt; alter database mount;
+RMAN&gt; switch database to copy;
+datafile 1 switched to datafile copy &quot;+SRD_DATA/SND/DATAFILE/system.289.1111865763&quot;
+...
+RMAN&gt; recover database;
+RMAN&gt; alter database open;</code></pre></div>
+<p>Recovery only applies the redo generated since the copy in step 3, so it takes seconds to minutes. As soon as the database is open, <strong>the downtime is over</strong>.</p>
+<h2><span class="num">7</span>Online: Temp Files and Redo Logs</h2>
+<p>RMAN doesn't copy temp files; create a new one and drop the old:</p>
+<div class="code"><span class="lbl">SQL</span><pre><code>alter tablespace temp add tempfile size 50m;               -- created in +SRD_DATA
+alter database tempfile &#x27;/h01/oracle/oradata/snd/temp01.dbf&#x27; drop including datafiles;</code></pre></div>
+<p>Online redo logs can be replaced while the database is open:</p>
+<div class="code"><span class="lbl">SQL</span><pre><code>-- new groups go to +SRD_DATA and +SRD_FRA (one member each)
+alter database add logfile size 200m;
+alter database add logfile size 200m;
+alter database add logfile size 200m;
+
+-- cycle until groups 1-3 are INACTIVE
+alter system switch logfile;
+alter system checkpoint;
+select group#, status from v$log;
+
+alter database drop logfile group 1;
+alter database drop logfile group 2;
+alter database drop logfile group 3;</code></pre></div>
+<h2><span class="num">8</span>Verify and Back Up</h2>
+<div class="code"><span class="lbl">SQL</span><pre><code>select name from v$datafile union all select name from v$tempfile
+union all select member from v$logfile union all select name from v$controlfile;
+-- everything should now start with +SRD_DATA or +SRD_FRA
+
+RMAN&gt; backup database plus archivelog;
+RMAN&gt; delete copy of database tag &#x27;TAG...&#x27;;   -- only if old copies are listed</code></pre></div>
+<p>Take a fresh full backup — the old file-system copies are no longer part of the database — and once you're satisfied, remove the old files from <code>/h01/oracle/oradata/snd</code>.</p>
+<div class="note">For a RAC or Oracle Restart database, use <code>srvctl stop/start database</code> for the restarts and keep the spfile location in the clusterware configuration (step 4). Related: <a href="../steps-to-converting-non-asm-database-to-asm-database/steps-to-converting-non-asm-database-to-asm-database.html">Converting a non-ASM database to ASM</a> · <a href="../migrate-asm-diskgroups-to-another-san-without-downtime-asmlib/migrate-asm-diskgroups-to-another-san-without-downtime-asmlib.html">Moving ASM disk groups to new storage</a>.</div>
+<p class="cap">Technique popularized by Uwe Hesse's blog post on migrating to ASM with short downtime; reproduced here from my own LAB run.</p>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Autonomous Database Free on Docker</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#1d63ed;--accent-soft:#e8effd;--accent-ink:#1650c4;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.06em;margin:1.6em 0 .4em;padding-left:.6em;border-left:4px solid var(--accent)}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.85em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em;overflow-wrap:normal}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post .tw{overflow-x:auto;margin:.8em 0}
+.tsn-post table{width:100%;border-collapse:collapse;font-size:.93em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.3em 0}
+.tsn-post .lab{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin:1em 0}
+.tsn-post .lab div{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:#fff;font-size:.9em}
+.tsn-post .lab b{display:block;color:var(--accent-ink);font-size:.82em;text-transform:uppercase;letter-spacing:.05em}
+.tsn-post .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:.8em 0}
+.tsn-post .flow span{background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:.88em;font-weight:600}
+.tsn-post .flow b{color:var(--accent)}
+.tsn-post .shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px;margin:.8em 0 1.2em;align-items:start}
+.tsn-post .shots.one{grid-template-columns:1fr}
+.tsn-post .shots figure{margin:0}
+.tsn-post .shots img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:8px;background:#fff;transition:box-shadow .15s ease}
+.tsn-post .shots a:hover img{box-shadow:0 4px 14px rgba(0,0,0,.14)}
+.tsn-post .shots.one img{max-width:100%;width:auto;margin:0 auto}
+.tsn-post .cap{color:var(--muted);font-size:.85em;margin-top:-.6em}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:var(--accent-ink)}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
+
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .check{list-style:none;padding:0;counter-reset:c}
+.tsn-post .check>li{position:relative;padding-left:2.4em;margin:.7em 0}
+.tsn-post .check>li::before{counter-increment:c;content:counter(c);position:absolute;left:0;top:.1em;width:1.7em;height:1.7em;line-height:1.7em;text-align:center;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:.85em}
+
+.tsn-post details{margin:.6em 0 1.2em}
+.tsn-post summary{cursor:pointer;color:var(--accent-ink);font-weight:600;font-size:.95em}
+.tsn-post .code pre.tall{max-height:640px;overflow:auto}
+</style>
+
+<h1>Run Oracle Autonomous Database Free (ADW/ATP) on Docker</h1>
+<div class="meta">By Sunke Nithin · August 8, 2025 &nbsp; <span class="tag">Docker</span><span class="tag">Oracle</span><span class="tag">ADB</span></div>
+<p class="lead">Oracle publishes <strong>Autonomous Database Free</strong> as a container image: a local ADB 23ai with ORDS, APEX, Database Actions and the MongoDB API, behaving like the cloud service. It's ideal for development and learning without an OCI account. Here I run it as an <strong>ADW</strong> (data warehouse) instance with Docker.</p>
+<h2>Prerequisites</h2>
+<ul><li>Docker (or Podman) on Linux x86-64 — or Windows with WSL2</li><li>At least 4 CPUs, 8 GB RAM and about 30 GB of disk (see <a href="../how-to-change-docker-data-root-storage-location/how-to-change-docker-data-root-storage-location.html">moving Docker storage to a bigger disk</a>)</li><li>Internet access to the GitHub Container Registry</li></ul>
+<h2><span class="num">1</span>Pull the Image</h2>
+<div class="code"><span class="lbl">BASH</span><pre><code>docker pull ghcr.io/oracle/adb-free:latest-23ai
+docker image ls ghcr.io/oracle/adb-free
+REPOSITORY                TAG           IMAGE ID       CREATED       SIZE
+ghcr.io/oracle/adb-free   latest-23ai   73b91e2be6bb   4 weeks ago   4.97GB</code></pre></div>
+<h2><span class="num">2</span>Start the Container — Docker Compose</h2>
+<div class="code"><span class="lbl">DOCKER-COMPOSE.YML</span><pre><code>services:
+  adb-free:
+    image: ghcr.io/oracle/adb-free:latest-23ai
+    container_name: adb-free
+    hostname: adb-free
+    ports:
+      - &quot;1521:1521&quot;     # TLS
+      - &quot;1522:1522&quot;     # mTLS
+      - &quot;8443:8443&quot;     # ORDS / APEX / Database Actions
+      - &quot;27017:27017&quot;   # MongoDB API
+    environment:
+      WORKLOAD_TYPE: &quot;ADW&quot;               # or ATP
+      ADMIN_PASSWORD: &quot;&lt;admin-password&gt;&quot;
+      WALLET_PASSWORD: &quot;&lt;wallet-password&gt;&quot;
+    cap_add:
+      - SYS_ADMIN
+    devices:
+      - &quot;/dev/fuse&quot;
+    volumes:
+      - adb_container_volume:/u01/data
+    restart: unless-stopped
+
+volumes:
+  adb_container_volume:</code></pre></div>
+<div class="code"><span class="lbl">BASH</span><pre><code>docker compose up -d &amp;&amp; docker compose logs -f</code></pre></div>
+<p>Or with plain <code>docker run</code>:</p>
+<div class="code"><span class="lbl">BASH</span><pre><code>docker run -d --name adb-free --hostname adb-free \
+  -p 1521:1521 -p 1522:1522 -p 8443:8443 -p 27017:27017 \
+  -e WORKLOAD_TYPE=&#x27;ADW&#x27; \
+  -e ADMIN_PASSWORD=&#x27;&lt;admin-password&gt;&#x27; \
+  -e WALLET_PASSWORD=&#x27;&lt;wallet-password&gt;&#x27; \
+  --cap-add SYS_ADMIN --device /dev/fuse \
+  --volume adb_container_volume:/u01/data \
+  ghcr.io/oracle/adb-free:latest-23ai
+
+docker logs -f adb-free        # wait until the database reports it is ready</code></pre></div>
+<p>The container needs <code>SYS_ADMIN</code> and <code>/dev/fuse</code> for its DBFS-based features. Passwords must meet ADB's rules: 12–30 characters with upper case, lower case and a digit.</p>
+<h2>Settings</h2>
+<div class="tw"><table><thead><tr><th>Variable</th><th>Meaning</th></tr></thead><tbody><tr><td><code>WORKLOAD_TYPE</code></td><td><code>ADW</code> (data warehouse) or <code>ATP</code> (transaction processing); default ATP</td></tr><tr><td><code>ADMIN_PASSWORD</code></td><td>Password of the ADMIN user</td></tr><tr><td><code>WALLET_PASSWORD</code></td><td>Password of the generated client wallet</td></tr><tr><td><code>DATABASE_NAME</code></td><td>Optional; alphanumeric. Defaults to MYATP or MYADW</td></tr><tr><td><code>ENABLE_ARCHIVE_LOG</code></td><td>True by default; set False to disable archiving</td></tr></tbody></table></div>
+<div class="tw"><table><thead><tr><th>Port</th><th>Use</th></tr></thead><tbody><tr><td>1521</td><td>SQL*Net over TLS</td></tr><tr><td>1522</td><td>SQL*Net over mutual TLS (wallet)</td></tr><tr><td>8443</td><td>HTTPS: ORDS, APEX, Database Actions</td></tr><tr><td>27017</td><td>MongoDB API</td></tr></tbody></table></div>
+<h2>Troubleshooting: Permission Denied on First Start</h2>
+<div class="code"><span class="lbl">LOG</span><pre><code>Downloading MY_ATP.pdb..
+PermissionError: [Errno 13] Permission denied: &#x27;/u01/data/MYATP.pdb.partial&#x27;</code></pre></div>
+<p>The volume isn't writable by the container's <code>oracle</code> user (UID 54321). Fix the ownership rather than opening it to everyone with <code>chmod 777</code>:</p>
+<div class="code"><span class="lbl">BASH</span><pre><code>docker compose down
+VOL=$(docker volume inspect -f &#x27;{{.Mountpoint}}&#x27; adb_adb_container_volume)
+sudo chown -R 54321:54321 &quot;$VOL&quot;      # 54321 = oracle user inside the container
+# SELinux hosts: also  sudo chcon -Rt container_file_t &quot;$VOL&quot;
+docker compose up -d</code></pre></div>
+<p>Compose prefixes the volume name with the project (folder) name — <code>adb_adb_container_volume</code> here.</p>
+<h2><span class="num">3</span>Connect</h2>
+<p>Copy the TLS wallet out of the container and use one of the predefined service aliases:</p>
+<div class="code"><span class="lbl">BASH</span><pre><code>docker cp adb-free:/u01/app/oracle/wallets/tls_wallet ./tls_wallet
+export TNS_ADMIN=$PWD/tls_wallet
+sqlplus admin@myadw_low_tls       # TLS: no client wallet password needed</code></pre></div>
+<div class="tw"><table><thead><tr><th>Workload</th><th>mTLS aliases</th><th>TLS aliases</th></tr></thead><tbody><tr><td>ATP</td><td>myatp_low / medium / high / tp / tpurgent</td><td>same with <code>_tls</code> suffix</td></tr><tr><td>ADW</td><td>myadw_low / medium / high</td><td>same with <code>_tls</code> suffix</td></tr></tbody></table></div>
+<h2><span class="num">4</span>Web Tools</h2>
+<div class="tw"><table><thead><tr><th>Application</th><th>URL</th></tr></thead><tbody><tr><td>APEX</td><td><code>https://localhost:8443/ords/apex</code></td></tr><tr><td>Database Actions</td><td><code>https://localhost:8443/ords/sql-developer</code></td></tr></tbody></table></div>
+<p>The certificate is self-signed, so the browser warns once. Log in as <code>ADMIN</code>.</p>
+<p class="cap">Based on Oracle's <a href="https://github.com/oracle/adb-free" target="_blank" rel="noopener">adb-free README</a>. In OCI: <a href="../step-by-step-guide-to-deploy-oracle-autonomous-data-warehouse-adw-on-oci/step-by-step-guide-to-deploy-oracle-autonomous-data-warehouse-adw-on-oci.html">Deploy ADW on OCI</a>.</p>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>
