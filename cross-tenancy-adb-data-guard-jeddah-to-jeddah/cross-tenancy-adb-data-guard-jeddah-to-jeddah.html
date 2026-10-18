@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cross-Tenancy ADB Data Guard</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#c74634;--accent-soft:#fdf1ef;--accent-ink:#a3372a;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.06em;margin:1.6em 0 .4em;padding-left:.6em;border-left:4px solid var(--accent)}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.85em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em;overflow-wrap:normal}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post .tw{overflow-x:auto;margin:.8em 0}
+.tsn-post table{width:100%;border-collapse:collapse;font-size:.93em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.3em 0}
+.tsn-post .lab{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin:1em 0}
+.tsn-post .lab div{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:#fff;font-size:.9em}
+.tsn-post .lab b{display:block;color:var(--accent-ink);font-size:.82em;text-transform:uppercase;letter-spacing:.05em}
+.tsn-post .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:.8em 0}
+.tsn-post .flow span{background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:.88em;font-weight:600}
+.tsn-post .flow b{color:var(--accent)}
+.tsn-post .shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px;margin:.8em 0 1.2em;align-items:start}
+.tsn-post .shots.one{grid-template-columns:1fr}
+.tsn-post .shots figure{margin:0}
+.tsn-post .shots img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:8px;background:#fff;transition:box-shadow .15s ease}
+.tsn-post .shots a:hover img{box-shadow:0 4px 14px rgba(0,0,0,.14)}
+.tsn-post .shots.one img{max-width:100%;width:auto;margin:0 auto}
+.tsn-post .cap{color:var(--muted);font-size:.85em;margin-top:-.6em}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:var(--accent-ink)}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
+
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .check{list-style:none;padding:0;counter-reset:c}
+.tsn-post .check>li{position:relative;padding-left:2.4em;margin:.7em 0}
+.tsn-post .check>li::before{counter-increment:c;content:counter(c);position:absolute;left:0;top:.1em;width:1.7em;height:1.7em;line-height:1.7em;text-align:center;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:.85em}
+
+.tsn-post details{margin:.6em 0 1.2em}
+.tsn-post summary{cursor:pointer;color:var(--accent-ink);font-weight:600;font-size:.95em}
+.tsn-post .code pre.tall{max-height:640px;overflow:auto}
+</style>
+
+<h1>Cross-Tenancy Autonomous Data Guard with the OCI CLI: A Real Build, Jeddah to Jeddah</h1>
+<div class="meta">By Sunke Nithin · October 17, 2026 &nbsp; <span class="tag">CLOUD</span><span class="tag">OCI</span><span class="tag">ADB</span><span class="tag">Data Guard</span></div>
+<p class="lead">The goal: an Autonomous Data Guard standby for the database <code>CTRATP</code>, in a <strong>different OCI tenancy</strong> and a <strong>different region</strong>. The Console can't configure a cross-tenancy standby, so everything is done with the OCI CLI from Windows PowerShell. The standby did get built — but in the same region as the primary, because the region pair I wanted turned out not to be supported. This is the full record, including six failures and what each one really meant.</p>
+<h2>Summary</h2>
+<ul><li><strong>Built:</strong> a cross-tenancy Autonomous Data Guard standby, Available, paired with the primary; a switchover was run to exercise the role swap.</li><li><strong>Where:</strong> both databases are in Jeddah (<code>me-jeddah-1</code>). Jeddah → Mumbai is not a supported Autonomous Data Guard region pair, which was the real cause of the original failures.</li><li><strong>Protects against:</strong> loss of a tenancy, accidental deletion, compartment or account compromise, database failure. <strong>Not</strong> against a Jeddah regional outage — that needs a standby in a region paired with Jeddah.</li><li><strong>Time:</strong> about three hours, almost all of it on the six issues below.</li></ul>
+<h2>Environment</h2>
+<div class="tw"><table><thead><tr><th></th><th>A_tenancy — primary</th><th>B_tenancy — standby</th></tr></thead><tbody><tr><td>CLI profile</td><td><code>A_tenancy</code> (+ <code>A_tenancy_frankfurt</code> for IAM writes)</td><td><code>B_tenancy</code></td></tr><tr><td>Home region (IAM writes)</td><td>eu-frankfurt-1</td><td>ap-mumbai-1</td></tr><tr><td>Working region</td><td>me-jeddah-1</td><td>ap-mumbai-1, then me-jeddah-1</td></tr><tr><td>Database</td><td>CTRATP (2 ECPU, 20 GB)</td><td>standby, created by this build</td></tr><tr><td>Compartment</td><td>nslabs (nested)</td><td>Operations (top level)</td></tr></tbody></table></div>
+<p>Both profiles here use the same API key, uploaded to the user in each tenancy. That works, but remember it when rotating the key: replace it in both tenancies, or one profile silently stops authenticating.</p>
+<h2>Three Regions, and Which Call Goes to Each</h2>
+<div class="shots one"><figure><a href="images/image1.png" target="_blank" rel="noopener"><img src="images/image1.png" alt="Diagram: eu-frankfurt-1 is A_tenancy home region for IAM writes (A_tenancy_frankfurt); me-jeddah-1 is A_tenancy working region with primary CTRATP (A_tenancy); ap-mumbai-1 is B_tenancy home region (B_tenancy)" loading="lazy"></a></figure></div>
+<p>Two tenancies, three regions — the root of most of the confusion. A_tenancy is homed in Frankfurt but keeps its database in Jeddah, so policy writes and database calls go to different endpoints. <strong>The CLI endpoint comes from the profile's <code>region=</code> or from <code>--region</code>, never from the region inside a resource OCID.</strong></p>
+<h2><span class="num">1</span>CLI Profiles and Identifiers</h2>
+<p><code>C:\Users\&lt;user&gt;\.oci\config</code>, one profile per tenancy (plus the Frankfurt one, see issue 4):</p>
+<div class="code"><span class="lbl">OCI CONFIG</span><pre><code>[A_tenancy]
+user=ocid1.user.oc1..&lt;A-user-ocid&gt;
+fingerprint=&lt;key-fingerprint&gt;
+tenancy=ocid1.tenancy.oc1..&lt;A-tenancy-ocid&gt;
+region=me-jeddah-1
+key_file=C:/Users/&lt;user&gt;/.oci/oci_api_key.pem
+
+[A_tenancy_frankfurt]
+# same user, tenancy and key as above - home region for IAM writes
+region=eu-frankfurt-1
+
+[B_tenancy]
+user=ocid1.user.oc1..&lt;B-user-ocid&gt;
+fingerprint=&lt;key-fingerprint&gt;
+tenancy=ocid1.tenancy.oc1..&lt;B-tenancy-ocid&gt;
+region=ap-mumbai-1
+key_file=C:/Users/&lt;user&gt;/.oci/oci_api_key.pem</code></pre></div>
+<p>Prove authentication first — this call needs valid credentials and almost no permission, so it separates authentication from authorization:</p>
+<div class="code"><span class="lbl">POWERSHELL</span><pre><code>oci os ns get --profile A_tenancy      # returns A&#x27;s Object Storage namespace
+oci os ns get --profile B_tenancy      # returns B&#x27;s namespace</code></pre></div>
+<p>Collect the identifiers in PowerShell variables (note the backtick for line continuation, not Linux's backslash):</p>
+<div class="code"><span class="lbl">POWERSHELL</span><pre><code># Tenancy A, the primary
+$env:SRC_TENANCY_OCID     = &#x27;&lt;A-tenancy-ocid&gt;&#x27;
+$env:SRC_PRIMARY_CMP_OCID = &#x27;&lt;primary-compartment-ocid&gt;&#x27;
+$env:PRIMARY_ADB_OCID = oci db autonomous-database list `
+  --profile A_tenancy `
+  --compartment-id $env:SRC_PRIMARY_CMP_OCID `
+  --display-name &#x27;CTRATP&#x27; `
+  --query &#x27;data[0].id&#x27; --raw-output
+
+# Tenancy B, the standby side
+$env:TGT_TENANCY_OCID     = &#x27;&lt;B-tenancy-ocid&gt;&#x27;
+$env:TGT_STANDBY_CMP_OCID = &#x27;&lt;operations-compartment-ocid&gt;&#x27;
+
+# echo every variable - PowerShell returns &quot;&quot; for a misspelt name
+$env:PRIMARY_ADB_OCID
+$env:TGT_STANDBY_CMP_OCID</code></pre></div>
+<p>Record the primary's shape — the standby inherits it. Check that it isn't Free Tier and uses no OCI Vault key (customer-managed keys aren't supported with a cross-tenancy standby):</p>
+<div class="code"><span class="lbl">POWERSHELL</span><pre><code>oci db autonomous-database get --profile A_tenancy `
+  --autonomous-database-id $env:PRIMARY_ADB_OCID `
+  --query &#x27;data.{name:&quot;display-name&quot;, dbName:&quot;db-name&quot;, state:&quot;lifecycle-state&quot;,
+           workload:&quot;db-workload&quot;, ecpu:&quot;compute-count&quot;, storage:&quot;data-storage-size-in-gbs&quot;,
+           license:&quot;license-model&quot;, key:&quot;key-store-id&quot;, free:&quot;is-free-tier&quot;}&#x27;</code></pre></div>
+<h2><span class="num">2</span>IAM in B_tenancy (Standby Side)</h2>
+<p>B owns the group that does the work, so B needs permission to create the standby locally, and an <strong>Endorse</strong> stating what the group may do in A.</p>
+<div class="code"><span class="lbl">POWERSHELL</span><pre><code>$env:DEST_GROUP_OCID = oci iam group create `
+  --profile B_tenancy `
+  --compartment-id $env:TGT_TENANCY_OCID `
+  --name ADG-CrossTenancy-Admins `
+  --description &quot;Creates and manages the cross-tenancy ADG standby&quot; `
+  --query &#x27;data.id&#x27; --raw-output
+
+oci iam user-group-membership add --profile B_tenancy `
+  --user-id &lt;B-user-ocid&gt; `
+  --group-id $env:DEST_GROUP_OCID</code></pre></div>
+<p>Policy <code>cross-tenancy-adb-adg</code> in B's <strong>root</strong> compartment:</p>
+<div class="code"><span class="lbl">POLICY</span><pre><code>Define tenancy SourceTenancy as &lt;A-tenancy-ocid&gt;
+Allow group ADG-CrossTenancy-Admins to manage autonomous-database-family in compartment Operations
+Endorse group ADG-CrossTenancy-Admins to manage autonomous-database-family in tenancy SourceTenancy</code></pre></div>
+<div class="shots one"><figure><a href="images/image2.png" target="_blank" rel="noopener"><img src="images/image2.png" alt="B_tenancy policy cross-tenancy-adb-adg: Define SourceTenancy (OCID hidden), Allow group ADG-CrossTenancy-Admins to manage autonomous-database-family in compartment Operations, Endorse to read autonomous-databases (earlier revision)" loading="lazy"></a></figure></div>
+<div class="note"><strong>Endorse and Admit.</strong> Endorse goes in the tenancy that owns the group and says what the group may do elsewhere; Admit goes in the tenancy that owns the resource. Neither grants anything alone — the effective permission is the intersection. Define/Endorse/Admit are only valid in the root compartment; the group must actually contain the user; a top-level compartment can be named directly, a nested one needs its full path.</div>
+<h2><span class="num">3</span>IAM in A_tenancy (Primary Side)</h2>
+<p>A <strong>Admits</strong> B's group to the primary. This write must go to <strong>Frankfurt</strong>, A's home region — not Jeddah where the database is:</p>
+<div class="code"><span class="lbl">POLICY</span><pre><code>Define tenancy DestinationTenancy as &lt;B-tenancy-ocid&gt;
+Define group DestGroup as &lt;ADG-CrossTenancy-Admins-group-ocid&gt;
+Admit group DestGroup of tenancy DestinationTenancy to manage autonomous-database-family in compartment id &lt;primary-compartment-ocid&gt;</code></pre></div>
+<div class="shots one"><figure><a href="images/image3.png" target="_blank" rel="noopener"><img src="images/image3.png" alt="A_tenancy admit policy: Define DestinationTenancy and DestGroup (OCIDs hidden), Admit group DestGroup to read autonomous-databases (earlier revision)" loading="lazy"></a></figure></div>
+<p>The screenshots show an earlier revision with <code>read autonomous-databases</code>; both halves were later raised to <code>manage autonomous-database-family</code> (issue 6). Created with the Frankfurt profile:</p>
+<div class="code"><span class="lbl">POWERSHELL</span><pre><code>$aPolicy = @(
+  &quot;Define tenancy DestinationTenancy as $env:TGT_TENANCY_OCID&quot;,
+  &quot;Define group DestGroup as $env:DEST_GROUP_OCID&quot;,
+  &quot;Admit group DestGroup of tenancy DestinationTenancy to manage autonomous-database-family in compartment id $env:SRC_PRIMARY_CMP_OCID&quot;
+)
+$aPolicy | ConvertTo-Json | Set-Content -Encoding ascii a-policy.json
+
+oci iam policy create --profile A_tenancy_frankfurt `
+  --compartment-id $env:SRC_TENANCY_OCID `
+  --name cross-tenancy-adb-adg-admit `
+  --description &quot;Admit B_tenancy&#x27;s ADG group to the Jeddah primary&quot; `
+  --statements file://a-policy.json
+
+# later updates need --statements and --version-date together
+oci iam policy update --profile A_tenancy_frankfurt `
+  --policy-id &lt;admit-policy-ocid&gt; `
+  --statements file://a-policy.json `
+  --version-date &quot;&quot; --force</code></pre></div>
+<p>Use <code>compartment id &lt;ocid&gt;</code> rather than a name: the primary's compartment is nested, so the name form would need the full <code>Parent:Child:nslabs</code> path. The OCID form can't be ambiguous.</p>
+<h2><span class="num">4</span>Prove the Cross-Tenancy Permission</h2>
+<p>This gate separates an IAM problem from a database problem. Read the Jeddah primary as B's group:</p>
+<div class="code"><span class="lbl">POWERSHELL</span><pre><code>oci db autonomous-database get --profile B_tenancy `
+  --region me-jeddah-1 `
+  --autonomous-database-id $env:PRIMARY_ADB_OCID `
+  --query &#x27;data.{name:&quot;display-name&quot;, state:&quot;lifecycle-state&quot;, role:role}&#x27;
+
+{
+  &quot;name&quot;: &quot;CTRATP&quot;,
+  &quot;role&quot;: null,
+  &quot;state&quot;: &quot;AVAILABLE&quot;
+}</code></pre></div>
+<p>B's group can see A's database across the tenancy boundary (<code>role: null</code> — no peer yet). <code>--region me-jeddah-1</code> is mandatory: without it the call goes to Mumbai, which answers <code>404</code> exactly like a policy failure. If this fails, check credentials before policies:</p>
+<div class="code"><span class="lbl">POWERSHELL</span><pre><code># cheaper probe: are the credentials valid in that region at all?
+oci os ns get --profile B_tenancy --region me-jeddah-1</code></pre></div>
+<p>After every policy edit, wait about <strong>ten minutes</strong> before retesting — retries run within seconds of a change test the old state.</p>
+<h2><span class="num">5</span>Create the Standby — First in Mumbai (Fails)</h2>
+<div class="code"><span class="lbl">POWERSHELL</span><pre><code>oci db autonomous-database create-cross-tenancy-disaster-recovery-details `
+  --profile B_tenancy `
+  --region ap-mumbai-1 `
+  --compartment-id $env:TGT_STANDBY_CMP_OCID `
+  --source-id $env:PRIMARY_ADB_OCID `
+  --disaster-recovery-type ADG `
+  --display-name &quot;CTRATP-StandbyMumbai&quot;
+
+&quot;code&quot;: &quot;NotAuthorizedOrNotFound&quot;,
+&quot;status&quot;: 404,
+&quot;operation_name&quot;: &quot;create_autonomous_database&quot;,
+&quot;request_endpoint&quot;: &quot;POST https://database.ap-mumbai-1.oraclecloud.com/20160918/autonomousDatabases&quot;</code></pre></div>
+<p>Only <code>--compartment-id</code>, <code>--source-id</code> and <code>--disaster-recovery-type</code> are required; the standby takes password, wallet, character set and sizing from the primary. Running with <code>--debug</code> showed a perfectly formed request (source type <code>CROSS_TENANCY_DISASTER_RECOVERY</code>, right OCIDs, right endpoint), and everything else was ruled out:</p>
+<div class="tw"><table><thead><tr><th>Hypothesis</th><th>Result</th></tr></thead><tbody><tr><td>Wrong region on the command</td><td>Ruled out — Mumbai is correct for the create</td></tr><tr><td>Invalid credentials</td><td>Ruled out — <code>os ns get</code> works in both regions</td></tr><tr><td>Region not subscribed</td><td>Ruled out — B is subscribed to Jeddah</td></tr><tr><td>User not in the group</td><td>Ruled out — step 4 succeeded as that group</td></tr><tr><td>Wrong compartment in Admit</td><td>Ruled out — OCID matches the database</td></tr><tr><td><code>read</code> too weak on the source</td><td>Raised to <code>manage</code> on both sides — still 404</td></tr><tr><td>Malformed request</td><td>Ruled out by the <code>--debug</code> dump</td></tr></tbody></table></div>
+<h2><span class="num">6</span>Create the Standby in Jeddah (Works)</h2>
+<p>The same command, pointed at Jeddah instead of Mumbai:</p>
+<div class="code"><span class="lbl">POWERSHELL</span><pre><code>oci db autonomous-database create-cross-tenancy-disaster-recovery-details `
+  --profile B_tenancy `
+  --region me-jeddah-1 `
+  --compartment-id $env:TGT_STANDBY_CMP_OCID `
+  --source-id $env:PRIMARY_ADB_OCID `
+  --disaster-recovery-type ADG `
+  --display-name &quot;CTRATP-StandbyMumbai&quot;</code></pre></div>
+<div class="tw"><table><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody><tr><td>role</td><td>STANDBY</td></tr><tr><td>lifecycle-state</td><td>PROVISIONING → AVAILABLE</td></tr><tr><td>peer-db-ids</td><td>the primary CTRATP</td></tr><tr><td>disaster-recovery-type</td><td>ADG</td></tr><tr><td>compartment</td><td>Operations, in B_tenancy</td></tr><tr><td>kms-key-id</td><td>ORACLE_MANAGED_KEY</td></tr></tbody></table></div>
+<p><strong>What this proves:</strong> group, policies, source and target compartment were identical between the failing and the working attempt — only the target region changed. IAM was right all along; Autonomous Data Guard wouldn't accept Jeddah and Mumbai as a pair. (So the raise from <code>read</code> to <code>manage</code> may not have been needed; it was already in place, so the two can't be separated here.)</p>
+<p>Careful when reading the result: <code>dataguard-region-type: REMOTE_STANDBY_DG_REGION</code> and <code>disaster-recovery-region-type: REMOTE</code> refer to the <em>remote tenancy</em>, not a remote region.</p>
+<h3>Why Mumbai was refused</h3>
+<p>The standby's <strong>Disaster recovery</strong> tab spells it out: <em>"Local peer: 1, Cross-region peer: 0. You may create up to 1 local peer and 1 cross-region peer for every remote paired region that your tenancy is subscribed to."</em> Each region has designated DR partner regions, normally in the same geography, and Mumbai isn't one of Jeddah's. To see the allowed regions, open the <strong>primary</strong> → <strong>Disaster recovery → Add peer database</strong> and look at the region list. A_tenancy is already subscribed to Riyadh (<code>me-riyadh-1</code>), the likely candidate for real regional DR.</p>
+<h2><span class="num">7</span>Verify</h2>
+<p>Provisioning took just under five minutes for a 2 ECPU / 20 GB database:</p>
+<div class="shots one"><figure><a href="images/image4.png" target="_blank" rel="noopener"><img src="images/image4.png" alt="Standby CTRATP-StandbyMumbai provisioning in B_tenancy (root)/Operations, Autonomous Data Guard role Standby" loading="lazy"></a></figure></div>
+<div class="shots one"><figure><a href="images/image5.png" target="_blank" rel="noopener"><img src="images/image5.png" alt="Standby Disaster recovery tab: local peer 1, cross-region peer 0; peer CTRATP (cross-tenancy), role Primary, Available, Saudi Arabia West (Jeddah), Autonomous Data Guard" loading="lazy"></a></figure></div>
+<div class="code"><span class="lbl">POWERSHELL</span><pre><code># standby, B_tenancy
+oci db autonomous-database get --profile B_tenancy --region me-jeddah-1 `
+  --autonomous-database-id &lt;standby-ocid&gt; `
+  --query &#x27;data.{role:role, state:&quot;lifecycle-state&quot;, dg:&quot;is-data-guard-enabled&quot;, peers:&quot;peer-db-ids&quot;}&#x27;
+
+# primary, A_tenancy
+oci db autonomous-database get --profile A_tenancy `
+  --autonomous-database-id $env:PRIMARY_ADB_OCID `
+  --query &#x27;data.{role:role, peers:&quot;peer-db-ids&quot;, dg:&quot;is-data-guard-enabled&quot;}&#x27;
+
+# give it a name that matches where it lives
+oci db autonomous-database update --profile B_tenancy --region me-jeddah-1 `
+  --autonomous-database-id &lt;standby-ocid&gt; `
+  --display-name &quot;CTRATP-StandbyXTenancy-JED&quot; --force</code></pre></div>
+<p>Each side should list the other in <code>peer-db-ids</code>; <code>is-data-guard-enabled</code> flips to true when provisioning completes. Rename the standby — a name that says Mumbai for a database in Jeddah will be misread during an incident. The Full Stack DR warning about missing policy permissions is harmless unless you use Full Stack DR.</p>
+<h2><span class="num">8</span>Switchover</h2>
+<div class="code"><span class="lbl">POWERSHELL</span><pre><code>oci db autonomous-database switchover --profile B_tenancy --region me-jeddah-1 `
+  --autonomous-database-id &lt;standby-ocid&gt; `
+  --peer-db-id $env:PRIMARY_ADB_OCID `
+  --wait-for-state AVAILABLE</code></pre></div>
+<div class="shots one"><figure><a href="images/image6.png" target="_blank" rel="noopener"><img src="images/image6.png" alt="Primary work requests: Switchover Autonomous AI Database in progress, Enable cross-region Autonomous Data Guard succeeded, Create Autonomous AI Database succeeded" loading="lazy"></a></figure></div>
+<p>The standby creation is logged as <em>"Enable cross-region Autonomous Data Guard"</em> although both databases are in Jeddah — Oracle uses "cross-region" internally for a remote-tenancy peer.</p>
+<h3>After the roles swap</h3>
+<ul><li>Automatic backups follow the primary role, so they start running in B_tenancy — and so does the primary's billing.</li><li>Applications must reconnect to the B_tenancy database with its own wallet and network settings.</li><li>The policies only let <strong>B's group</strong> act on A's database. Keep running all Data Guard operations as that group, or build the mirror pair (Endorse in A, Admit in B) so A's admins can act on their own.</li></ul>
+<h2>Issues and Fixes</h2>
+<div class="tw"><table><thead><tr><th>#</th><th>Symptom</th><th>Real cause</th><th>Fix</th></tr></thead><tbody><tr><td>1</td><td>404 <code>NotAuthorizedOrNotFound</code>; endpoint Mumbai, OCID Jeddah</td><td>The CLI ignores the region in the OCID; the B profile pointed at Mumbai</td><td>Add <code>--region me-jeddah-1</code>; read <code>request_endpoint</code> in every error</td></tr><tr><td>2</td><td>401 <code>NotAuthenticated</code> at Jeddah</td><td>B wasn't subscribed to Jeddah, so Jeddah couldn't validate its users or keys</td><td>Subscribe B to <code>me-jeddah-1</code> (permanent; needs tenancy admin)</td></tr><tr><td>3</td><td>409 "matching request still in progress"</td><td>A second click on Subscribe</td><td>Don't retry; poll <code>oci iam region-subscription list</code> until READY</td></tr><tr><td>4</td><td>403 "go to your home region FRA"</td><td>IAM writes are pinned to the home region (Frankfurt)</td><td>Add the <code>A_tenancy_frankfurt</code> profile for policy writes</td></tr><tr><td>5</td><td>401, later 404, right after changes</td><td>Identity replication: users/keys first, then groups and policies</td><td>Wait ~15 min after subscribing, ~10 min after each policy edit</td></tr><tr><td>6</td><td>404 on create with <code>read</code> on the source</td><td>Hypothesis: creating a peer writes to the primary</td><td>Raised to <code>manage</code> — didn't fix it; the real cause was the region pair</td></tr></tbody></table></div>
+<div class="tw"><table><thead><tr><th>CLI mechanic</th><th>Fix</th></tr></thead><tbody><tr><td><code>oci iam policy update</code> rejects <code>--statements</code> alone</td><td>Also pass <code>--version-date ""</code></td></tr><tr><td>A misspelt PowerShell variable (<code>TGT__STANDBY_CMP_OCID</code>) gives no error</td><td>Echo every variable before use</td></tr></tbody></table></div>
+<h2>Reading OCI Error Codes</h2>
+<div class="tw"><table><thead><tr><th>Code</th><th>Meaning</th><th>Where to look</th></tr></thead><tbody><tr><td>404 NotAuthorizedOrNotFound</td><td>The endpoint denies access or can't see the resource</td><td>A missing <code>--region</code>; otherwise a real policy gap</td></tr><tr><td>401 NotAuthenticated</td><td>The region can't validate your credentials</td><td>Region subscription or identity replication — not policies</td></tr><tr><td>403 NotAllowed, "home region"</td><td>IAM write sent to a non-home region</td><td>Use a profile for the home region</td></tr><tr><td>409 request in progress</td><td>Duplicate of a running request</td><td>Stop and poll</td></tr></tbody></table></div>
+<p>OCI returns 404 instead of 403 for denied reads on purpose, so a denial can't prove a resource exists. Always read <code>request_endpoint</code> first.</p>
+<h2>Pre-Flight Checklist for the Next Build</h2>
+<ol><li><strong>Check the region pair first</strong> — primary → Disaster recovery → Add peer database shows the allowed regions. No policy works around an unsupported pair.</li><li>Check region subscriptions in both tenancies; the standby tenancy must be subscribed to the primary's region. Start this first — it's permanent and can take up to an hour.</li><li>Find each tenancy's home region and create the profile for IAM writes up front.</li><li>Prove authentication with <code>oci os ns get --profile &lt;p&gt; --region &lt;r&gt;</code> in every region you'll touch.</li><li>Pass <code>--region</code> on every command for a resource outside the profile's region.</li><li>Wait after every IAM change.</li><li>Use <code>compartment id &lt;ocid&gt;</code> in policies.</li><li>Echo every shell variable before using it.</li><li>Keep Endorse and Admit identical in verb and resource type.</li><li>Change one thing at a time and verify it landed.</li></ol>
+<h2>Before Relying on It in an Outage</h2>
+<ul><li>Download the standby's own wallet; configure its access control lists or private endpoint — network settings aren't replicated.</li><li>Recreate what applications depend on: Vault secrets, DBMS_CLOUD credentials, buckets, database links, scheduler endpoints.</li><li>Create alarms on apply lag and on the standby leaving AVAILABLE; record a baseline lag.</li><li>Build the mirror-image policies, and agree in writing who may declare a disaster — there is no automatic failover for a cross-tenancy standby.</li><li>Drill with a snapshot standby and time each phase; put the measured time in the DR plan.</li><li>For regional DR, add a peer in a region paired with Jeddah, with the standby tenancy subscribed there.</li></ul>
+<p class="cap">Open questions to confirm against Oracle documentation: whether <code>read</code> or <code>manage</code> is really required on the source (serverless and dedicated docs differ), whether customer-managed keys work with a cross-tenancy standby, and the current published RPO/RTO. Related: <a href="../oracle-autonomous-database-disaster-recovery/oracle-autonomous-database-disaster-recovery.html">Oracle Autonomous Database disaster recovery</a> · <a href="../fundamentals-of-oci/fundamentals-of-oci.html">Fundamentals of OCI</a>.</p>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>
