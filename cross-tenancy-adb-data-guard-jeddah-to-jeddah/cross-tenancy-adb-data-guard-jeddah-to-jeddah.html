@@ -69,9 +69,9 @@
 <div class="meta">By Sunke Nithin · October 17, 2026 &nbsp; <span class="tag">CLOUD</span><span class="tag">OCI</span><span class="tag">ADB</span><span class="tag">Data Guard</span></div>
 <p class="lead">Autonomous Data Guard can keep a standby in a <strong>different OCI tenancy</strong>. Here the source database <code>CTRATP</code> lives in <strong>A_tenancy</strong> and its standby is created in <strong>B_tenancy</strong> — both in the same region, Jeddah (<code>me-jeddah-1</code>). The Console can't set up a cross-tenancy standby, so everything is done with the OCI CLI from Windows PowerShell.</p>
 <h2>Source and Target</h2>
-<div class="tw"><table><thead><tr><th></th><th>Source (primary)</th><th>Target (standby)</th></tr></thead><tbody><tr><td>Tenancy</td><td>A_tenancy</td><td>B_tenancy</td></tr><tr><td>Region</td><td>me-jeddah-1</td><td>me-jeddah-1</td></tr><tr><td>Database</td><td>CTRATP — 2 ECPU, 20 GB, Transaction Processing</td><td>created by this procedure</td></tr><tr><td>Compartment</td><td>nslabs (nested)</td><td>Operations (top level)</td></tr><tr><td>Tenancy home region (IAM writes)</td><td>eu-frankfurt-1</td><td>ap-mumbai-1</td></tr><tr><td>CLI profiles</td><td>A_tenancy, A_tenancy_frankfurt</td><td>B_tenancy (+ <code>--region me-jeddah-1</code>)</td></tr></tbody></table></div>
-<div class="shots one"><figure><a href="images/image1.png" target="_blank" rel="noopener"><img src="images/image1.png" alt="Diagram: eu-frankfurt-1 is Tenancy A home region for IAM writes (A_tenancy_frankfurt); me-jeddah-1 holds both the primary CTRATP (A_tenancy) and the cross-tenancy standby (B_tenancy --region me-jeddah-1) with Data Guard redo between them; ap-mumbai-1 is Tenancy B home region where the standby was refused as not a paired DR region" loading="lazy"></a></figure></div>
-<p>Both databases are in Jeddah; the other two regions only matter for identity. <strong>IAM writes always go to a tenancy's home region</strong> — Frankfurt for A, Mumbai for B — while every database call goes to Jeddah. The CLI picks its endpoint from the profile's <code>region=</code> or from <code>--region</code>, never from the region inside an OCID.</p>
+<div class="tw"><table><thead><tr><th></th><th>Source (primary)</th><th>Target (standby)</th></tr></thead><tbody><tr><td>Tenancy</td><td>A_tenancy</td><td>B_tenancy</td></tr><tr><td>Region</td><td>me-jeddah-1</td><td>me-jeddah-1</td></tr><tr><td>Database</td><td>CTRATP — 2 ECPU, 20 GB, Transaction Processing</td><td>created by this procedure</td></tr><tr><td>Compartment</td><td>nslabs (nested)</td><td>Operations (top level)</td></tr><tr><td>Tenancy home region (IAM writes)</td><td>eu-frankfurt-1</td><td>ap-mumbai-1</td></tr><tr><td>CLI profile — Data Guard work (Jeddah)</td><td><code>A_tenancy</code></td><td><code>B_tenancy</code></td></tr><tr><td>CLI profile — IAM writes (home region)</td><td><code>A_tenancy_frankfurt</code></td><td><code>B_tenancy_mumbai</code></td></tr></tbody></table></div>
+<div class="shots one"><figure><a href="images/image1.png" target="_blank" rel="noopener"><img src="images/image1.png" alt="Diagram: eu-frankfurt-1 is Tenancy A home region for IAM writes (A_tenancy_frankfurt); me-jeddah-1 holds both the primary CTRATP (A_tenancy) and the cross-tenancy standby (B_tenancy) with Data Guard redo between them; ap-mumbai-1 is Tenancy B home region where the standby was refused as not a paired DR region" loading="lazy"></a></figure></div>
+<p>Both databases are in Jeddah; the other two regions only matter for identity. <strong>IAM writes always go to a tenancy's home region</strong> — Frankfurt for A, Mumbai for B — while every database call goes to Jeddah. So each tenancy gets two profiles: one for its home region and one for Jeddah. The CLI picks its endpoint from the profile's <code>region=</code> (or <code>--region</code>), never from the region inside an OCID.</p>
 <h3>What this protects against</h3>
 <div class="tw"><table><thead><tr><th>Risk</th><th>Covered?</th></tr></thead><tbody><tr><td>Loss of a tenancy, accidental deletion, compartment or account compromise</td><td>Yes</td></tr><tr><td>Database or instance failure</td><td>Yes</td></tr><tr><td>A Jeddah regional outage</td><td>No — both copies are in Jeddah</td></tr></tbody></table></div>
 <div class="note"><strong>Why not another region?</strong> I first tried to put the target in Mumbai (B_tenancy's home region). Autonomous Data Guard refused it with a 404, because a cross-region standby must be in one of the source region's <em>paired</em> DR regions, and Mumbai isn't paired with Jeddah. The identical command against Jeddah worked straight away. To see which regions are allowed, open the source database → <strong>Disaster recovery → Add peer database</strong> and look at the region list.</div>
@@ -95,7 +95,15 @@ region=eu-frankfurt-1
 key_file=C:/Users/&lt;user&gt;/.oci/oci_api_key.pem
 
 [B_tenancy]
-# B&#x27;s home region (IAM writes); database calls add --region me-jeddah-1
+# B&#x27;s Data Guard region - where the standby is created and managed
+user=ocid1.user.oc1..&lt;B-user-ocid&gt;
+fingerprint=&lt;key-fingerprint&gt;
+tenancy=ocid1.tenancy.oc1..&lt;B-tenancy-ocid&gt;
+region=me-jeddah-1
+key_file=C:/Users/&lt;user&gt;/.oci/oci_api_key.pem
+
+[B_tenancy_mumbai]
+# same user, tenancy and key as B_tenancy - B&#x27;s home region, for IAM writes
 user=ocid1.user.oc1..&lt;B-user-ocid&gt;
 fingerprint=&lt;key-fingerprint&gt;
 tenancy=ocid1.tenancy.oc1..&lt;B-tenancy-ocid&gt;
@@ -103,8 +111,9 @@ region=ap-mumbai-1
 key_file=C:/Users/&lt;user&gt;/.oci/oci_api_key.pem</code></pre></div>
 <p>Prove authentication before anything else — this call needs valid credentials and almost no permissions:</p>
 <div class="code"><span class="lbl">POWERSHELL</span><pre><code>oci os ns get --profile A_tenancy
-oci os ns get --profile B_tenancy --region me-jeddah-1   # 401 = B not subscribed to Jeddah yet</code></pre></div>
-<div class="code"><span class="lbl">POWERSHELL</span><pre><code>oci iam region-subscription list --profile B_tenancy --output table
+oci os ns get --profile B_tenancy_mumbai
+oci os ns get --profile B_tenancy          # Jeddah: 401 = B not subscribed to Jeddah yet</code></pre></div>
+<div class="code"><span class="lbl">POWERSHELL</span><pre><code>oci iam region-subscription list --profile B_tenancy_mumbai --output table
 # me-jeddah-1 must show READY</code></pre></div>
 <p>If the same API key is uploaded in both tenancies (as here), remember to replace it in both when you rotate it.</p>
 <h2><span class="num">2</span>Variables and Source Details</h2>
@@ -131,15 +140,15 @@ $env:TGT_STANDBY_CMP_OCID</code></pre></div>
            workload:&quot;db-workload&quot;, ecpu:&quot;compute-count&quot;, storage:&quot;data-storage-size-in-gbs&quot;,
            license:&quot;license-model&quot;, key:&quot;key-store-id&quot;, free:&quot;is-free-tier&quot;}&#x27;</code></pre></div>
 <h2><span class="num">3</span>IAM in the Target Tenancy (B_tenancy)</h2>
-<p>B_tenancy owns the group that does the work. It needs permission to create the standby in its own compartment, and an <strong>Endorse</strong> saying what the group may do in A_tenancy. IAM writes go to B's home region, which is the profile's default:</p>
+<p>B_tenancy owns the group that does the work. It needs permission to create the standby in its own compartment, and an <strong>Endorse</strong> saying what the group may do in A_tenancy. IAM writes go to B's home region, Mumbai, so use the <code>B_tenancy_mumbai</code> profile:</p>
 <div class="code"><span class="lbl">POWERSHELL</span><pre><code>$env:DEST_GROUP_OCID = oci iam group create `
-  --profile B_tenancy `
+  --profile B_tenancy_mumbai `
   --compartment-id $env:TGT_TENANCY_OCID `
   --name ADG-CrossTenancy-Admins `
   --description &quot;Creates and manages the cross-tenancy ADG standby&quot; `
   --query &#x27;data.id&#x27; --raw-output
 
-oci iam user-group-membership add --profile B_tenancy `
+oci iam user-group-membership add --profile B_tenancy_mumbai `
   --user-id &lt;B-user-ocid&gt; `
   --group-id $env:DEST_GROUP_OCID</code></pre></div>
 <p>Policy <code>cross-tenancy-adb-adg</code> in B's <strong>root</strong> compartment:</p>
@@ -176,7 +185,6 @@ oci iam policy update --profile A_tenancy_frankfurt `
 <h2><span class="num">5</span>Prove the Cross-Tenancy Access</h2>
 <p>Read the source database as B's group, in Jeddah:</p>
 <div class="code"><span class="lbl">POWERSHELL</span><pre><code>oci db autonomous-database get --profile B_tenancy `
-  --region me-jeddah-1 `
   --autonomous-database-id $env:PRIMARY_ADB_OCID `
   --query &#x27;data.{name:&quot;display-name&quot;, state:&quot;lifecycle-state&quot;, role:role}&#x27;
 
@@ -185,11 +193,10 @@ oci iam policy update --profile A_tenancy_frankfurt `
   &quot;role&quot;: null,
   &quot;state&quot;: &quot;AVAILABLE&quot;
 }</code></pre></div>
-<p>Success means IAM is right (<code>role: null</code> just means no peer yet). A <code>404</code> here is either a missing <code>--region</code> or a policy gap; a <code>401</code> means B's credentials don't work in Jeddah yet (subscription or replication) — policies aren't even consulted.</p>
+<p>The <code>B_tenancy</code> profile already points at Jeddah, so no <code>--region</code> is needed. Success means IAM is right (<code>role: null</code> just means no peer yet). A <code>404</code> here is either a call sent to the wrong region or a policy gap; a <code>401</code> means B's credentials don't work in Jeddah yet (subscription or replication) — policies aren't even consulted.</p>
 <h2><span class="num">6</span>Create the Standby in Jeddah</h2>
 <div class="code"><span class="lbl">POWERSHELL</span><pre><code>oci db autonomous-database create-cross-tenancy-disaster-recovery-details `
   --profile B_tenancy `
-  --region me-jeddah-1 `
   --compartment-id $env:TGT_STANDBY_CMP_OCID `
   --source-id $env:PRIMARY_ADB_OCID `
   --disaster-recovery-type ADG `
@@ -202,7 +209,7 @@ oci iam policy update --profile A_tenancy_frankfurt `
 <div class="shots one"><figure><a href="images/image5.png" target="_blank" rel="noopener"><img src="images/image5.png" alt="Target Disaster recovery tab: local peer 1, cross-region peer 0; peer CTRATP (cross-tenancy), role Primary, Available, Saudi Arabia West (Jeddah), Autonomous Data Guard" loading="lazy"></a></figure></div>
 <p>The target's <strong>Disaster recovery</strong> tab shows <em>Local peer: 1</em> — the same-region standby — and the peer row: CTRATP (cross-tenancy), role Primary, Available, Saudi Arabia West (Jeddah). (My screenshots still show the first display name, CTRATP-StandbyMumbai; I renamed it afterwards.) From the CLI:</p>
 <div class="code"><span class="lbl">POWERSHELL</span><pre><code># target (standby), B_tenancy
-oci db autonomous-database get --profile B_tenancy --region me-jeddah-1 `
+oci db autonomous-database get --profile B_tenancy `
   --autonomous-database-id &lt;standby-ocid&gt; `
   --query &#x27;data.{role:role, state:&quot;lifecycle-state&quot;, dg:&quot;is-data-guard-enabled&quot;, peers:&quot;peer-db-ids&quot;}&#x27;
 
@@ -213,7 +220,7 @@ oci db autonomous-database get --profile A_tenancy `
 <p>Each side lists the other in <code>peer-db-ids</code>; <code>is-data-guard-enabled</code> turns true when provisioning finishes. The Full Stack DR warning about missing permissions is harmless unless you use Full Stack DR.</p>
 <h2><span class="num">8</span>Switchover</h2>
 <p>A switchover swaps the roles with no data loss — use it for drills; fail over only when the source is really lost. Both peers are in Jeddah, so the same-region form applies:</p>
-<div class="code"><span class="lbl">POWERSHELL</span><pre><code>oci db autonomous-database switchover --profile B_tenancy --region me-jeddah-1 `
+<div class="code"><span class="lbl">POWERSHELL</span><pre><code>oci db autonomous-database switchover --profile B_tenancy `
   --autonomous-database-id &lt;standby-ocid&gt; `
   --peer-db-id $env:PRIMARY_ADB_OCID `
   --wait-for-state AVAILABLE</code></pre></div>
@@ -223,17 +230,17 @@ oci db autonomous-database get --profile A_tenancy `
   --autonomous-database-id $env:PRIMARY_ADB_OCID `
   --query &#x27;data.{name:&quot;display-name&quot;, role:role, state:&quot;lifecycle-state&quot;, switched:&quot;time-of-last-switchover&quot;}&#x27;
 
-oci db autonomous-database get --profile B_tenancy --region me-jeddah-1 `
+oci db autonomous-database get --profile B_tenancy `
   --autonomous-database-id &lt;standby-ocid&gt; `
   --query &#x27;data.{name:&quot;display-name&quot;, role:role, state:&quot;lifecycle-state&quot;, switched:&quot;time-of-last-switchover&quot;}&#x27;</code></pre></div>
 <h3>After the roles swap</h3>
 <ul><li>Automatic backups and the primary's billing move to B_tenancy.</li><li>Applications reconnect to the B_tenancy database with its own wallet and network settings.</li><li>Only B's group has rights on A's database. Run all Data Guard operations as that group, or add the mirror pair (Endorse in A, Admit in B) so A's admins can act independently.</li></ul>
 <h2>Problems I Hit and How to Recognize Them</h2>
-<div class="tw"><table><thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead><tbody><tr><td>404 NotAuthorizedOrNotFound; <code>request_endpoint</code> is Mumbai</td><td>B_tenancy's profile defaults to Mumbai; the CLI ignores the region in the OCID</td><td>Add <code>--region me-jeddah-1</code></td></tr><tr><td>401 NotAuthenticated at Jeddah</td><td>B_tenancy not subscribed to Jeddah, or identity not replicated yet</td><td>Subscribe; wait ~15 minutes</td></tr><tr><td>409 "matching request still in progress"</td><td>Clicked Subscribe twice</td><td>Poll <code>region-subscription list</code> until READY</td></tr><tr><td>403 "go to your home region FRA"</td><td>IAM write sent to Jeddah</td><td>Use <code>A_tenancy_frankfurt</code> for A's policy writes</td></tr><tr><td>404 right after a policy edit</td><td>Policy replication lag</td><td>Wait ~10 minutes and retry</td></tr><tr><td>404 on create with the target in Mumbai</td><td>Mumbai isn't a paired DR region for Jeddah</td><td>Create in Jeddah, or in a region the source lists as a peer</td></tr></tbody></table></div>
+<div class="tw"><table><thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead><tbody><tr><td>404 NotAuthorizedOrNotFound; <code>request_endpoint</code> is Mumbai</td><td>A database call made with the Mumbai (home-region) profile; the CLI ignores the region in the OCID</td><td>Use the Jeddah profile <code>B_tenancy</code> (or add <code>--region me-jeddah-1</code>)</td></tr><tr><td>401 NotAuthenticated at Jeddah</td><td>B_tenancy not subscribed to Jeddah, or identity not replicated yet</td><td>Subscribe; wait ~15 minutes</td></tr><tr><td>409 "matching request still in progress"</td><td>Clicked Subscribe twice</td><td>Poll <code>region-subscription list</code> until READY</td></tr><tr><td>403 "go to your home region"</td><td>IAM write sent to Jeddah</td><td>Use <code>A_tenancy_frankfurt</code> / <code>B_tenancy_mumbai</code> for policy writes</td></tr><tr><td>404 right after a policy edit</td><td>Policy replication lag</td><td>Wait ~10 minutes and retry</td></tr><tr><td>404 on create with the target in Mumbai</td><td>Mumbai isn't a paired DR region for Jeddah</td><td>Create in Jeddah, or in a region the source lists as a peer</td></tr></tbody></table></div>
 <div class="tw"><table><thead><tr><th>CLI detail</th><th>Fix</th></tr></thead><tbody><tr><td><code>oci iam policy update</code> rejects <code>--statements</code> alone</td><td>Also pass <code>--version-date ""</code></td></tr><tr><td>A misspelt PowerShell variable gives no error</td><td>Echo every variable before use</td></tr></tbody></table></div>
 <p>OCI returns 404 rather than 403 for denied requests, so the response never confirms a resource exists. Read <code>request_endpoint</code> in every error first — it shows which region actually got the call.</p>
 <h2>Checklist</h2>
-<ol><li>Decide the target region: same region (as here) or a paired region from the source's <em>Add peer database</em> list.</li><li>Subscribe the target tenancy to that region first.</li><li>Know each tenancy's home region and have a profile for its IAM writes.</li><li>Test authentication with <code>oci os ns get --region &lt;region&gt;</code>.</li><li>Pass <code>--region me-jeddah-1</code> on every B_tenancy call for a Jeddah resource.</li><li>Keep Endorse and Admit identical; use compartment OCIDs; wait after each IAM change.</li></ol>
+<ol><li>Decide the target region: same region (as here) or a paired region from the source's <em>Add peer database</em> list.</li><li>Subscribe the target tenancy to that region first.</li><li>Know each tenancy's home region and have a profile for its IAM writes.</li><li>Test authentication with <code>oci os ns get --region &lt;region&gt;</code>.</li><li>Use the Jeddah profile (<code>B_tenancy</code>) for every database call and the home-region profile (<code>B_tenancy_mumbai</code>) for IAM writes; check <code>request_endpoint</code> in any error.</li><li>Keep Endorse and Admit identical; use compartment OCIDs; wait after each IAM change.</li></ol>
 <h2>Before Relying on It in an Outage</h2>
 <ul><li>Download the standby's own wallet and set up its access control lists or private endpoint — network settings aren't copied from the source.</li><li>Recreate what applications need in B_tenancy: Vault secrets, DBMS_CLOUD credentials, buckets, database links.</li><li>Alarms on apply lag and on the standby leaving AVAILABLE; record a baseline lag.</li><li>Agree in writing who may declare a disaster — there's no automatic failover for a cross-tenancy standby.</li><li>Drill with a switchover or snapshot standby and time each phase.</li><li>For protection against a regional outage, add a second peer in a region paired with Jeddah, with the target tenancy subscribed there.</li></ul>
 <p class="cap">Related: <a href="../oracle-autonomous-database-disaster-recovery/oracle-autonomous-database-disaster-recovery.html">Oracle Autonomous Database disaster recovery</a> · <a href="../fundamentals-of-oci/fundamentals-of-oci.html">Fundamentals of OCI</a>.</p>
