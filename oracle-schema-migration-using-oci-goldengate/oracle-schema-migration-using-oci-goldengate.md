@@ -1,12 +1,12 @@
 ---
-title: "Oracle Schema Migration Using OCI GoldenGate: Online Move of INSURANCE_DB from PROD to UAT"
+title: "Oracle Schema Migration Using OCI GoldenGate: Online Move from Source to Target Database"
 author: "Sunke Nithin"
 date: 2026-10-27
 categories: ["Replication"]
 tags: ["Goldengate", "Oracle", "OCI", "Migration"]
 ---
 
-# Oracle Schema Migration Using OCI GoldenGate: Online Move of INSURANCE_DB from PROD to UAT
+# Oracle Schema Migration Using OCI GoldenGate: Online Move from Source to Target Database
 
 This post moves the **INSURANCE_DB** schema from the production database **ORDPROD** to the UAT database **ORDUAT** with very little downtime, using the managed **OCI GoldenGate** service (Microservices, 23ai console). The target schema is pre-created empty, an integrated extract starts capturing, the existing rows are copied at a known SCN with Data Pump, and a parallel replicat applies every change made after that SCN. At cut-over you only wait for lag to reach zero.
 
