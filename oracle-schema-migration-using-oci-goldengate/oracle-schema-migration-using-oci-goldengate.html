@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oracle Schema Migration with OCI GoldenGate</title>
+</head>
+<body>
+<!-- ===== Paste everything from here to the END marker into Blogger's HTML view ===== -->
+<div class="tsn-post">
+<style>
+
+.tsn-post{--ink:#1f2933;--muted:#5b6672;--accent:#c74634;--accent-soft:#fdf1ef;--accent-ink:#a3372a;--line:#e3e7eb;--code-bg:#1e2430;--code-ink:#e6edf3;--note-bg:#eef6ff;--note-line:#2f6fb3;--warn-bg:#fff7e6;--warn-line:#d48806;
+  font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.7;font-size:16px;max-width:860px;margin:0 auto;padding:0 16px 40px}
+.tsn-post *{box-sizing:border-box}
+.tsn-post h1{font-size:1.9em;line-height:1.25;margin:.6em 0 .3em}
+.tsn-post h2{font-size:1.35em;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+.tsn-post h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:0 .45em;margin-right:.45em;font-size:.85em}
+.tsn-post h3{font-size:1.06em;margin:1.6em 0 .4em;padding-left:.6em;border-left:4px solid var(--accent)}
+.tsn-post p{margin:.6em 0}
+.tsn-post .meta{color:var(--muted);font-size:.9em;margin-bottom:1.2em}
+.tsn-post .tag{display:inline-block;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:1px 10px;font-size:.8em;margin-right:4px;font-weight:600}
+.tsn-post .lead{font-size:1.05em;background:#f7f9fa;border-left:4px solid var(--accent);padding:12px 16px;border-radius:0 8px 8px 0}
+.tsn-post code{font-family:"JetBrains Mono",Consolas,"Courier New",monospace;font-size:.9em;background:#f1f3f5;padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.tsn-post .code{position:relative;margin:.8em 0 1.2em}
+.tsn-post .code pre{background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;margin:0;font-size:.85em;line-height:1.55}
+.tsn-post .code pre code{background:none;padding:0;color:inherit;font-size:1em;overflow-wrap:normal}
+.tsn-post .code .lbl{position:absolute;top:0;left:12px;transform:translateY(-50%);background:var(--accent);color:#fff;font-size:.7em;padding:1px 8px;border-radius:4px;font-weight:600;letter-spacing:.03em}
+.tsn-post .cm{color:#8b98a8}
+.tsn-post .tw{overflow-x:auto;margin:.8em 0}
+.tsn-post table{width:100%;border-collapse:collapse;font-size:.93em}
+.tsn-post th,.tsn-post td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+.tsn-post th{background:#f5f7f9}
+.tsn-post ul,.tsn-post ol{padding-left:1.4em}
+.tsn-post li{margin:.3em 0}
+.tsn-post .lab{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin:1em 0}
+.tsn-post .lab div{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:#fff;font-size:.9em}
+.tsn-post .lab b{display:block;color:var(--accent-ink);font-size:.82em;text-transform:uppercase;letter-spacing:.05em}
+.tsn-post .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:.8em 0}
+.tsn-post .flow span{background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:.88em;font-weight:600}
+.tsn-post .flow b{color:var(--accent)}
+.tsn-post .shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px;margin:.8em 0 1.2em;align-items:start}
+.tsn-post .shots.one{grid-template-columns:1fr}
+.tsn-post .shots figure{margin:0}
+.tsn-post .shots img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:8px;background:#fff;transition:box-shadow .15s ease}
+.tsn-post .shots a:hover img{box-shadow:0 4px 14px rgba(0,0,0,.14)}
+.tsn-post .shots.one img{max-width:100%;width:auto;margin:0 auto}
+.tsn-post .cap{color:var(--muted);font-size:.85em;margin-top:-.6em}
+.tsn-post .toc{background:#f7f9fa;border:1px solid var(--line);border-radius:8px;padding:10px 18px}
+.tsn-post .toc ol{margin:.3em 0}
+.tsn-post a{color:var(--accent-ink)}
+@media (max-width:600px){.tsn-post{font-size:15px}.tsn-post h1{font-size:1.5em}}
+
+.tsn-post .note,.tsn-post .warn{padding:10px 14px;border-radius:8px;margin:1em 0;border-left:4px solid}
+.tsn-post .note{background:var(--note-bg);border-color:var(--note-line)}
+.tsn-post .warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.tsn-post .copy{position:absolute;top:8px;right:8px;background:#3a4252;color:#e6edf3;border:0;border-radius:5px;padding:3px 10px;font-size:.75em;cursor:pointer;opacity:.85}
+.tsn-post .copy:hover{opacity:1}
+.tsn-post .check{list-style:none;padding:0;counter-reset:c}
+.tsn-post .check>li{position:relative;padding-left:2.4em;margin:.7em 0}
+.tsn-post .check>li::before{counter-increment:c;content:counter(c);position:absolute;left:0;top:.1em;width:1.7em;height:1.7em;line-height:1.7em;text-align:center;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:.85em}
+
+.tsn-post details{margin:.6em 0 1.2em}
+.tsn-post summary{cursor:pointer;color:var(--accent-ink);font-weight:600;font-size:.95em}
+.tsn-post .code pre.tall{max-height:640px;overflow:auto}
+</style>
+
+<h1>Oracle Schema Migration Using OCI GoldenGate: Online Move of INSURANCE_DB from PROD to UAT</h1>
+<div class="meta">By Sunke Nithin · October 27, 2026 &nbsp; <span class="tag">REPLICATION</span><span class="tag">GoldenGate</span><span class="tag">Oracle</span><span class="tag">OCI</span><span class="tag">Migration</span></div>
+<p class="lead">This post moves the <strong>INSURANCE_DB</strong> schema from the production database <strong>ORDPROD</strong> to the UAT database <strong>ORDUAT</strong> with very little downtime, using the managed <strong>OCI GoldenGate</strong> service (Microservices, 23ai console). The target schema is pre-created empty, an integrated extract starts capturing, the existing rows are copied at a known SCN with Data Pump, and a parallel replicat applies every change made after that SCN. At cut-over you only wait for lag to reach zero.</p>
+<div class="toc"><strong>Steps</strong><ol><li><a href="#s1">Create the GoldenGate Deployment</a></li><li><a href="#s2">Prepare the Source Database</a></li><li><a href="#s3">Prepare the Target Database</a></li><li><a href="#s4">Database Connections</a></li><li><a href="#s5">Pre-create the Target Schema</a></li><li><a href="#s6">Trandata, Heartbeat and Checkpoint</a></li><li><a href="#s7">Create the Extract EXTMIG</a></li><li><a href="#s8">Initial Load at a Known SCN</a></li><li><a href="#s9">Create the Replicat REPMG</a></li><li><a href="#s10">Monitor</a></li><li><a href="#s11">Switchover</a></li><li><a href="#s12">Validation</a></li><li><a href="#s13">Fallback and Cleanup</a></li></ol></div>
+<h2>Environment</h2>
+<div class="tw"><table><thead><tr><th></th><th>Source</th><th>Target</th></tr></thead><tbody><tr><td>Host</td><td><code>dbhostprod</code></td><td><code>dbhostuat</code></td></tr><tr><td>Database / PDB</td><td>ORDPROD / <code>ORDPROD_PDB1</code> (19c)</td><td>ORDUAT / <code>ORDUAT_PDB1</code> (19c)</td></tr><tr><td>Schema</td><td>INSURANCE_DB</td><td>INSURANCE_DB</td></tr><tr><td>GoldenGate user</td><td><code>ggadmin</code> (PDB), <code>C##GGADMIN</code> (CDB)</td><td><code>ggadmin</code> (PDB)</td></tr><tr><td>GoldenGate connection</td><td><code>oraprod_pdb</code>, <code>oraprod_cdb</code></td><td><code>orauat_pdb</code></td></tr></tbody></table></div>
+<p>GoldenGate deployment: <strong>gg-ora2ora</strong> (Oracle Database technology, one deployment that both captures and applies). Console reached at <code>https://localhost:2443</code> through an OCI Bastion session. Processes: extract <strong>EXTMIG</strong>, trail <strong>EA</strong>, replicat <strong>REPMG</strong>.</p>
+<div class="flow"><span>Deployment</span><b>→</b><span>Prepare source</span><b>→</b><span>Prepare target</span><b>→</b><span>Connections</span><b>→</b><span>Pre-create schema</span><b>→</b><span>Trandata</span><b>→</b><span>Extract</span><b>→</b><span>Initial load</span><b>→</b><span>Replicat</span><b>→</b><span>Monitor</span><b>→</b><span>Switchover</span><b>→</b><span>Validate</span></div>
+<div class="note">Everything about GoldenGate is done in the web console. SQL and the shell are only used to prepare the databases, copy the data and check the results.</div>
+<h2 id="s1"><span class="num">1</span>Create the GoldenGate Deployment</h2>
+<p>On OCI the managed service is the simplest choice: no install, patching or backups to look after. A self-managed Microservices install gives the same console if you prefer that.</p>
+<div class="code"><span class="lbl">OCI CONSOLE</span><pre><code>Oracle Database → GoldenGate → Deployments → Create deployment
+  Name:        gg-ora2ora
+  Technology:  Oracle Database
+  Subnet:      private subnet that reaches dbhostprod and dbhostuat
+  OCPU:        1–2, auto scaling as needed
+  Admin user:  ggadmin / &lt;password&gt;</code></pre></div>
+<p>When the deployment is <strong>Active</strong>: open it → <strong>Launch console</strong> → sign in with the admin user.</p>
+<div class="shots one"><figure><a href="images/image1.png" target="_blank" rel="noopener"><img src="images/image1.png" alt="OCI GoldenGate deployment gg-ora2ora details page: Active, Oracle AI Database type, version 23.26, private subnet" loading="lazy"></a></figure></div>
+<h2 id="s2"><span class="num">2</span>Prepare the Source Database</h2>
+<h3>Enable GoldenGate, force logging and supplemental logging</h3>
+<div class="code"><span class="lbl">SOURCE SQL</span><pre><code>ALTER SYSTEM SET enable_goldengate_replication = TRUE SCOPE = BOTH;
+ALTER SYSTEM SET streams_pool_size = 2G SCOPE = BOTH;
+ALTER DATABASE FORCE LOGGING;
+ALTER DATABASE ADD SUPPLEMENTAL LOG DATA;
+ALTER SYSTEM SWITCH LOGFILE;</code></pre></div>
+<h3>Create the GoldenGate capture user</h3>
+<p>On a <strong>19c or earlier</strong> CDB also create a common user <code>C##GGADMIN</code> in the root container for capture. From 21c a separate CDB user isn't needed.</p>
+<div class="code"><span class="lbl">SOURCE SQL (PDB)</span><pre><code>CREATE USER ggadmin IDENTIFIED BY "&lt;pwd&gt;" DEFAULT TABLESPACE users QUOTA UNLIMITED ON users;
+GRANT CREATE SESSION, CONNECT, RESOURCE, SELECT ANY DICTIONARY, SELECT ANY TRANSACTION TO ggadmin;
+EXEC DBMS_GOLDENGATE_AUTH.GRANT_ADMIN_PRIVILEGE('GGADMIN');</code></pre></div>
+<div class="warn">These grants are the minimum. The console's heartbeat and Trandata screens need a few more (CREATE VIEW, CREATE JOB …) — see <strong>Troubleshooting</strong> at the end for the full list if you hit ORA-01031.</div>
+<h3>Find data types and tables that need attention</h3>
+<p>LONG, ANYDATA, XMLTYPE, SDO_GEOMETRY and user-defined types need checking, and every table should have a primary or unique key so the replicat can find rows.</p>
+<div class="code"><span class="lbl">SOURCE SQL</span><pre><code>SELECT owner, table_name, column_name, data_type FROM dba_tab_columns
+WHERE  owner IN ('INSURANCE_DB') AND data_type IN ('LONG','LONG RAW','ANYDATA','XMLTYPE','SDO_GEOMETRY','BFILE')
+   OR (owner IN ('INSURANCE_DB') AND data_type_owner NOT IN ('SYS','PUBLIC') AND data_type_owner IS NOT NULL);
+
+-- tables without a primary or unique key
+SELECT owner, table_name FROM dba_tables t WHERE owner IN ('INSURANCE_DB')
+AND NOT EXISTS (SELECT 1 FROM dba_constraints c WHERE c.owner = t.owner AND c.table_name = t.table_name
+                AND c.constraint_type IN ('P','U'));</code></pre></div>
+<h2 id="s3"><span class="num">3</span>Prepare the Target Database</h2>
+<p>Only the apply user is created here; the application schema itself is created in step 5.</p>
+<div class="code"><span class="lbl">TARGET SQL (PDB)</span><pre><code>ALTER SYSTEM SET enable_goldengate_replication = TRUE SCOPE = BOTH;
+CREATE USER ggadmin IDENTIFIED BY "&lt;pwd&gt;" DEFAULT TABLESPACE users QUOTA UNLIMITED ON users;
+GRANT CREATE SESSION, CONNECT, RESOURCE, DBA TO ggadmin;
+EXEC DBMS_GOLDENGATE_AUTH.GRANT_ADMIN_PRIVILEGE('GGADMIN');</code></pre></div>
+<h2 id="s4"><span class="num">4</span>Database Connections</h2>
+<h3>Create the connections in OCI</h3>
+<div class="code"><span class="lbl">OCI CONSOLE</span><pre><code>GoldenGate → Connections → Create connection
+  oraprod_cdb : Oracle AI Database, ORDPROD (root), user C##GGADMIN
+  oraprod_pdb : Oracle AI Database, ORDPROD_pdb1.prvsharedsn.hubssvcn.oraclevcn.com, user ggadmin
+  orauat_pdb  : Oracle AI Database, ORDUAT_pdb1.prvsharedsn.hubssvcn.oraclevcn.com,  user ggadmin</code></pre></div>
+<p>Choose <strong>Select database</strong> and pick the DB system, DB home and database from the lists; the connection string is filled in for you. On the target only the PDB connection with <code>ggadmin</code> is needed.</p>
+<div class="shots"><figure><a href="images/image2.png" target="_blank" rel="noopener"><img src="images/image2.png" alt="GoldenGate Connections page with Create connection button" loading="lazy"></a></figure><figure><a href="images/image3.png" target="_blank" rel="noopener"><img src="images/image3.png" alt="Create connection form: name oraprod_cdb, type Oracle AI Database, DB system ORDPROD selected" loading="lazy"></a></figure><figure><a href="images/image4.png" target="_blank" rel="noopener"><img src="images/image4.png" alt="oraprod_cdb connection details: Active, user C##GGADMIN, connection string to dbhostprod" loading="lazy"></a></figure><figure><a href="images/image5.png" target="_blank" rel="noopener"><img src="images/image5.png" alt="Source connections oraprod_pdb and oraprod_cdb both Active" loading="lazy"></a></figure><figure><a href="images/image6.png" target="_blank" rel="noopener"><img src="images/image6.png" alt="Target connections orauat_pdb and orauat_cdb Active" loading="lazy"></a></figure></div>
+<h3>Assign the connections to the deployment</h3>
+<p>Deployment <strong>gg-ora2ora</strong> → <strong>Assigned connections</strong> → <strong>Assign connection</strong>, add the source and target connections, then use <strong>Test connection</strong> on each.</p>
+<div class="shots"><figure><a href="images/image7.png" target="_blank" rel="noopener"><img src="images/image7.png" alt="Deployment gg-ora2ora Assigned connections tab with Assign connection button" loading="lazy"></a></figure><figure><a href="images/image8.png" target="_blank" rel="noopener"><img src="images/image8.png" alt="Assign connection dialog with oraprod_cdb, oraprod_pdb, orauat_cdb and orauat_pdb" loading="lazy"></a></figure><figure><a href="images/image9.png" target="_blank" rel="noopener"><img src="images/image9.png" alt="Four connections assigned to the deployment" loading="lazy"></a></figure><figure><a href="images/image10.png" target="_blank" rel="noopener"><img src="images/image10.png" alt="Connection actions menu with Test connection" loading="lazy"></a></figure><figure><a href="images/image11.png" target="_blank" rel="noopener"><img src="images/image11.png" alt="Test connection: connectivity test passed successfully" loading="lazy"></a></figure></div>
+<h3>Check the credentials in the GoldenGate console</h3>
+<p>Each assigned connection appears in the deployment console under <strong>DB Connections</strong> as a credential in domain <strong>OracleGoldenGate</strong>. On a self-managed hub you add them yourself:</p>
+<div class="code"><span class="lbl">CONSOLE</span><pre><code>Administration Service → DB Connections → +
+  Domain: OracleGoldenGate  Alias: oraprod_pdb  User ID: ggadmin@dbhostprod:1521/ORDPROD_pdb1.prvsharedsn.hubssvcn.oraclevcn.com
+  Domain: OracleGoldenGate  Alias: orauat_pdb   User ID: ggadmin@dbhostuat:1521/ORDUAT_pdb1.prvsharedsn.hubssvcn.oraclevcn.com</code></pre></div>
+<p>Click <strong>Connect to database</strong> on each; if the Trandata / Checkpoint / Heartbeat panels open, the login works.</p>
+<div class="shots"><figure><a href="images/image12.png" target="_blank" rel="noopener"><img src="images/image12.png" alt="GoldenGate console DB Connections list: oraprod_cdb, oraprod_pdb, orauat_pdb in domain OracleGoldenGate" loading="lazy"></a></figure><figure><a href="images/image13.png" target="_blank" rel="noopener"><img src="images/image13.png" alt="Connect to database action on oraprod_cdb" loading="lazy"></a></figure><figure><a href="images/image14.png" target="_blank" rel="noopener"><img src="images/image14.png" alt="Connected to CDBROOT with the TRANDATA Information panel open" loading="lazy"></a></figure></div>
+<h2 id="s5"><span class="num">5</span>Pre-create the Target Schema</h2>
+<p>Create tablespaces, the user, roles and every object on the target <strong>before</strong> replication starts, so the replicat only applies rows.</p>
+<h3>Tablespaces the schema uses</h3>
+<div class="code"><span class="lbl">SOURCE SQL</span><pre><code>SELECT tablespace_name, ROUND(SUM(bytes)/1024/1024/1024,2) gb
+FROM   dba_segments WHERE owner IN ('INSURANCE_DB') GROUP BY tablespace_name ORDER BY 1;</code></pre></div>
+<div class="shots one"><figure><a href="images/image15.png" target="_blank" rel="noopener"><img src="images/image15.png" alt="Query output: INSURANCE_DB uses tablespace OSSTS, 0.37 GB" loading="lazy"></a></figure></div>
+<div class="code"><span class="lbl">TARGET SQL</span><pre><code>CREATE TABLESPACE OSSTS DATAFILE SIZE 1G AUTOEXTEND ON;   -- one per tablespace above</code></pre></div>
+<div class="shots one"><figure><a href="images/image16.png" target="_blank" rel="noopener"><img src="images/image16.png" alt="CREATE TABLESPACE OSSTS on the target: Tablespace created" loading="lazy"></a></figure></div>
+<h3>Database link to the source</h3>
+<p>Used for the network-mode import below and for all the validation queries later.</p>
+<div class="code"><span class="lbl">TARGET SQL</span><pre><code>CREATE DATABASE LINK SRC_VAL_LINK CONNECT TO system IDENTIFIED BY "&lt;password&gt;"
+  USING '//dbhostprod:1521/ORDPROD_pdb1.prvsharedsn.hubssvcn.oraclevcn.com';
+ALTER SYSTEM SET global_names = FALSE SCOPE = BOTH;
+SELECT * FROM dual@SRC_VAL_LINK;</code></pre></div>
+<h3>Create users, roles and all objects (no data)</h3>
+<p><strong>Option A — network import</strong> straight over the link:</p>
+<div class="code"><span class="lbl">SHELL (TARGET)</span><pre><code>impdp system NETWORK_LINK=SRC_VAL_LINK DIRECTORY=DATA_PUMP_DIR LOGFILE=gg_roles.log FULL=Y CONTENT=METADATA_ONLY INCLUDE=ROLE,PROFILE
+impdp system NETWORK_LINK=SRC_VAL_LINK DIRECTORY=DATA_PUMP_DIR LOGFILE=gg_ddl.log SCHEMAS=INSURANCE_DB CONTENT=METADATA_ONLY EXCLUDE=STATISTICS PARALLEL=4</code></pre></div>
+<p><strong>Option B — export and import a metadata-only dump</strong> (what I used):</p>
+<div class="code"><span class="lbl">exp_insurance.par</span><pre><code>directory=MIGDP
+dumpfile=insurance_%U.dmp
+logfile=exp_insurance.log
+schemas=INSURANCE_DB
+parallel=4
+filesize=10G
+exclude=STATISTICS
+CONTENT=METADATA_ONLY
+logtime=all</code></pre></div>
+<div class="code"><span class="lbl">SHELL</span><pre><code>[oracle@dbhostprod dpump]$ expdp system@ORDPROD_PDB1 parfile=exp_insurance.par
+# copy the dump files to dbhostuat, then
+[oracle@dbhostuat dpump]$ impdp system@ORDUAT_PDB1 parfile=imp_insurance.par</code></pre></div>
+<div class="shots"><figure><a href="images/image17.png" target="_blank" rel="noopener"><img src="images/image17.png" alt="exp_insurance.par parameter file: METADATA_ONLY export of INSURANCE_DB" loading="lazy"></a></figure><figure><a href="images/image18.png" target="_blank" rel="noopener"><img src="images/image18.png" alt="expdp run on dbhostprod exporting schema metadata into four dump files" loading="lazy"></a></figure><figure><a href="images/image19.png" target="_blank" rel="noopener"><img src="images/image19.png" alt="impdp run on dbhostuat importing the metadata, completed successfully" loading="lazy"></a></figure><figure><a href="images/image20.png" target="_blank" rel="noopener"><img src="images/image20.png" alt="Target: INSURANCE_DB tables, views and indexes listed after the metadata import" loading="lazy"></a></figure></div>
+<h3>Disable triggers, foreign keys and jobs until cut-over</h3>
+<p>Primary and unique keys stay <strong>enabled</strong> — the replicat uses them to locate rows. Run the generated statements:</p>
+<div class="code"><span class="lbl">TARGET SQL</span><pre><code>SELECT 'ALTER TRIGGER "' || owner || '"."' || trigger_name || '" DISABLE;'
+FROM dba_triggers WHERE owner IN ('INSURANCE_DB') AND status = 'ENABLED';
+
+SELECT 'ALTER TABLE "' || owner || '"."' || table_name || '" DISABLE CONSTRAINT "' || constraint_name || '";'
+FROM dba_constraints WHERE owner IN ('INSURANCE_DB') AND constraint_type = 'R' AND status = 'ENABLED';
+
+SELECT 'EXEC DBMS_SCHEDULER.DISABLE(''"' || owner || '"."' || job_name || '"'');'
+FROM dba_scheduler_jobs WHERE owner IN ('INSURANCE_DB') AND enabled = 'TRUE';</code></pre></div>
+<div class="shots one"><figure><a href="images/image21.png" target="_blank" rel="noopener"><img src="images/image21.png" alt="Generated statements disabling six foreign keys on INSURANCE_DB tables, executed" loading="lazy"></a></figure></div>
+<p><strong>Check:</strong> every table has a key and all objects exist.</p>
+<div class="code"><span class="lbl">OUTPUT</span><pre><code>SQL&gt; SELECT t.owner, t.table_name FROM dba_tables t WHERE t.owner IN ('INSURANCE_DB')
+     AND NOT EXISTS (SELECT 1 FROM dba_constraints c WHERE c.owner = t.owner
+                     AND c.table_name = t.table_name AND c.constraint_type IN ('P','U'));
+no rows selected
+
+SQL&gt; SELECT owner, object_type, COUNT(*) c FROM dba_objects WHERE owner IN ('INSURANCE_DB') GROUP BY owner, object_type;
+OWNER                OBJECT_TYPE                      C
+-------------------- ----------------------- ----------
+INSURANCE_DB         TABLE                            7
+INSURANCE_DB         INDEX                           12
+INSURANCE_DB         VIEW                             2</code></pre></div>
+<h2 id="s6"><span class="num">6</span>Trandata, Heartbeat and Checkpoint</h2>
+<h3>Schema-level supplemental logging (source)</h3>
+<p>Logs the key columns GoldenGate needs for every table in the schema, including tables created later.</p>
+<div class="code"><span class="lbl">CONSOLE</span><pre><code>DB Connections → oraprod_pdb → connect → Trandata → +
+  Type: Schema   Schema name: INSURANCE_DB   All columns: on   → Submit</code></pre></div>
+<div class="shots"><figure><a href="images/image22.png" target="_blank" rel="noopener"><img src="images/image22.png" alt="Add Schema Trandata dialog for INSURANCE_DB with All Columns selected" loading="lazy"></a></figure><figure><a href="images/image23.png" target="_blank" rel="noopener"><img src="images/image23.png" alt="TRANDATA Information: INSURANCE_DB with 7 prepared tables" loading="lazy"></a></figure></div>
+<h3>Heartbeat table (source)</h3>
+<p>Lets the console show true end-to-end lag. The defaults are fine (60 s frequency, 30 days retention).</p>
+<div class="code"><span class="lbl">CONSOLE</span><pre><code>DB Connections → oraprod_pdb → connect → Heartbeat → +  → Submit</code></pre></div>
+<div class="shots"><figure><a href="images/image24.png" target="_blank" rel="noopener"><img src="images/image24.png" alt="Add Heartbeat Table dialog: frequency 60 seconds, retention 30 days, purge 1 day" loading="lazy"></a></figure><figure><a href="images/image25.png" target="_blank" rel="noopener"><img src="images/image25.png" alt="Heartbeat created on ORDPROD_PDB1" loading="lazy"></a></figure></div>
+<h3>Checkpoint table (target)</h3>
+<p>The replicat records its progress here, so it restarts exactly where it stopped.</p>
+<div class="code"><span class="lbl">CONSOLE</span><pre><code>DB Connections → orauat_pdb → connect → Checkpoint → +
+  Table: ggadmin.ggs_checkpoint → Submit</code></pre></div>
+<div class="shots"><figure><a href="images/image26.png" target="_blank" rel="noopener"><img src="images/image26.png" alt="Add checkpoint table ggadmin.ggs_checkpoint on ORDUAT_PDB1" loading="lazy"></a></figure><figure><a href="images/image27.png" target="_blank" rel="noopener"><img src="images/image27.png" alt="Checkpoint table GGADMIN.GGS_CHECKPOINT listed" loading="lazy"></a></figure></div>
+<h2 id="s7"><span class="num">7</span>Create the Extract EXTMIG</h2>
+<p>Start capture <strong>before</strong> the initial load so no change is missed.</p>
+<div class="code"><span class="lbl">CONSOLE</span><pre><code>Extracts → +
+  Type:        Integrated Extract
+  Name:        EXTMIG
+  Credentials: OracleGoldenGate / oraprod_pdb
+  Trail:       EA
+  Begin:       Now
+  → Next → parameter file → Create and Run</code></pre></div>
+<div class="code"><span class="lbl">EXTRACT PARAMS</span><pre><code>EXTRACT EXTMIG
+USERIDALIAS oraprod_pdb DOMAIN OracleGoldenGate
+EXTTRAIL EA
+TABLE INSURANCE_DB.*;</code></pre></div>
+<div class="shots"><figure><a href="images/image28.png" target="_blank" rel="noopener"><img src="images/image28.png" alt="Extracts page with Add Extract button" loading="lazy"></a></figure><figure><a href="images/image29.png" target="_blank" rel="noopener"><img src="images/image29.png" alt="Add Extract: EXTMIG, Integrated Extract, alias oraprod_pdb, trail EA, begin Now" loading="lazy"></a></figure><figure><a href="images/image30.png" target="_blank" rel="noopener"><img src="images/image30.png" alt="Extract parameter file with TABLE INSURANCE_DB.*" loading="lazy"></a></figure><figure><a href="images/image31.png" target="_blank" rel="noopener"><img src="images/image31.png" alt="Extract review page before creation" loading="lazy"></a></figure><figure><a href="images/image32.png" target="_blank" rel="noopener"><img src="images/image32.png" alt="EXTMIG registered in the Extracts list" loading="lazy"></a></figure><figure><a href="images/image33.png" target="_blank" rel="noopener"><img src="images/image33.png" alt="EXTMIG statistics showing captured operations" loading="lazy"></a></figure></div>
+<h2 id="s8"><span class="num">8</span>Initial Load at a Known SCN</h2>
+<h3>Wait for open transactions, then note the SCN</h3>
+<div class="code"><span class="lbl">SOURCE SQL</span><pre><code>SELECT s.sid, s.username, t.start_time
+FROM v$transaction t JOIN v$session s ON s.saddr = t.ses_addr ORDER BY t.start_time;   -- wait for no rows
+
+SELECT current_scn AS instantiation_scn FROM v$database;</code></pre></div>
+<div class="shots one"><figure><a href="images/image34.png" target="_blank" rel="noopener"><img src="images/image34.png" alt="No open transactions; instantiation SCN 3320122" loading="lazy"></a></figure></div>
+<p>Any transaction still open at that SCN would be missing from both the dump and the trail, which is why you wait for none. Here the SCN was <strong>3320122</strong>.</p>
+<h3>Export the rows at that SCN and import them</h3>
+<div class="code"><span class="lbl">export_insurance_data.par</span><pre><code>directory=MIGDB
+dumpfile=insurance_data_%U.dmp
+logfile=exp_insurance.log
+schemas=INSURANCE_DB
+FLASHBACK_SCN=3320122
+parallel=4
+filesize=1G
+exclude=STATISTICS
+CONTENT=DATA_ONLY
+logtime=all</code></pre></div>
+<div class="code"><span class="lbl">SHELL</span><pre><code>[oracle@dbhostprod dpump]$ expdp system@ORDPROD_PDB1 parfile=export_insurance_data.par
+# copy the dumps to dbhostuat; tables already exist, so rows only
+[oracle@dbhostuat dpump]$ impdp system@ORDUAT_PDB1 parfile=import_insurance_data.par
+#   (directory, dumpfile, schemas, CONTENT=DATA_ONLY - add TABLE_EXISTS_ACTION=TRUNCATE if re-running)</code></pre></div>
+<div class="shots"><figure><a href="images/image35.png" target="_blank" rel="noopener"><img src="images/image35.png" alt="Data-only export at FLASHBACK_SCN 3320122 of the seven INSURANCE_DB tables" loading="lazy"></a></figure><figure><a href="images/image36.png" target="_blank" rel="noopener"><img src="images/image36.png" alt="Data-only import into ORDUAT_PDB1: all seven tables loaded" loading="lazy"></a></figure></div>
+<div class="note">ORA-39173 (encrypted data stored unencrypted in the dump) is a warning about TDE columns, not a failure. Protect or delete the dump files once the load is done.</div>
+<h2 id="s9"><span class="num">9</span>Create the Replicat REPMG</h2>
+<div class="code"><span class="lbl">CONSOLE</span><pre><code>Replicats → +
+  Type:        Parallel Replicat, Integrated
+  Name:        REPMG
+  Credentials: OracleGoldenGate / orauat_pdb
+  Checkpoint:  "GGADMIN"."GGS_CHECKPOINT"
+  Trail:       EA
+  → Next → parameter file → Create (do not run yet)</code></pre></div>
+<div class="code"><span class="lbl">REPLICAT PARAMS</span><pre><code>REPLICAT REPMG
+USERIDALIAS orauat_pdb DOMAIN OracleGoldenGate
+REPERROR (DEFAULT, DISCARD)
+MAP INSURANCE_DB.*, TARGET INSURANCE_DB.*;</code></pre></div>
+<p>Start it from the SCN of the load: <strong>Actions → Start with Options → Start point: After CSN = 3320122</strong>. Changes up to that SCN are already in the dump; only later ones are applied.</p>
+<div class="shots"><figure><a href="images/image37.png" target="_blank" rel="noopener"><img src="images/image37.png" alt="Add Replicat: REPMG, Parallel Integrated, alias orauat_pdb, checkpoint GGS_CHECKPOINT, trail EA" loading="lazy"></a></figure><figure><a href="images/image38.png" target="_blank" rel="noopener"><img src="images/image38.png" alt="Replicat parameter file with MAP INSURANCE_DB.*, TARGET INSURANCE_DB.*" loading="lazy"></a></figure><figure><a href="images/image39.png" target="_blank" rel="noopener"><img src="images/image39.png" alt="REPMG registered" loading="lazy"></a></figure><figure><a href="images/image40.png" target="_blank" rel="noopener"><img src="images/image40.png" alt="Replicat actions menu: Start with Options" loading="lazy"></a></figure><figure><a href="images/image41.png" target="_blank" rel="noopener"><img src="images/image41.png" alt="Start Replicat with Options: After CSN 3320122" loading="lazy"></a></figure></div>
+<div class="warn"><code>REPERROR (DEFAULT, DISCARD)</code> keeps the replicat running and writes failing rows to the discard file. Check that file before cut-over — a non-empty discard file means the target is not identical.</div>
+<h2 id="s10"><span class="num">10</span>Monitor</h2>
+<p>Leave both processes running until lag stays at a few seconds. Overview should show EXTMIG and REPMG <strong>Running</strong>; click REPMG → <strong>Statistics</strong> for rows applied and lag.</p>
+<div class="shots one"><figure><a href="images/image42.png" target="_blank" rel="noopener"><img src="images/image42.png" alt="REPMG statistics: heartbeat rows applied, parallel replicat transactions" loading="lazy"></a></figure></div>
+<h2 id="s11"><span class="num">11</span>Switchover</h2>
+<h3>Stop application writes — downtime starts</h3>
+<div class="code"><span class="lbl">SOURCE SQL</span><pre><code>SELECT username, machine, status, COUNT(*) AS sessions
+FROM   v$session WHERE type = 'USER' AND username NOT IN ('SYS','SYSTEM','DBSNMP')
+GROUP  BY username, machine, status;</code></pre></div>
+<div class="shots one"><figure><a href="images/image43.png" target="_blank" rel="noopener"><img src="images/image43.png" alt="Only GGADMIN sessions remain on the source" loading="lazy"></a></figure></div>
+<h3>Drain and stop</h3>
+<ol><li>Extracts → EXTMIG: heartbeat lag 0 → <strong>Actions → Stop</strong>.</li><li>Replicats → REPMG: lag 0, at end of trail → <strong>Actions → Stop</strong>.</li></ol>
+<h3>Reset sequences, re-enable triggers, foreign keys and jobs</h3>
+<div class="code"><span class="lbl">TARGET SQL</span><pre><code>SELECT 'ALTER SEQUENCE "' || sequence_owner || '"."' || sequence_name || '" RESTART START WITH ' || (last_number + 1000) || ';'
+FROM dba_sequences@SRC_VAL_LINK WHERE sequence_owner IN ('INSURANCE_DB');
+
+SELECT 'ALTER TRIGGER "' || owner || '"."' || trigger_name || '" ENABLE;'
+FROM dba_triggers WHERE owner IN ('INSURANCE_DB');
+
+SELECT 'ALTER TABLE "' || owner || '"."' || table_name || '" ENABLE NOVALIDATE CONSTRAINT "' || constraint_name || '";'
+FROM dba_constraints WHERE owner IN ('INSURANCE_DB') AND constraint_type = 'R' AND status = 'DISABLED';
+
+SELECT 'EXEC DBMS_SCHEDULER.ENABLE(''"' || owner || '"."' || job_name || '"'');'
+FROM dba_scheduler_jobs WHERE owner IN ('INSURANCE_DB') AND enabled = 'FALSE';</code></pre></div>
+<div class="note">Sequences are not replicated by these parameters, so they're moved past the source values (+1000 gives headroom). <code>ALTER SEQUENCE … RESTART</code> needs 18c or later.</div>
+<h3>Point the application at the target — downtime ends</h3>
+<p>Update the TNS entry, JDBC URL or DNS name to <code>ORDUAT_PDB1</code> on <code>dbhostuat</code>.</p>
+<h2 id="s12"><span class="num">12</span>Validation</h2>
+<h3>Object counts, source vs target</h3>
+<div class="code"><span class="lbl">TARGET SQL</span><pre><code>WITH s AS (SELECT owner, object_type, COUNT(*) c FROM dba_objects@SRC_VAL_LINK
+           WHERE owner IN ('INSURANCE_DB') AND object_name NOT LIKE 'BIN$%' GROUP BY owner, object_type),
+     t AS (SELECT owner, object_type, COUNT(*) c FROM dba_objects
+           WHERE owner IN ('INSURANCE_DB') AND object_name NOT LIKE 'BIN$%' GROUP BY owner, object_type)
+SELECT NVL(s.owner,t.owner) AS owner, NVL(s.object_type,t.object_type) AS object_type,
+       NVL(s.c,0) AS src_cnt, NVL(t.c,0) AS tgt_cnt,
+       CASE WHEN NVL(s.c,0) = NVL(t.c,0) THEN 'OK' ELSE 'MISMATCH' END AS status
+FROM   s FULL OUTER JOIN t ON s.owner = t.owner AND s.object_type = t.object_type
+ORDER  BY status, 1, 2;</code></pre></div>
+<div class="shots one"><figure><a href="images/image44.png" target="_blank" rel="noopener"><img src="images/image44.png" alt="Object counts: INDEX 12/12, TABLE 7/7, VIEW 2/2, all OK" loading="lazy"></a></figure></div>
+<h3>Invalid objects, source vs target</h3>
+<div class="code"><span class="lbl">TARGET SQL</span><pre><code>SELECT t.owner, t.object_type, t.object_name
+FROM   dba_objects t
+WHERE  t.status = 'INVALID' AND t.owner IN ('INSURANCE_DB')
+AND    NOT EXISTS (SELECT 1 FROM dba_objects@SRC_VAL_LINK x WHERE x.owner = t.owner AND x.object_name = t.object_name
+                   AND x.object_type = t.object_type AND x.status = 'INVALID')
+ORDER  BY 1, 2, 3;
+
+SELECT 'SOURCE' side, COUNT(*) invalid_cnt FROM dba_objects@SRC_VAL_LINK WHERE status = 'INVALID' AND owner IN ('INSURANCE_DB')
+UNION ALL
+SELECT 'TARGET', COUNT(*) FROM dba_objects WHERE status = 'INVALID' AND owner IN ('INSURANCE_DB');</code></pre></div>
+<div class="shots one"><figure><a href="images/image45.png" target="_blank" rel="noopener"><img src="images/image45.png" alt="No new invalid objects; zero invalid on source and target" loading="lazy"></a></figure></div>
+<h3>Row counts for every table</h3>
+<div class="code"><span class="lbl">TARGET SQL</span><pre><code>-- One row per table: source rows, target rows, difference, status.
+-- Mismatched and missing tables sort first. target_rows = -1 means the table is missing.
+SET LINESIZE 200 PAGESIZE 1000
+COLUMN owner FORMAT A25
+COLUMN table_name FORMAT A40
+COLUMN status FORMAT A10
+WITH src AS (
+  SELECT owner AS src_owner, owner AS tgt_owner, table_name
+  FROM   dba_tables@SRC_VAL_LINK
+  WHERE  owner IN ('INSURANCE_DB')
+  AND    nested = 'NO' AND secondary = 'N' AND temporary = 'N'
+  AND    (iot_type IS NULL OR iot_type = 'IOT')
+  AND    (owner, table_name) NOT IN (SELECT owner, table_name FROM dba_external_tables@SRC_VAL_LINK)
+),
+cnt AS (
+  SELECT s.tgt_owner AS owner, s.table_name,
+         TO_NUMBER(EXTRACTVALUE(XMLTYPE(DBMS_XMLGEN.GETXML('SELECT COUNT(*) c FROM "' || s.src_owner || '"."' || s.table_name || '"@SRC_VAL_LINK')),'/ROWSET/ROW/C')) AS source_rows,
+         (SELECT TO_NUMBER(EXTRACTVALUE(XMLTYPE(DBMS_XMLGEN.GETXML('SELECT COUNT(*) c FROM "' || t.owner || '"."' || t.table_name || '"')),'/ROWSET/ROW/C'))
+          FROM dba_tables t WHERE t.owner = s.tgt_owner AND t.table_name = s.table_name) AS target_rows
+  FROM   src s
+)
+SELECT owner, table_name, source_rows,
+       NVL(target_rows, -1)              AS target_rows,
+       NVL(target_rows, 0) - source_rows AS difference,
+       CASE WHEN target_rows IS NULL       THEN 'MISSING'
+            WHEN target_rows = source_rows THEN 'MATCH'
+            ELSE 'MISMATCH' END            AS status
+FROM   cnt
+ORDER  BY CASE WHEN target_rows = source_rows THEN 1 ELSE 0 END, owner, table_name;</code></pre></div>
+<div class="shots one"><figure><a href="images/image46.png" target="_blank" rel="noopener"><img src="images/image46.png" alt="Row counts: all seven INSURANCE_DB tables MATCH between source and target" loading="lazy"></a></figure></div>
+<h2 id="s13"><span class="num">13</span>Fallback and Cleanup</h2>
+<p>Keep the source untouched until sign-off. To fall back, point the application back to <code>ORDPROD_PDB1</code> on <code>dbhostprod</code>. If users will write to the target before sign-off and you still want a way back, build a reverse extract and replicat (target → source) <strong>before</strong> switching.</p>
+<p>After sign-off:</p>
+<ul><li>Replicats → REPMG → <strong>Actions → Delete</strong>.</li><li>Extracts → EXTMIG → <strong>Actions → Delete</strong> (this also unregisters it from the database).</li><li>DB Connections → oraprod_pdb → remove the Trandata and Heartbeat entries.</li><li>Drop the <code>SRC_VAL_LINK</code> database link on the target.</li><li>OCI: delete the deployment and connections if they're no longer needed.</li></ul>
+<h2>Troubleshooting: ORA-01031 when adding the Heartbeat table</h2>
+<div class="shots one"><figure><a href="images/image47.png" target="_blank" rel="noopener"><img src="images/image47.png" alt="Heartbeat on ORDPROD_PDB1 fails with ORA-01031 insufficient privileges, OGG-08100" loading="lazy"></a></figure></div>
+<p>The connection itself is fine — the panel says <strong>Connected to: ORDPROD_PDB1</strong>. The error comes from what runs next: the heartbeat setup creates tables, views and a scheduler job, and <code>ggadmin</code> in the PDB lacks some of those privileges. Usual causes:</p>
+<ul><li><code>DBMS_GOLDENGATE_AUTH.GRANT_ADMIN_PRIVILEGE</code> was never run in <strong>this PDB</strong>, or only in CDB$ROOT.</li><li><code>RESOURCE</code> was granted but <code>CREATE VIEW</code> / <code>CREATE JOB</code> were not — RESOURCE doesn't include them.</li></ul>
+<p><strong>Fix</strong> — as SYS, in the PDB:</p>
+<div class="code"><span class="lbl">SQL</span><pre><code>ALTER SESSION SET CONTAINER = ORDPROD_PDB1;
+
+GRANT CREATE SESSION, ALTER SESSION, CREATE TABLE, CREATE VIEW,
+      CREATE SEQUENCE, CREATE PROCEDURE, CREATE JOB, CREATE SYNONYM TO ggadmin;
+GRANT SELECT ANY DICTIONARY, SELECT ANY TABLE, FLASHBACK ANY TABLE,
+      SELECT ANY TRANSACTION TO ggadmin;
+GRANT EXECUTE ON dbms_lock TO ggadmin;
+GRANT EXECUTE ON dbms_scheduler TO ggadmin;
+ALTER USER ggadmin QUOTA UNLIMITED ON users;   -- or its default tablespace
+
+EXEC DBMS_GOLDENGATE_AUTH.GRANT_ADMIN_PRIVILEGE('GGADMIN', container =&gt; 'CURRENT');</code></pre></div>
+<p>For the <strong>target</strong> PDB, also add the apply-side DML privileges. On 23ai you can grant the <code>OGG_CAPTURE</code> and <code>OGG_APPLY</code> roles instead.</p>
+<div class="code"><span class="lbl">SQL</span><pre><code>GRANT INSERT ANY TABLE, UPDATE ANY TABLE, DELETE ANY TABLE, LOCK ANY TABLE TO ggadmin;</code></pre></div>
+<p><strong>Verify</strong> in the PDB — <code>DBA_GOLDENGATE_PRIVILEGES</code> must return rows:</p>
+<div class="code"><span class="lbl">SQL</span><pre><code>SELECT * FROM dba_goldengate_privileges WHERE username = 'GGADMIN';
+SELECT privilege FROM dba_sys_privs WHERE grantee = 'GGADMIN' ORDER BY 1;
+SELECT default_tablespace FROM dba_users WHERE username = 'GGADMIN';</code></pre></div>
+<p>Then disconnect and reconnect the <code>oraprod_pdb</code> connection in the console (or refresh the page) and add the heartbeat again.</p>
+<p class="cap">Related: <a href="../understand-oracle-goldengate-architecture-purposeuse-cases/understand-oracle-goldengate-architecture-purposeuse-cases.html">Oracle GoldenGate architecture</a> · <a href="../steps-to-add-a-new-table-tables-to-ongoing-replication/steps-to-add-a-new-table-tables-to-ongoing-replication.html">Adding tables to an ongoing replication</a>.</p>
+
+<script>
+(function(){
+  var blocks=document.querySelectorAll('.tsn-post .code');
+  for(var i=0;i<blocks.length;i++){(function(b){
+    var btn=document.createElement('button');btn.className='copy';btn.type='button';btn.textContent='Copy';
+    btn.onclick=function(){
+      var t=b.querySelector('pre').innerText;
+      var done=function(){btn.textContent='Copied!';setTimeout(function(){btn.textContent='Copy';},1500);};
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(done,function(){fallback(t);done();});}else{fallback(t);done();}
+    };
+    b.appendChild(btn);
+  })(blocks[i]);}
+  function fallback(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(a);}
+})();
+</script>
+</div>
+<!-- ===== END ===== -->
+</body>
+</html>
