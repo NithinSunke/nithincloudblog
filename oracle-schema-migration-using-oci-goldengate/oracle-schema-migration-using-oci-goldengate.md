@@ -3,7 +3,7 @@ title: "Oracle Schema Migration Using OCI GoldenGate: Online Move of INSURANCE_D
 author: "Sunke Nithin"
 date: 2026-10-27
 categories: ["Replication"]
-tags: ["GoldenGate", "Oracle", "OCI", "Migration"]
+tags: ["Goldengate", "Oracle", "OCI", "Migration"]
 ---
 
 # Oracle Schema Migration Using OCI GoldenGate: Online Move of INSURANCE_DB from PROD to UAT
