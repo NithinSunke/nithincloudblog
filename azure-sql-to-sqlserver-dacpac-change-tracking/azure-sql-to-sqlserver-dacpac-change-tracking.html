@@ -76,7 +76,7 @@
   <section class="hero">
     <span class="tag">Azure · Migration · Change Tracking</span>
     <h1>Low-Downtime Migration: Azure SQL Database to SQL Server (VM) with DACPAC and Change Tracking</h1>
-    <div class="meta">Nithin Sunke · November 2, 2026 · 18 min read</div>
+    <div class="meta">Nithin Sunke · November 2, 2026 · 21 min read</div>
     <p class="lede">Lab 7 of the Azure SQL Database migration series. Labs 5 and 6 copied everything while the application was stopped. This time the 16.7-million-row database is copied while Azure stays live, Change Tracking ships only the rows that changed, and the cutover window shrinks to about a minute and a half, of which the final sync took <strong>3 seconds</strong>. Everything is scripted, with no per-table code.</p>
   </section>
 
@@ -94,6 +94,7 @@
       <li><a href="#validate">Validate while the source is live</a></li>
       <li><a href="#cutover">Cutover</a></li>
       <li><a href="#after">After cutover</a></li>
+      <li><a href="#scope">Will it work with any SQL Server database?</a></li>
       <li><a href="#trouble">Troubleshooting (what I actually hit)</a></li>
       <li><a href="#compare">Lab 5 vs Lab 6 vs Lab 7</a></li>
     </ol>
@@ -304,6 +305,50 @@ UPDATE sync.control SET last_version = @new_version WHERE …;</code></pre>
 <pre><code>.\ctmig.ps1 -Step Cleanup                    # Agent job, sync/stg schemas, linked server
 .\ctmig.ps1 -Step Cleanup -DisableSourceCT   # also CT off on Azure (skipped while it is READ_ONLY)</code></pre>
   <p><code>02_target_linked_server.sql</code> set <code>remote query timeout</code> to 0 server-wide. Put it back to 600 if your standards require it.</p>
+
+  <h2 id="scope">Will it work with any SQL Server database?</h2>
+  <p>The <strong>engine</strong> (Change Tracking + generated MERGE) is generic and works for any schema that meets the conditions below. The <strong>orchestration</strong> around it (<code>ctmig.ps1</code>, the linked server, the Agent job) was built and tested for one route: Azure SQL Database → SQL Server on a VM.</p>
+
+  <h3>Source and target combinations</h3>
+  <div class="tbl"><table>
+    <tr><th>Source → Target</th><th>Works?</th><th>Why / what changes</th></tr>
+    <tr><td><strong>Azure SQL Database → SQL Server VM</strong></td><td>Yes, tested in this lab</td><td>What the toolkit was built for</td></tr>
+    <tr><td><strong>SQL Server (on-prem/VM) → SQL Server VM</strong></td><td>With small changes</td><td>SQL authentication only (see below). Source on SQL Server 2017+, because <code>01_source_enable_ct.sql</code> uses <code>STRING_AGG</code>. For SQL Server → SQL Server, log shipping, an availability group or backup/restore are usually simpler anyway.</td></tr>
+    <tr><td><strong>Any SQL Server → Azure SQL Database</strong></td><td>No</td><td>The engine runs on the <em>target</em> and needs a linked server, SQL Agent and <code>sp_configure</code>, and Azure SQL Database has none of them. Use transactional replication instead (Lab 4).</td></tr>
+    <tr><td><strong>Target older than SQL Server 2017</strong></td><td>No</td><td>The framework uses <code>STRING_AGG</code> and <code>CREATE OR ALTER</code></td></tr>
+  </table></div>
+
+  <h3>Schema requirements on the source</h3>
+  <div class="tbl"><table>
+    <tr><th>Table type</th><th>What happens</th></tr>
+    <tr><td>Has a primary key</td><td>Synced with CT + MERGE</td></tr>
+    <tr><td>No primary key</td><td>CT can't track it, so it gets a <strong>full copy during cutover</strong>, which adds downtime. Add a PK first if you can.</td></tr>
+    <tr><td>Composite PK, identity, foreign keys, triggers, sequences</td><td>Handled</td></tr>
+    <tr><td><code>geography</code>, <code>geometry</code>, <code>hierarchyid</code>, <code>xml</code>, <code>json</code>, <code>vector</code></td><td>Converted to a type the linked server can carry, then converted back on the target</td></tr>
+    <tr><td>Computed, <code>rowversion</code></td><td>Skipped; the target generates them</td></tr>
+    <tr><td>System-versioned temporal tables</td><td><strong>Not handled.</strong> The history table gets registered like a normal table, but you can't MERGE into it while versioning is on. Turn <code>SYSTEM_VERSIONING</code> off on the target during the sync, or exclude the history table.</td></tr>
+    <tr><td>Memory-optimized tables</td><td><strong>Not supported.</strong> Change Tracking can't be enabled on them.</td></tr>
+    <tr><td>Ledger tables, graph (node/edge) tables</td><td>Not supported</td></tr>
+    <tr><td>Sparse columns with a column set</td><td>Not handled: <code>SELECT *</code> returns the column set instead of the individual columns</td></tr>
+  </table></div>
+  <p>Two things force a table to be <strong>reloaded</strong> (fully copied again): a <code>TRUNCATE</code> or partition switch on the source, and CT retention running out before the next sync. Both raise error 50001, and <code>-AutoReload</code> or <code>-Step ReloadTable</code> fixes them, but for a very large table that's a long copy.</p>
+  <p>On scale: each table's delta is applied as <strong>one transaction</strong>. A burst of changes, such as a mass update of millions of rows, means a big MERGE and target log growth. Syncing more often keeps each delta small.</p>
+
+  <h3>On-prem SQL Server as the source: SQL authentication, not Windows</h3>
+  <p>Source connections use <strong>SQL authentication only</strong>: <code>ctmig.ps1</code> connects with <code>-U SourceUser</code>, SqlPackage passes <code>/SourceUser</code> and <code>/SourcePassword</code>, and the linked server maps to a SQL login (<code>@useself = 'false'</code>). The target can use either (<code>TargetAuth = 'SQL'</code> or <code>'Windows'</code>).</p>
+  <p>Windows authentication for the source would need more than a config switch. sqlcmd and SqlPackage could use integrated security easily. The linked server is the problem: a Windows login passing through the VM to another server is a <strong>Kerberos double hop</strong>. It fails unless SPNs and delegation are configured, and especially when the Agent job runs under a service account. SQL authentication avoids all of that.</p>
+  <p>Even with SQL authentication, check these on an on-prem source:</p>
+  <div class="tbl"><table>
+    <tr><th>Requirement</th><th>Why</th><th>Check / fix</th></tr>
+    <tr><td>Mixed Mode authentication</td><td>Many on-prem servers allow Windows logins only</td><td><code>SELECT SERVERPROPERTY('IsIntegratedSecurityOnly')</code> must return <strong>0</strong></td></tr>
+    <tr><td>Default instance on port 1433</td><td>The script connects to <code>tcp:&lt;server&gt;,1433</code></td><td>Named instances and other ports need a script change</td></tr>
+    <tr><td>Trusted TLS certificate on the source</td><td>ODBC Driver 18 (sqlcmd) and SqlPackage encrypt by default and <strong>reject self-signed certificates</strong>, which most on-prem servers use</td><td>Give the source a certificate from your CA, or add a source trust-certificate option to the script (today it exists for the target only)</td></tr>
+    <tr><td>Linked server provider</td><td><code>MSOLEDBSQL19</code> encrypts by default and fails on a self-signed certificate. <code>MSOLEDBSQL</code> (v18) doesn't.</td><td><code>Provider = 'MSOLEDBSQL'</code></td></tr>
+    <tr><td>SQL Server 2017+ on the source</td><td><code>STRING_AGG</code> in the CT enable script</td><td><code>SELECT @@VERSION</code></td></tr>
+    <tr><td>RCSI on the source (recommended)</td><td>Azure SQL Database has it by default. Without it, the delta reads take shared locks and can block the application.</td><td><code>ALTER DATABASE … SET READ_COMMITTED_SNAPSHOT ON</code></td></tr>
+    <tr><td>Login rights</td><td><code>db_owner</code> to enable CT; <code>sysadmin</code> (or <code>ALTER ANY DATABASE</code>) to set <code>READ_ONLY</code> at cutover</td><td>Same as with Azure</td></tr>
+  </table></div>
+  <div class="tip">Before pointing the toolkit at a new database, run <code>-Step Precheck</code> against it. Look for tables without a PK, temporal or memory-optimized tables, and the SQL Server version, before you commit to a cutover date.</div>
 
   <h2 id="trouble">Troubleshooting (what I actually hit)</h2>
   <div class="tbl"><table>
