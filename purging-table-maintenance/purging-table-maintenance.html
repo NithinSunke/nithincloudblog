@@ -66,7 +66,7 @@
 </style>
 
 <h1>Purging Old Data from a Large Table with Partitioning</h1>
-<div class="meta">By Sunke Nithin · June 4, 2024 &nbsp; <span class="tag">Database</span><span class="tag">Oracle</span></div>
+<div class="meta">By Sunke Nithin · June 4, 2024 &nbsp; <span class="tag">Oracle Database</span><span class="tag">Oracle</span></div>
 
 <p class="lead">A customer's <code>cust_data</code> table holds about 29 million rows from March 2009 to February 2018. Company policy says data older than five years — before February 2013 — must go. Deleting tens of millions of rows is slow, generates huge amounts of undo and redo, and leaves the table fragmented. The better way: <strong>partition the table by month online, then drop the old partitions</strong>, which takes seconds.</p>
 

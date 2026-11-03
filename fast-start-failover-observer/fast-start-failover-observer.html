@@ -66,7 +66,7 @@
 </style>
 
 <h1>Configuring the Fast-Start Failover Observer for Oracle Data Guard</h1>
-<div class="meta">By Sunke Nithin · August 8, 2022 &nbsp; <span class="tag">Database</span><span class="tag">Oracle</span><span class="tag">Data Guard</span></div>
+<div class="meta">By Sunke Nithin · August 8, 2022 &nbsp; <span class="tag">Data Guard</span><span class="tag">Oracle</span><span class="tag">Data Guard</span></div>
 <p class="lead">Fast-Start Failover (FSFO) turns a Data Guard standby into an automatic one: if the primary disappears, the standby takes over without a DBA. The decision is made by the <strong>observer</strong>, a DGMGRL process on a third server. Here I set up the observer with a wallet so it runs unattended in the background, enable FSFO, and test a failover and automatic reinstatement.</p>
 <h2>LAB Setup</h2>
 <div class="tw"><table><thead><tr><th>Role</th><th>Host</th><th>Database</th></tr></thead><tbody><tr><td>Primary</td><td>orstdbdvl01</td><td>NPGR (19c)</td></tr><tr><td>Physical standby</td><td>orstsbdvl01</td><td>NPGRSB (19c)</td></tr><tr><td>Observer</td><td>oem</td><td>12.2 client / Oracle home</td></tr></tbody></table></div>

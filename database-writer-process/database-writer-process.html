@@ -66,7 +66,7 @@
 </style>
 
 <h1>The Database Writer Process (DBWn) in Oracle</h1>
-<div class="meta">By Sunke Nithin · October 29, 2020 &nbsp; <span class="tag">Database</span><span class="tag">Oracle</span></div>
+<div class="meta">By Sunke Nithin · October 29, 2020 &nbsp; <span class="tag">Oracle Database</span><span class="tag">Oracle</span></div>
 <p class="lead">Every change to a table or index happens first in memory, in the <strong>database buffer cache</strong>. The <strong>database writer</strong> background process (DBWn) is what eventually puts those changed blocks into the data files on disk. Knowing when and why it writes explains a lot about checkpoints, instance recovery and some common wait events.</p>
 <h2>Dirty, Clean and Cold Buffers</h2>
 <ul><li>A buffer becomes <strong>dirty</strong> when a session changes the block in it; the copy on disk is now out of date.</li><li>A <strong>cold</strong> buffer is one that hasn't been used recently (by the cache's least-recently-used logic); a <strong>hot</strong> one is in frequent use.</li><li>Sessions reading a block from disk need a <strong>free</strong> (clean, reusable) buffer to put it in.</li></ul>

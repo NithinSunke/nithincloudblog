@@ -66,7 +66,7 @@
 </style>
 
 <h1>Converting an Oracle 19c Non-CDB to a PDB with a Shell Script</h1>
-<div class="meta">By Sunke Nithin · August 18, 2025 &nbsp; <span class="tag">Database</span><span class="tag">Oracle</span><span class="tag">Scripts</span></div>
+<div class="meta">By Sunke Nithin · August 18, 2025 &nbsp; <span class="tag">Oracle Database</span><span class="tag">Oracle</span><span class="tag">Scripts</span></div>
 <p class="lead">Plugging a non-CDB into a container database follows a fixed sequence: describe it with <code>DBMS_PDB.DESCRIBE</code>, check compatibility, create the PDB from the XML file, run <code>noncdb_to_pdb.sql</code>, open it. This script does those steps on one server, stops at the first error, and logs everything.</p>
 <h2>What It Does</h2>
 <ol><li><strong>Describe</strong> — restarts the non-CDB read only and writes its description to an XML file.</li><li><strong>Check</strong> — runs <code>DBMS_PDB.CHECK_PLUG_COMPATIBILITY</code> in the CDB; on failure, prints the open <code>PDB_PLUG_IN_VIOLATIONS</code>.</li><li><strong>Create</strong> — creates the PDB with <code>COPY</code>, so the original files stay untouched as a fallback.</li><li><strong>Convert and open</strong> — runs <code>noncdb_to_pdb.sql</code> inside the new PDB, then opens it and saves its state.</li><li><strong>Back up</strong> — an RMAN backup of the CDB.</li></ol>

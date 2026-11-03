@@ -66,7 +66,7 @@
 </style>
 
 <h1>How to Create a VCN in OCI Using Terraform</h1>
-<div class="meta">By Sunke Nithin · April 13, 2025 &nbsp; <span class="tag">CLOUD</span><span class="tag">OCI</span><span class="tag">Terraform</span></div>
+<div class="meta">By Sunke Nithin · April 13, 2025 &nbsp; <span class="tag">Cloud</span><span class="tag">OCI</span><span class="tag">Terraform</span></div>
 <p class="lead">A Virtual Cloud Network (VCN) is the base of everything you run in OCI. This Terraform configuration builds a complete one in a single <code>apply</code>: a public and a private subnet, internet, NAT and service gateways, route tables and security lists.</p>
 <h2>What Gets Created</h2>
 <div class="tw"><table><thead><tr><th>Resource</th><th>Purpose</th></tr></thead><tbody><tr><td>VCN <code>phoenix_vcn</code></td><td>10.0.0.0/16 address space</td></tr><tr><td>Public subnet 10.0.1.0/24</td><td>Route to the internet gateway; security list allows only my public IP</td></tr><tr><td>Private subnet 10.0.2.0/24</td><td>No public IPs; outbound through NAT; Oracle services through the service gateway</td></tr><tr><td>Internet / NAT / service gateways</td><td>Inbound + outbound internet, outbound-only internet, private access to Object Storage etc.</td></tr><tr><td>Two route tables, two security lists</td><td>One of each per subnet</td></tr></tbody></table></div>

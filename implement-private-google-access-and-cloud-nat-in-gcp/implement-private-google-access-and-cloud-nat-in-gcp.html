@@ -66,7 +66,7 @@
 </style>
 
 <h1>Implement Private Google Access and Cloud NAT in GCP</h1>
-<div class="meta">By Sunke Nithin · August 11, 2025 &nbsp; <span class="tag">CLOUD</span><span class="tag">GCP</span></div>
+<div class="meta">By Sunke Nithin · August 11, 2025 &nbsp; <span class="tag">Cloud</span><span class="tag">GCP</span></div>
 <p class="lead">VMs without external IP addresses are safer, but they still need to reach Google APIs (Cloud Storage, BigQuery…) and often the internet (package repositories, external APIs). <strong>Private Google Access</strong> covers the first, <strong>Cloud NAT</strong> the second — neither gives the VMs a public address or lets anything connect in.</p>
 
 <div class="tw"><table><thead><tr><th>Feature</th><th>What it does</th><th>Scope</th></tr></thead><tbody><tr><td>Private Google Access</td><td>VMs with only internal IPs can reach Google APIs and services over Google's network</td><td>Per subnet</td></tr><tr><td>Cloud NAT</td><td>Outbound internet access through managed NAT; no inbound connections</td><td>Per region, attached to a Cloud Router</td></tr></tbody></table></div>

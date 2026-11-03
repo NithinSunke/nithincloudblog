@@ -66,7 +66,7 @@
 </style>
 
 <h1>Oracle Grid Infrastructure 19c Out-of-Place Patching with switchGridHome</h1>
-<div class="meta">By Sunke Nithin · June 12, 2024 &nbsp; <span class="tag">Database</span><span class="tag">Oracle</span><span class="tag">Patching</span></div>
+<div class="meta">By Sunke Nithin · June 12, 2024 &nbsp; <span class="tag">RAC & ASM</span><span class="tag">Oracle</span><span class="tag">Patching</span></div>
 
 <p class="lead">Out-of-place patching installs a <strong>fresh, already-patched Grid home</strong> next to the running one and then switches the cluster to it, node by node. Downtime per node is only the time it takes to restart the stack, rollback is just switching back, and you never touch the binaries the cluster is running from. Here I patch a freshly built two-node 19c RAC to the 19.23 RU (patch 36233126) using <code>gridSetup.sh -switchGridHome</code>.</p>
 

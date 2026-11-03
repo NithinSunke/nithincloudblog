@@ -66,7 +66,7 @@
 </style>
 
 <h1>How to Change the Docker Data Root (Storage Location)</h1>
-<div class="meta">By Sunke Nithin · August 8, 2025 &nbsp; <span class="tag">Docker</span><span class="tag">Docker</span></div>
+<div class="meta">By Sunke Nithin · August 8, 2025 &nbsp; <span class="tag">Containers</span><span class="tag">Docker</span></div>
 <p class="lead">Docker keeps images, containers and volumes under <code>/var/lib/docker</code>. Large images — an Oracle Database or GoldenGate image is several GB — fill the root filesystem quickly. Here I move Docker's storage to <code>/mnt/docker_storage</code>, a separate disk.</p>
 <h2>Prerequisites</h2>
 <ul><li>A filesystem with enough space mounted at the new location (persistently, through <code>/etc/fstab</code>). <code>xfs</code> needs <code>ftype=1</code> for the overlay2 driver — the default on current releases.</li><li>Root or sudo access, and a short window when no containers need to run.</li></ul>

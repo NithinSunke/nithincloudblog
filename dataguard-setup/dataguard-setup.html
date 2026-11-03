@@ -66,7 +66,7 @@
 </style>
 
 <h1>Setting Up an Oracle 19c Physical Standby (Data Guard) with RMAN Active Duplicate</h1>
-<div class="meta">By Sunke Nithin · August 8, 2022 &nbsp; <span class="tag">Database</span><span class="tag">Oracle</span><span class="tag">Data Guard</span></div>
+<div class="meta">By Sunke Nithin · August 8, 2022 &nbsp; <span class="tag">Data Guard</span><span class="tag">Oracle</span><span class="tag">Data Guard</span></div>
 <p class="lead">This builds a physical standby database <code>NPGRSB</code> for the primary <code>NPGR</code> (Oracle 19.14 on RHEL 7) by copying it over the network with <code>DUPLICATE ... FROM ACTIVE DATABASE</code> — no backup files to move around.</p>
 <h2>Starting Point</h2>
 <ul><li>Two servers with the OS and Oracle software installed: <code>orstdbdvl01</code> (primary, database running) and <code>orstsbdvl01</code> (software only).</li><li><code>DB_NAME</code> = <code>NPGR</code> on both; <code>DB_UNIQUE_NAME</code> = <code>NPGR</code> on the primary and <code>NPGRSB</code> on the standby.</li></ul>

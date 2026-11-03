@@ -66,7 +66,7 @@
 </style>
 
 <h1>Recover a Standby Database Using Incremental Backups</h1>
-<div class="meta">By Sunke Nithin · June 20, 2019 &nbsp; <span class="tag">Database</span><span class="tag">Oracle</span><span class="tag">Dataguard</span></div>
+<div class="meta">By Sunke Nithin · June 20, 2019 &nbsp; <span class="tag">Data Guard</span><span class="tag">Oracle</span><span class="tag">Dataguard</span></div>
 
 <p class="lead">When a physical standby falls far behind — archived logs lost or deleted on the primary before they were shipped — you don't have to rebuild it. An <strong>incremental backup from the standby's SCN</strong> on the primary carries every changed block, and applying it to the standby rolls it forward in one step. Example: primary <code>SUNKDEV</code> on <code>oradbdvl01</code>, standby on <code>orclstdy01</code>, 11.2.0.4.</p>
 

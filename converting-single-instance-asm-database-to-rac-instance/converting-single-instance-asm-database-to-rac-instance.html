@@ -66,7 +66,7 @@
 </style>
 
 <h1>Converting a Single-Instance ASM Database to RAC (Manual Method)</h1>
-<div class="meta">By Sunke Nithin · June 24, 2019 &nbsp; <span class="tag">Database</span><span class="tag">Oracle</span><span class="tag">Rac</span></div>
+<div class="meta">By Sunke Nithin · June 24, 2019 &nbsp; <span class="tag">RAC & ASM</span><span class="tag">Oracle</span><span class="tag">Rac</span></div>
 <p class="lead">A single-instance database already on ASM, on a cluster with Grid Infrastructure and a RAC-enabled database home, can be turned into a two-instance RAC database by hand: add a redo thread and undo for the second instance, set the cluster parameters, and register it with the clusterware. This was done on 11.2.0.4 (database <code>asmrac</code>, nodes <code>rac1</code> and <code>rac2</code>); the steps are the same on 12c–19c with the newer <code>srvctl</code> option names.</p>
 <h2>Prerequisites</h2>
 <ul><li>Grid Infrastructure on both nodes, the database files in a shared ASM disk group.</li><li>The same Oracle home path installed on both nodes, linked with the RAC option.</li><li>A full backup.</li></ul>

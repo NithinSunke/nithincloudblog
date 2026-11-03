@@ -66,7 +66,7 @@
 </style>
 
 <h1>How to Create a User, Group and Policy for Terraform in OCI</h1>
-<div class="meta">By Sunke Nithin · April 11, 2025 &nbsp; <span class="tag">CLOUD</span><span class="tag">OCI</span><span class="tag">Terraform</span></div>
+<div class="meta">By Sunke Nithin · April 11, 2025 &nbsp; <span class="tag">Cloud</span><span class="tag">OCI</span><span class="tag">Terraform</span></div>
 <p class="lead">Before Terraform can build anything in OCI it needs an identity with the right permissions. A dedicated <strong>user</strong> in a dedicated <strong>group</strong>, granted access through a <strong>policy</strong>, keeps Terraform's rights limited and its actions easy to audit. Then we configure authentication and check a first Terraform configuration.</p>
 <h2><span class="num">1</span>Create a Group</h2>
 <ol><li>OCI Console → <strong>Identity &amp; Security → Domains</strong> → your identity domain (usually <em>Default</em> or <em>OracleIdentityCloudService</em>) → <strong>Groups</strong>.</li><li><strong>Create group</strong>: name <code>terraform-admins</code>, description <em>Group for users managing infrastructure via Terraform</em>.</li></ol>

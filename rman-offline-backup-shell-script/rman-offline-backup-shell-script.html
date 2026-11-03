@@ -66,7 +66,7 @@
 </style>
 
 <h1>RMAN Offline (Cold) Backup Shell Script</h1>
-<div class="meta">By Sunke Nithin · July 3, 2019 &nbsp; <span class="tag">Database</span><span class="tag">Scripts</span></div>
+<div class="meta">By Sunke Nithin · July 3, 2019 &nbsp; <span class="tag">Backup & Recovery</span><span class="tag">Scripts</span></div>
 <p class="lead">A cold backup is taken with the database shut down cleanly and then mounted, so the backup is fully consistent and can be restored without any recovery. This shell script automates the whole thing: checks, clean shutdown, RMAN backup, restart, error scan and an email report.</p>
 <div class="note">An offline backup means downtime. Use it for databases that can't run in ARCHIVELOG mode or for a guaranteed-consistent copy before a big change; otherwise prefer the <a href="../rman-online-incremental-level0-shell-script/rman-online-incremental-level0-shell-script.html">online level 0 script</a>.</div>
 <h2>What the Script Does</h2>

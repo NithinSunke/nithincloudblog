@@ -66,7 +66,7 @@
 </style>
 
 <h1>Converting a Regular Table to a Partitioned Table Online</h1>
-<div class="meta">By Sunke Nithin · June 5, 2024 &nbsp; <span class="tag">Database</span><span class="tag">Oracle</span></div>
+<div class="meta">By Sunke Nithin · June 5, 2024 &nbsp; <span class="tag">Oracle Database</span><span class="tag">Oracle</span></div>
 <p class="lead">Since Oracle 12.2 a non-partitioned table can be converted to a partitioned one with a single <code>ALTER TABLE ... MODIFY PARTITION BY</code> — and with the <code>ONLINE</code> keyword, inserts, updates and deletes keep running during the conversion. No more <code>DBMS_REDEFINITION</code> for this common request.</p>
 <h2><span class="num">1</span>A Test Table</h2>
 <div class="code"><span class="lbl">SQL</span><pre><code>create table cust_data (

@@ -66,7 +66,7 @@
 </style>
 
 <h1>Creating Administrative Users for Azure CLOUD Management</h1>
-<div class="meta">By Sunke Nithin · May 20, 2020 &nbsp; <span class="tag">CLOUD</span><span class="tag">Azure</span><span class="tag">Security</span></div>
+<div class="meta">By Sunke Nithin · May 20, 2020 &nbsp; <span class="tag">Cloud</span><span class="tag">Azure</span><span class="tag">Security</span></div>
 <p class="lead">The account you signed up with owns everything in your Azure subscription. Keep it for billing and emergencies, and do day-to-day work with separate named accounts that have only the rights they need. Azure has <strong>two separate permission systems</strong> for this, and it helps to know which is which.</p>
 <div class="tw"><table><thead><tr><th>System</th><th>Controls</th><th>Example roles</th><th>Where to assign</th></tr></thead><tbody><tr><td><strong>Microsoft Entra roles</strong> (directory)</td><td>Users, groups, app registrations, tenant settings</td><td>Global Administrator, User Administrator</td><td>Entra ID → Roles and administrators</td></tr><tr><td><strong>Azure RBAC roles</strong> (resources)</td><td>Subscriptions, resource groups, VMs, storage, networks</td><td>Owner, Contributor, Reader</td><td>Subscription or resource group → Access control (IAM)</td></tr></tbody></table></div>
 <div class="note">Being <strong>Global Administrator</strong> does <em>not</em> by itself let you create or change Azure resources — that needs an RBAC role such as Owner or Contributor on the subscription. My original post mixed the two up.</div>

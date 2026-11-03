@@ -66,7 +66,7 @@
 </style>
 
 <h1>How to Extend a Subnet in Google CLOUD Platform (GCP): Step by Step, with Restrictions</h1>
-<div class="meta">By Sunke Nithin · August 9, 2025 &nbsp; <span class="tag">CLOUD</span><span class="tag">GCP</span></div>
+<div class="meta">By Sunke Nithin · August 9, 2025 &nbsp; <span class="tag">Cloud</span><span class="tag">GCP</span></div>
 <p class="lead">When a subnet runs out of addresses, GCP lets you <strong>expand its primary range in place</strong> — no downtime, no change to existing VMs. But the expansion is one-way and has rules. Here I grow <code>subnet-us-central1-ext</code> from <code>10.0.0.0/24</code> (256 addresses) to <code>10.0.0.0/23</code> (512).</p>
 <h2>Restrictions</h2>
 <div class="tw"><table><thead><tr><th>Rule</th><th>Details</th></tr></thead><tbody><tr><td>Grow only</td><td>You can only make the prefix shorter (/24 → /23). A subnet can never shrink, so expand in modest steps.</td></tr><tr><td>Same starting address</td><td>The new range keeps the base address and must contain the old one. 10.0.1.0/24 can't become 10.0.1.0/23 — that isn't a valid /23; it would be 10.0.0.0/23.</td></tr><tr><td>No overlap</td><td>The larger range must not overlap any other subnet in the VPC, or in peered VPCs, or routes that conflict.</td></tr><tr><td>Primary range only</td><td>Secondary ranges (alias IPs, GKE pods/services) can't be expanded; add a new secondary range instead.</td></tr><tr><td>Auto-mode limit</td><td>Subnets of an auto-mode VPC can only grow to /16 within 10.128.0.0/9; to go further, convert the VPC to custom mode.</td></tr></tbody></table></div>

@@ -66,7 +66,7 @@
 </style>
 
 <h1>Oracle Data Guard Configuration Shell Script</h1>
-<div class="meta">By Sunke Nithin · July 9, 2019 &nbsp; <span class="tag">Database</span><span class="tag">Scripts</span></div>
+<div class="meta">By Sunke Nithin · July 9, 2019 &nbsp; <span class="tag">Data Guard</span><span class="tag">Scripts</span></div>
 
 <p class="lead">A bash script that builds a <strong>physical standby database</strong> end to end from the primary server: it checks ARCHIVELOG and FORCE LOGGING, sets the Data Guard parameters, configures the standby listener and TNS entries over ssh, creates standby redo logs, runs <strong>RMAN <code>DUPLICATE … FOR STANDBY FROM ACTIVE DATABASE</code></strong>, and starts managed recovery. It was written for 11.2.0.4 but works the same on 12c–19c (non-CDB).</p>
 

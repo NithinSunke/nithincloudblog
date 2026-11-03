@@ -66,7 +66,7 @@
 </style>
 
 <h1>Changing the Hostname of an Oracle Restart (Grid Infrastructure) Server</h1>
-<div class="meta">By Sunke Nithin · February 6, 2020 &nbsp; <span class="tag">Database</span><span class="tag">Oracle</span><span class="tag">Rac</span></div>
+<div class="meta">By Sunke Nithin · February 6, 2020 &nbsp; <span class="tag">RAC & ASM</span><span class="tag">Oracle</span><span class="tag">Rac</span></div>
 <p class="lead">Oracle Restart — Grid Infrastructure for a standalone server — records the hostname in its configuration (OLR) when it is set up. Rename the server and the stack stops working. The fix is to deconfigure Oracle Restart, change the name, configure it again and re-register ASM, the listener and the database. Here the server <code>asmdvl01</code> becomes <code>asmtsl01</code> (19.3, ASM disk groups CRS, DATA and FRA, database <code>sundev</code>).</p>
 <div class="note">This is for a <strong>standalone</strong> Oracle Restart server. Renaming a node in a <strong>RAC cluster</strong> is a different procedure: delete the node from the cluster and add it back under the new name.</div>
 <h2><span class="num">1</span>Record the Current Configuration</h2>

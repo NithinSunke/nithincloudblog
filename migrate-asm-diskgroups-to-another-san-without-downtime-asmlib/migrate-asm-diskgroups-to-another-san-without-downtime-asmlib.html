@@ -66,7 +66,7 @@
 </style>
 
 <h1>Migrating ASM Disk Groups to New Storage Without Downtime (ASMLIB)</h1>
-<div class="meta">By Sunke Nithin · June 26, 2019 &nbsp; <span class="tag">Database</span><span class="tag">Oracle</span><span class="tag">Storage</span></div>
+<div class="meta">By Sunke Nithin · June 26, 2019 &nbsp; <span class="tag">RAC & ASM</span><span class="tag">Oracle</span><span class="tag">Storage</span></div>
 <p class="lead">ASM can move a disk group from an old SAN or disk array to a new one while databases stay open: add the new disks, let ASM rebalance the data onto them, then drop the old disks. Here the <code>DATA</code> disk group moves from ten old LUNs to ten new ones, all labelled with <strong>ASMLIB</strong>. The same works for disk groups holding OCR, voting files and the ASM spfile.</p>
 <h2>Before You Start</h2>
 <ul><li><strong>Take and validate a backup</strong> of every database in the disk group.</li><li>Present the new LUNs to <strong>all</strong> cluster nodes, with multipathing configured (see <a href="../lun-migration/lun-migration.html">LUN migration</a>).</li><li>The new disks should be the same size and performance as the old ones — ASM balances data by capacity, and mixed sizes cause uneven I/O.</li><li>The new disk group capacity must hold all current data.</li></ul>

@@ -66,7 +66,7 @@
 </style>
 
 <h1>Fast-Start Failover Setup for Oracle Database 19c</h1>
-<div class="meta">By Sunke Nithin · December 10, 2024 &nbsp; <span class="tag">Database</span><span class="tag">Oracle</span><span class="tag">Data Guard</span></div>
+<div class="meta">By Sunke Nithin · December 10, 2024 &nbsp; <span class="tag">Data Guard</span><span class="tag">Oracle</span><span class="tag">Data Guard</span></div>
 <p class="lead">Fast-Start Failover (FSFO) makes Data Guard fail over automatically: an <strong>observer</strong> process on a separate host watches the primary and standby, and if the primary is lost it promotes the standby — no DBA needed at 3 a.m. This is the full cycle on 19c: prepare, set up the observer host, configure and enable FSFO, test it, reinstate the old primary, switch back, and finally switch it off again.</p>
 <div class="flow">Primary ⇄ Standby (SYNC redo) · Observer on a third host pings both</div>
 <h2>Pre-Checks</h2>

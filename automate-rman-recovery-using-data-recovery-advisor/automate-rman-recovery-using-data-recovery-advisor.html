@@ -66,7 +66,7 @@
 </style>
 
 <h1>Automating RMAN Recovery with the Data Recovery Advisor</h1>
-<div class="meta">By Sunke Nithin · June 20, 2019 &nbsp; <span class="tag">Database</span><span class="tag">Oracle</span><span class="tag">RMAN</span></div>
+<div class="meta">By Sunke Nithin · June 20, 2019 &nbsp; <span class="tag">Backup & Recovery</span><span class="tag">Oracle</span><span class="tag">RMAN</span></div>
 <p class="lead">The <strong>Data Recovery Advisor</strong> (DRA), introduced in 11g, diagnoses a damaged database, proposes a repair and can run it for you — from RMAN with four commands: <code>LIST FAILURE</code>, <code>ADVISE FAILURE</code>, <code>REPAIR FAILURE PREVIEW</code> and <code>REPAIR FAILURE</code>. Here I lose a data file on purpose and let DRA bring it back (11.2.0.4, single instance).</p>
 <div class="warn"><strong>DRA is deprecated in 19c and desupported from 21c</strong>, and it never supported RAC. On current versions use the manual RMAN commands at the end of this post — they're exactly what DRA generates.</div>
 <h2><span class="num">1</span>Test Data</h2>

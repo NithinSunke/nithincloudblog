@@ -66,7 +66,7 @@
 </style>
 
 <h1>Three Ways to Clone a Linux VM in OCI</h1>
-<div class="meta">By Sunke Nithin · January 9, 2025 &nbsp; <span class="tag">CLOUD</span><span class="tag">OCI</span></div>
+<div class="meta">By Sunke Nithin · January 9, 2025 &nbsp; <span class="tag">Cloud</span><span class="tag">OCI</span></div>
 <p class="lead">OCI has no single "clone VM" button, but there are three good ways to make a copy of a compute instance: <strong>clone its volumes</strong>, <strong>back up and restore</strong> them, or create a <strong>custom image</strong>. To show the copy really is a copy, I first put a small web page on the source VM, <code>demo-vm</code>.</p>
 <div class="tw"><table><thead><tr><th>Method</th><th>Best for</th><th>Speed</th></tr></thead><tbody><tr><td>Volume (group) clone</td><td>A quick copy in the same region</td><td>Minutes; the clone is usable almost at once</td></tr><tr><td>Backup + restore</td><td>A copy from a point in time, kept in Object Storage; can be copied to other regions</td><td>Slower; backup must finish first</td></tr><tr><td>Custom image</td><td>A template for many identical VMs; can be exported or shared</td><td>Instance goes offline while the image is taken</td></tr></tbody></table></div>
 <h2>The Source VM</h2>

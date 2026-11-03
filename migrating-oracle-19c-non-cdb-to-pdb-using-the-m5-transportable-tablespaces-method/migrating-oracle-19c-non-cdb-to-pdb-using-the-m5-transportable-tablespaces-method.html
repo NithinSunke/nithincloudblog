@@ -66,7 +66,7 @@
 </style>
 
 <h1>Migrating Oracle 19c Non-CDB to PDB Using the M5 Transportable Tablespaces Method</h1>
-<div class="meta">By Sunke Nithin · August 20, 2025 &nbsp; <span class="tag">Database</span><span class="tag">Oracle</span><span class="tag">Migration</span></div>
+<div class="meta">By Sunke Nithin · August 20, 2025 &nbsp; <span class="tag">Oracle Database</span><span class="tag">Oracle</span><span class="tag">Migration</span></div>
 
 <p class="lead"><strong>M5</strong> is Oracle's current cross-platform transportable tablespace procedure (MOS Doc ID 2999157.1). It moves data files with RMAN — a level 0 backup and then incremental level 1 backups while the source stays online — and finishes with a <strong>Full Transportable Export/Import</strong> of the metadata. Downtime is just the last incremental plus the metadata import, and it works across platforms and endian formats. Here I use it to move a 19c non-CDB into a PDB.</p>
 

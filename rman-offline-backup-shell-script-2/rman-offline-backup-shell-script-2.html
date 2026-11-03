@@ -66,7 +66,7 @@
 </style>
 
 <h1>RMAN Online Backup Shell Script with Backup Profiles</h1>
-<div class="meta">By Sunke Nithin · July 3, 2019 &nbsp; <span class="tag">Database</span><span class="tag">Scripts</span></div>
+<div class="meta">By Sunke Nithin · July 3, 2019 &nbsp; <span class="tag">Backup & Recovery</span><span class="tag">Scripts</span></div>
 <p class="lead">One script for every RMAN backup you schedule: full, level 0, level 1 cumulative or differential, or archived logs only — chosen by a <em>backup profile</em> number on the command line. It validates its parameters, checks the instance and logins, runs RMAN with a per-profile configuration file, scans the log for errors and keeps 45 days of logs.</p>
 <h2>Backup Profiles</h2><div class="tw"><table><thead><tr><th>Profile</th><th>Backup</th><th>Backup location</th></tr></thead><tbody><tr><td>1</td><td>Full database plus archived logs (<code>delete input</code>)</td><td><code>/backup/$ORACLE_SID/full</code></td></tr><tr><td>2</td><td>Incremental level 0, then archived logs, control file and spfile</td><td><code>/backup/$ORACLE_SID/inc0</code></td></tr><tr><td>3</td><td>Incremental level 1 <strong>cumulative</strong></td><td><code>/backup/$ORACLE_SID/inc1c</code></td></tr><tr><td>4</td><td>Incremental level 1 <strong>differential</strong></td><td><code>/backup/$ORACLE_SID/inc1d</code></td></tr><tr><td>5</td><td>Archived logs only</td><td><code>/backup/$ORACLE_SID/arch</code></td></tr></tbody></table></div>
 <h2>What the Script Does</h2>

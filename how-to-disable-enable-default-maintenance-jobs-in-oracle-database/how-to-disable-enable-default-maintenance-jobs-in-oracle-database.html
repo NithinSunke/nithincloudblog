@@ -66,7 +66,7 @@
 </style>
 
 <h1>How to Disable and Enable Default Maintenance Jobs in Oracle Database</h1>
-<div class="meta">By Sunke Nithin · April 16, 2025 &nbsp; <span class="tag">Database</span><span class="tag">Oracle</span></div>
+<div class="meta">By Sunke Nithin · April 16, 2025 &nbsp; <span class="tag">Oracle Database</span><span class="tag">Oracle</span></div>
 <p class="lead">Oracle runs three automated maintenance tasks in its nightly and weekend maintenance windows. They keep the database healthy, but during a migration, a performance test or a busy batch period you may want them out of the way for a while. <code>DBMS_AUTO_TASK_ADMIN</code> turns them off and on.</p>
 <h2>The Three Tasks</h2>
 <div class="tw"><table><thead><tr><th>Client name</th><th>What it does</th></tr></thead><tbody><tr><td><code>auto optimizer stats collection</code></td><td>Gathers stale and missing optimizer statistics</td></tr><tr><td><code>auto space advisor</code></td><td>Runs the Segment Advisor to find space to reclaim</td></tr><tr><td><code>sql tuning advisor</code></td><td>Tunes the top resource-intensive SQL statements</td></tr></tbody></table></div>

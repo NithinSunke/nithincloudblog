@@ -66,7 +66,7 @@
 </style>
 
 <h1>Configuring a Cascaded Standby in Oracle Data Guard 19c</h1>
-<div class="meta">By Sunke Nithin · August 8, 2022 &nbsp; <span class="tag">Database</span><span class="tag">Oracle</span><span class="tag">Data Guard</span></div>
+<div class="meta">By Sunke Nithin · August 8, 2022 &nbsp; <span class="tag">Data Guard</span><span class="tag">Oracle</span><span class="tag">Data Guard</span></div>
 <p class="lead">A <strong>cascaded standby</strong> receives its redo not from the primary but from another standby. The primary ships redo once, and the first standby forwards it — useful for a far-away DR site or a reporting copy, without extra load on the primary's network. Here <code>NPGRSB1</code> is added behind the existing standby <code>NPGRSB</code>.</p>
 <div class="flow">NPGR (primary) → NPGRSB (standby) → NPGRSB1 (cascaded standby)</div>
 <p>Starting point: <a href="../dataguard-setup/dataguard-setup.html">primary and standby built with RMAN active duplicate</a>, managed by the <a href="../configure-dataguard-broker-on-different-server/configure-dataguard-broker-on-different-server.html">Data Guard broker</a>.</p>
