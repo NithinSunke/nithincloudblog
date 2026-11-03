@@ -11,7 +11,7 @@
 <meta property="og:description" content="Notes on Oracle Cloud Infrastructure, networking, and homelab infrastructure.">
 
 <!-- Relative, so the site works both opened from disk and served over HTTP. -->
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=3">
 </head>
 
 <body class="no-js">
@@ -21,6 +21,7 @@
     <div class="brand-row">
       <h1><a href="index.html">Nithin Cloud Blog</a></h1>
       <nav class="site-nav">
+        <a href="#series">Series</a>
         <a href="#posts">Posts</a>
         <a href="#categories">Categories</a>
       </nav>
@@ -28,17 +29,36 @@
     <p class="tagline">
       Hands-on notes from building and breaking things on Oracle Cloud
       Infrastructure, networking, and a homelab that refuses to stay simple.
+      Every walkthrough is one I ran myself, including the parts that failed.
     </p>
+    <dl class="stats">
+      <div><dt>Posts</dt><dd id="stat-posts">&mdash;</dd></div>
+      <div><dt>Topics</dt><dd id="stat-cats">&mdash;</dd></div>
+      <div><dt>Written</dt><dd id="stat-years">&mdash;</dd></div>
+    </dl>
   </div>
 </header>
+
+<section class="series-wrap" id="series">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 class="section">Start a series</h2>
+      <span class="n">Multi-part walkthroughs, in order</span>
+    </div>
+    <div class="series-strip" id="series-strip"></div>
+  </div>
+</section>
 
 <div class="wrap layout">
 
   <main id="posts">
     <div class="section-head">
-      <h2 class="section">Latest posts</h2>
+      <h2 class="section" id="list-heading">Latest posts</h2>
       <span class="n" id="count"></span>
     </div>
+
+    <!-- Category chips. Built from the same chips the posts carry. -->
+    <div class="filter-bar" id="filter-bar"></div>
 
 
     <!-- To add a post: copy one <li class="post"> block and edit the fields.
@@ -65,7 +85,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">CLOUD</li>
+          <li class="cat">Cloud</li>
           <li class="tag">Azure</li>
           <li class="tag">Network</li>
         </ul>
@@ -91,9 +111,8 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
+          <li class="cat">SQL Server</li>
           <li class="tag">Azure</li>
-          <li class="tag">MSSQL</li>
           <li class="tag">Migration</li>
           <li class="tag">Change Tracking</li>
         </ul>
@@ -119,9 +138,8 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
+          <li class="cat">SQL Server</li>
           <li class="tag">Azure</li>
-          <li class="tag">MSSQL</li>
           <li class="tag">Migration</li>
           <li class="tag">Security</li>
         </ul>
@@ -147,9 +165,8 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
+          <li class="cat">SQL Server</li>
           <li class="tag">Azure</li>
-          <li class="tag">MSSQL</li>
           <li class="tag">Migration</li>
           <li class="tag">Security</li>
         </ul>
@@ -175,9 +192,8 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Replication</li>
+          <li class="cat">SQL Server</li>
           <li class="tag">Azure</li>
-          <li class="tag">MSSQL</li>
           <li class="tag">Migration</li>
         </ul>
       </li>
@@ -202,9 +218,8 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
+          <li class="cat">SQL Server</li>
           <li class="tag">Azure</li>
-          <li class="tag">MSSQL</li>
           <li class="tag">Migration</li>
         </ul>
       </li>
@@ -229,9 +244,8 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
+          <li class="cat">SQL Server</li>
           <li class="tag">Azure</li>
-          <li class="tag">MSSQL</li>
           <li class="tag">Migration</li>
         </ul>
       </li>
@@ -256,9 +270,8 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
+          <li class="cat">SQL Server</li>
           <li class="tag">Azure</li>
-          <li class="tag">MSSQL</li>
           <li class="tag">Migration</li>
         </ul>
       </li>
@@ -283,10 +296,8 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">CLOUD</li>
+          <li class="cat">SQL Server</li>
           <li class="tag">Azure</li>
-          <li class="tag">MSSQL</li>
-          <li class="tag">Database</li>
         </ul>
       </li>
 
@@ -310,9 +321,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Replication</li>
-          <li class="tag">Goldengate</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">GoldenGate</li>
           <li class="tag">OCI</li>
           <li class="tag">Migration</li>
         </ul>
@@ -338,10 +347,9 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">CLOUD</li>
+          <li class="cat">Data Guard</li>
           <li class="tag">OCI</li>
           <li class="tag">ADB</li>
-          <li class="tag">Data Guard</li>
         </ul>
       </li>
 
@@ -368,8 +376,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">MongoDB</li>
+          <li class="cat">MongoDB</li>
         </ul>
       </li>
 
@@ -393,9 +400,8 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">CLOUD</li>
+          <li class="cat">Cloud</li>
           <li class="tag">OCI</li>
-          <li class="tag">Fundamentals</li>
         </ul>
       </li>
 
@@ -423,9 +429,9 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">LAB</li>
-          <li class="cat">CLOUD</li>
+          <li class="cat">Homelab</li>
           <li class="tag">Network</li>
+          <li class="tag">Home Lab</li>
         </ul>
       </li>
 
@@ -452,9 +458,9 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">CLOUD</li>
-          <li class="cat">LAB</li>
+          <li class="cat">Homelab</li>
           <li class="tag">Network</li>
+          <li class="tag">Home Lab</li>
         </ul>
       </li>
 
@@ -481,8 +487,8 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Kubernetes</li>
-          <li class="tag">Devops</li>
+          <li class="cat">Containers</li>
+          <li class="tag">DevOps</li>
         </ul>
       </li>
 
@@ -509,8 +515,8 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Kubernetes</li>
-          <li class="tag">Devops</li>
+          <li class="cat">Containers</li>
+          <li class="tag">DevOps</li>
         </ul>
       </li>
 
@@ -537,8 +543,8 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Kubernetes</li>
-          <li class="tag">Devops</li>
+          <li class="cat">Containers</li>
+          <li class="tag">DevOps</li>
         </ul>
       </li>
 
@@ -565,8 +571,8 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Kubernetes</li>
-          <li class="tag">Devops</li>
+          <li class="cat">Containers</li>
+          <li class="tag">DevOps</li>
         </ul>
       </li>
 
@@ -592,10 +598,10 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Kubernetes</li>
-          <li class="tag">Devops</li>
+          <li class="cat">Containers</li>
+          <li class="tag">DevOps</li>
           <li class="tag">Linux</li>
-          <li class="tag">Podman</li>
+          <li class="tag">Installation</li>
         </ul>
       </li>
 
@@ -623,7 +629,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
+          <li class="cat">GoldenGate</li>
           <li class="tag">MongoDB</li>
           <li class="tag">ADB</li>
           <li class="tag">Migration</li>
@@ -654,8 +660,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">MongoDB</li>
+          <li class="cat">MongoDB</li>
           <li class="tag">ADB</li>
           <li class="tag">Migration</li>
         </ul>
@@ -684,8 +689,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">MongoDB</li>
+          <li class="cat">MongoDB</li>
         </ul>
       </li>
 
@@ -713,8 +717,8 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">MongoDB</li>
+          <li class="cat">MongoDB</li>
+          <li class="tag">Backup</li>
         </ul>
       </li>
 
@@ -741,8 +745,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">MongoDB</li>
+          <li class="cat">MongoDB</li>
         </ul>
       </li>
 
@@ -769,8 +772,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">MongoDB</li>
+          <li class="cat">MongoDB</li>
         </ul>
       </li>
 
@@ -797,8 +799,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">MongoDB</li>
+          <li class="cat">MongoDB</li>
         </ul>
       </li>
 
@@ -825,8 +826,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">MongoDB</li>
+          <li class="cat">MongoDB</li>
         </ul>
       </li>
 
@@ -853,8 +853,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">MongoDB</li>
+          <li class="cat">MongoDB</li>
         </ul>
       </li>
 
@@ -882,8 +881,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">MongoDB</li>
+          <li class="cat">MongoDB</li>
         </ul>
       </li>
 
@@ -910,8 +908,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">MongoDB</li>
+          <li class="cat">MongoDB</li>
         </ul>
       </li>
 
@@ -938,8 +935,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">MongoDB</li>
+          <li class="cat">MongoDB</li>
           <li class="tag">Linux</li>
         </ul>
       </li>
@@ -967,8 +963,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">MongoDB</li>
+          <li class="cat">MongoDB</li>
         </ul>
       </li>
 
@@ -995,9 +990,9 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">MongoDB</li>
+          <li class="cat">MongoDB</li>
           <li class="tag">Linux</li>
+          <li class="tag">Installation</li>
         </ul>
       </li>
 
@@ -1024,8 +1019,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">MongoDB</li>
+          <li class="cat">MongoDB</li>
         </ul>
       </li>
 
@@ -1047,8 +1041,7 @@
         <p class="excerpt">Move a non-CDB into a PDB with M5: RMAN level 0 and incremental backups while online, then a short outage for the final incremental and full transportable import.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">Oracle Database</li>
           <li class="tag">Migration</li>
         </ul>
       </li>
@@ -1071,9 +1064,10 @@
         <p class="excerpt">Clone a non-CDB over a database link as a refreshable PDB, keep it in sync, and let AutoUpgrade convert it at a cutover time you choose.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">Oracle Database</li>
           <li class="tag">Migration</li>
+          <li class="tag">Upgrade</li>
+          <li class="tag">Cloning</li>
         </ul>
       </li>
 
@@ -1095,8 +1089,7 @@
         <p class="excerpt">The logical route: a consistent full Data Pump export from the non-CDB and an import into a new PDB, with validation queries.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">Oracle Database</li>
           <li class="tag">Migration</li>
         </ul>
       </li>
@@ -1119,9 +1112,9 @@
         <p class="excerpt">Convert a 19c non-CDB into a PDB of an existing CDB with one AutoUpgrade job &mdash; config, analyze, deploy and post-migration steps.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">Oracle Database</li>
           <li class="tag">Migration</li>
+          <li class="tag">Upgrade</li>
         </ul>
       </li>
 
@@ -1145,8 +1138,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">Oracle Database</li>
           <li class="tag">Scripts</li>
         </ul>
       </li>
@@ -1169,7 +1161,7 @@
         <p class="excerpt">Create an Oracle 19c CDB or non-CDB with DBCA in silent mode from one script &mdash; arguments for the names, prompted passwords, and the key DBCA options explained.</p>
 
         <ul class="chips">
-          <li class="cat">Automation</li>
+          <li class="cat">Oracle Database</li>
           <li class="tag">Scripts</li>
         </ul>
       </li>
@@ -1192,8 +1184,8 @@
         <p class="excerpt">Install PostgreSQL 15 from the PGDG repository on OL7, initialise the cluster, start the service and allow remote connections.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Postgresql</li>
+          <li class="cat">PostgreSQL</li>
+          <li class="tag">Installation</li>
         </ul>
       </li>
 
@@ -1217,8 +1209,8 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">Oracle Database</li>
+          <li class="tag">Cloning</li>
         </ul>
       </li>
 
@@ -1242,8 +1234,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">Oracle Database</li>
         </ul>
       </li>
 
@@ -1340,7 +1331,7 @@
         <p class="excerpt">A small script that lists every running Docker container and stops them all cleanly, plus the one-liner and notes on stop timeouts and restart policies.</p>
 
         <ul class="chips">
-          <li class="cat">Docker</li>
+          <li class="cat">Containers</li>
           <li class="tag">Scripts</li>
         </ul>
       </li>
@@ -1363,7 +1354,7 @@
         <p class="excerpt">Let VMs without external IPs reach Google APIs through Private Google Access and the internet through Cloud NAT &mdash; with gcloud commands and tests.</p>
 
         <ul class="chips">
-          <li class="cat">CLOUD</li>
+          <li class="cat">Cloud</li>
           <li class="tag">GCP</li>
         </ul>
       </li>
@@ -1388,10 +1379,9 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Replication</li>
-          <li class="tag">Goldengate</li>
+          <li class="cat">GoldenGate</li>
           <li class="tag">Docker</li>
-          <li class="tag">MSSQL</li>
+          <li class="tag">SQL Server</li>
         </ul>
       </li>
 
@@ -1417,7 +1407,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">CLOUD</li>
+          <li class="cat">Cloud</li>
           <li class="tag">GCP</li>
         </ul>
       </li>
@@ -1445,7 +1435,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">CLOUD</li>
+          <li class="cat">Cloud</li>
           <li class="tag">GCP</li>
         </ul>
       </li>
@@ -1473,7 +1463,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">CLOUD</li>
+          <li class="cat">Cloud</li>
           <li class="tag">GCP</li>
           <li class="tag">Network</li>
         </ul>
@@ -1497,7 +1487,7 @@
         <p class="excerpt">Google Cloud&rsquo;s free browser terminal: pre-installed tools, getting started, example uses, and its real limits (50 hours a week, 40-minute idle timeout).</p>
 
         <ul class="chips">
-          <li class="cat">CLOUD</li>
+          <li class="cat">Cloud</li>
           <li class="tag">GCP</li>
         </ul>
       </li>
@@ -1522,7 +1512,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">CLOUD</li>
+          <li class="cat">Cloud</li>
           <li class="tag">GCP</li>
         </ul>
       </li>
@@ -1547,7 +1537,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">CLOUD</li>
+          <li class="cat">Cloud</li>
           <li class="tag">GCP</li>
         </ul>
       </li>
@@ -1572,7 +1562,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">CLOUD</li>
+          <li class="cat">Cloud</li>
           <li class="tag">GCP</li>
         </ul>
       </li>
@@ -1597,7 +1587,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">CLOUD</li>
+          <li class="cat">Cloud</li>
           <li class="tag">GCP</li>
         </ul>
       </li>
@@ -1620,8 +1610,7 @@
         <p class="excerpt">An in-place upgrade of a SQL Server 2016 instance to SQL Server 2019 &mdash; pre-upgrade checks and backups, the setup wizard step by step, and the post-upgrade tasks: latest CU, compatibility level and error log review.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">MSSQL</li>
+          <li class="cat">SQL Server</li>
           <li class="tag">Upgrade</li>
         </ul>
       </li>
@@ -1644,7 +1633,7 @@
         <p class="excerpt">Install Docker Engine on Oracle Linux 8 from Docker&rsquo;s repository &mdash; add the repo with curl, install the engine with the Buildx and Compose plugins, start the service and run docker without sudo.</p>
 
         <ul class="chips">
-          <li class="cat">Docker</li>
+          <li class="cat">Containers</li>
           <li class="tag">Installation</li>
         </ul>
       </li>
@@ -1669,7 +1658,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Docker</li>
+          <li class="cat">Containers</li>
           <li class="tag">Docker</li>
         </ul>
       </li>
@@ -1694,7 +1683,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Docker</li>
+          <li class="cat">Containers</li>
           <li class="tag">Oracle</li>
           <li class="tag">ADB</li>
         </ul>
@@ -1726,7 +1715,7 @@
           <li class="cat">Windows</li>
           <li class="tag">Active Directory</li>
           <li class="tag">Group Policy</li>
-          <li class="tag">Home LAB</li>
+          <li class="tag">Home Lab</li>
         </ul>
       </li>
 
@@ -1748,8 +1737,8 @@
         <p class="excerpt">The ten-step plan for a Windows Server homelab: AD DS, DNS, DHCP, Group Policy, file shares, RDS, IIS, backup and monitoring.</p>
 
         <ul class="chips">
-          <li class="cat">LAB</li>
-          <li class="tag">LAB</li>
+          <li class="cat">Homelab</li>
+          <li class="tag">Home Lab</li>
         </ul>
       </li>
 
@@ -1777,7 +1766,8 @@
 
         <ul class="chips">
           <li class="cat">Virtualization</li>
-          <li class="tag">Vmware</li>
+          <li class="tag">VMware</li>
+          <li class="tag">Upgrade</li>
         </ul>
       </li>
 
@@ -1800,7 +1790,7 @@
 
         <ul class="chips">
           <li class="cat">Virtualization</li>
-          <li class="tag">Vmware</li>
+          <li class="tag">VMware</li>
           <li class="tag">Installation</li>
         </ul>
       </li>
@@ -1824,7 +1814,7 @@
 
         <ul class="chips">
           <li class="cat">Virtualization</li>
-          <li class="tag">Vmware</li>
+          <li class="tag">VMware</li>
           <li class="tag">Installation</li>
         </ul>
       </li>
@@ -1847,7 +1837,7 @@
         <p class="excerpt">Move a Docker image between hosts without a registry &mdash; docker save to a compressed file, copy it, and docker load it back with a small restore script.</p>
 
         <ul class="chips">
-          <li class="cat">Docker</li>
+          <li class="cat">Containers</li>
           <li class="tag">Scripts</li>
         </ul>
       </li>
@@ -1870,9 +1860,7 @@
         <p class="excerpt">Build a GoldenGate 23ai Microservices image from Oracle&rsquo;s docker-images repository and run it with docker compose, with the admin password kept in a .env file.</p>
 
         <ul class="chips">
-          <li class="cat">Replication</li>
-          <li class="tag">Oracle</li>
-          <li class="tag">Goldengate</li>
+          <li class="cat">GoldenGate</li>
           <li class="tag">Docker</li>
         </ul>
       </li>
@@ -1897,9 +1885,8 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Docker</li>
+          <li class="cat">GoldenGate</li>
           <li class="tag">Docker</li>
-          <li class="tag">Goldengate</li>
         </ul>
       </li>
 
@@ -1925,9 +1912,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Replication</li>
-          <li class="tag">Oracle</li>
-          <li class="tag">Goldengate</li>
+          <li class="cat">GoldenGate</li>
         </ul>
       </li>
 
@@ -1949,9 +1934,8 @@
         <p class="excerpt">Install GoldenGate 21c Microservices on Linux: the software with the Universal Installer, then a Service Manager and deployment with oggca.sh, registered as a systemd service.</p>
 
         <ul class="chips">
-          <li class="cat">Replication</li>
-          <li class="tag">Oracle</li>
-          <li class="tag">Goldengate</li>
+          <li class="cat">GoldenGate</li>
+          <li class="tag">Installation</li>
         </ul>
       </li>
 
@@ -1973,9 +1957,8 @@
         <p class="excerpt">Back up, stop the processes, remove the deployment with oggca.sh, remove the Service Manager service and deinstall the GoldenGate home.</p>
 
         <ul class="chips">
-          <li class="cat">Replication</li>
-          <li class="tag">Oracle</li>
-          <li class="tag">Goldengate</li>
+          <li class="cat">GoldenGate</li>
+          <li class="tag">Installation</li>
         </ul>
       </li>
 
@@ -1999,6 +1982,8 @@
         <ul class="chips">
           <li class="cat">Virtualization</li>
           <li class="tag">Proxmox</li>
+          <li class="tag">Installation</li>
+          <li class="tag">Backup</li>
         </ul>
       </li>
 
@@ -2022,6 +2007,7 @@
         <ul class="chips">
           <li class="cat">Virtualization</li>
           <li class="tag">Proxmox</li>
+          <li class="tag">Backup</li>
         </ul>
       </li>
 
@@ -2045,6 +2031,7 @@
         <ul class="chips">
           <li class="cat">Virtualization</li>
           <li class="tag">Proxmox</li>
+          <li class="tag">Backup</li>
         </ul>
       </li>
 
@@ -2193,7 +2180,6 @@
 
         <ul class="chips">
           <li class="cat">Linux</li>
-          <li class="tag">Linux</li>
         </ul>
       </li>
 
@@ -2219,7 +2205,7 @@
         <ul class="chips">
           <li class="cat">Virtualization</li>
           <li class="tag">Proxmox</li>
-          <li class="tag">Home LAB</li>
+          <li class="tag">Home Lab</li>
         </ul>
       </li>
 
@@ -2241,8 +2227,7 @@
         <p class="excerpt">A quick reference of RMAN commands for listing, crosschecking, deleting and cataloging backups and archived logs, grouped by task.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">Backup & Recovery</li>
         </ul>
       </li>
 
@@ -2264,8 +2249,10 @@
         <p class="excerpt">Install pfSense in VMware Workstation and route between two lab networks &mdash; host-only networks, installer, console setup, wizard, a second LAN and firewall rules.</p>
 
         <ul class="chips">
-          <li class="cat">Virtualization</li>
+          <li class="cat">Homelab</li>
           <li class="tag">Network</li>
+          <li class="tag">Installation</li>
+          <li class="tag">Home Lab</li>
         </ul>
       </li>
 
@@ -2290,7 +2277,7 @@
 
         <ul class="chips">
           <li class="cat">Virtualization</li>
-          <li class="tag">Vmware</li>
+          <li class="tag">VMware</li>
           <li class="tag">Network</li>
         </ul>
       </li>
@@ -2315,8 +2302,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">Oracle Database</li>
         </ul>
       </li>
 
@@ -2341,7 +2327,6 @@
 
         <ul class="chips">
           <li class="cat">Linux</li>
-          <li class="tag">Linux</li>
           <li class="tag">Security</li>
         </ul>
       </li>
@@ -2366,7 +2351,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">CLOUD</li>
+          <li class="cat">Cloud</li>
           <li class="tag">OCI</li>
           <li class="tag">Terraform</li>
         </ul>
@@ -2392,7 +2377,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">CLOUD</li>
+          <li class="cat">Cloud</li>
           <li class="tag">OCI</li>
           <li class="tag">Terraform</li>
         </ul>
@@ -2416,8 +2401,7 @@
         <p class="excerpt">Copy a SQL Server 2016 table with binary image data into Oracle 19c using SQL Developer, the jTDS driver and Copy To Oracle.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">Oracle Database</li>
           <li class="tag">Migration</li>
         </ul>
       </li>
@@ -2440,9 +2424,8 @@
         <p class="excerpt">Use SQL Developer&rsquo;s Migration Wizard to capture, convert and move a whole SQL Server database into an Oracle 19c PDB &mdash; then unlock the new schema and validate.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
-          <li class="tag">MSSQL</li>
+          <li class="cat">Oracle Database</li>
+          <li class="tag">SQL Server</li>
           <li class="tag">Migration</li>
         </ul>
       </li>
@@ -2465,8 +2448,7 @@
         <p class="excerpt">A full SQL Server 2016 SP2 install: media download, setup wizard, named instance, mixed-mode auth, SSMS 20 (with the .NET 4.8 prerequisite) and a first database.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">MSSQL</li>
+          <li class="cat">SQL Server</li>
           <li class="tag">Installation</li>
         </ul>
       </li>
@@ -2491,7 +2473,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">CLOUD</li>
+          <li class="cat">Cloud</li>
           <li class="tag">OCI</li>
           <li class="tag">Terraform</li>
         </ul>
@@ -2515,8 +2497,9 @@
         <p class="excerpt">Build a local chat-with-your-PDFs app on Windows 11 &mdash; Ollama and DeepSeek-R1, a FAISS index of your documents, and a Streamlit UI, all running on your own machine.</p>
 
         <ul class="chips">
-          <li class="cat">AI</li>
-          <li class="tag">LAB</li>
+          <li class="cat">Homelab</li>
+          <li class="tag">AI</li>
+          <li class="tag">Home Lab</li>
         </ul>
       </li>
 
@@ -2539,7 +2522,6 @@
 
         <ul class="chips">
           <li class="cat">Linux</li>
-          <li class="tag">Linux</li>
         </ul>
       </li>
 
@@ -2562,7 +2544,6 @@
 
         <ul class="chips">
           <li class="cat">Linux</li>
-          <li class="tag">Linux</li>
           <li class="tag">Active Directory</li>
         </ul>
       </li>
@@ -2587,8 +2568,9 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">AI</li>
-          <li class="tag">LAB</li>
+          <li class="cat">Homelab</li>
+          <li class="tag">AI</li>
+          <li class="tag">Home Lab</li>
         </ul>
       </li>
 
@@ -2613,7 +2595,6 @@
 
         <ul class="chips">
           <li class="cat">Linux</li>
-          <li class="tag">Linux</li>
           <li class="tag">Security</li>
         </ul>
       </li>
@@ -2636,8 +2617,7 @@
         <p class="excerpt">Read OCI Object Storage from Autonomous Database &mdash; create an auth token, store it with DBMS_CLOUD.CREATE_CREDENTIAL, list a bucket and load a file with COPY_DATA, or use a resource principal instead.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="cat">CLOUD</li>
+          <li class="cat">Cloud</li>
           <li class="tag">Oracle</li>
           <li class="tag">ADB</li>
           <li class="tag">OCI</li>
@@ -2662,7 +2642,7 @@
         <p class="excerpt">Provision an Autonomous Data Warehouse in the OCI Console &mdash; workload types, ECPUs and storage, backup retention, network access options, licensing and the first look at the new database.</p>
 
         <ul class="chips">
-          <li class="cat">CLOUD</li>
+          <li class="cat">Cloud</li>
           <li class="tag">Oracle</li>
           <li class="tag">OCI</li>
           <li class="tag">ADB</li>
@@ -2687,7 +2667,7 @@
         <p class="excerpt">Change Autonomous Database ECPUs and storage online with Manage resource allocation or the OCI CLI, use auto scaling, and pick the right action for each workload.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
+          <li class="cat">Cloud</li>
           <li class="tag">OCI</li>
           <li class="tag">Oracle</li>
           <li class="tag">ADB</li>
@@ -2712,8 +2692,7 @@
         <p class="excerpt">Backup-based DR versus Autonomous Data Guard, local and cross-region, with their RTO/RPO &mdash; plus adding a cross-region peer and upgrading a local peer to a standby.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">Data Guard</li>
           <li class="tag">OCI</li>
           <li class="tag">ADB</li>
         </ul>
@@ -2737,7 +2716,7 @@
         <p class="excerpt">Patch an OCI Base Database DB system from 19.23 to 19.24 with dbcli &mdash; update the tooling, precheck and patch the server (GI), then the database home.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
+          <li class="cat">Cloud</li>
           <li class="tag">Oracle</li>
           <li class="tag">OCI</li>
           <li class="tag">Patching</li>
@@ -2762,9 +2741,9 @@
         <p class="excerpt">Clone a 19c non-CDB on Windows into a PDB on Linux with a refreshable remote clone &mdash; including the ORA-29548 Java fix, datapatch, noncdb_to_pdb.sql and TDE.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">Oracle Database</li>
           <li class="tag">Migration</li>
+          <li class="tag">Cloning</li>
         </ul>
       </li>
 
@@ -2786,7 +2765,7 @@
         <p class="excerpt">An overview of Autonomous Database on OCI &mdash; workload types, scaling, built-in tools, everyday operations, disaster recovery, monitoring and security.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
+          <li class="cat">Cloud</li>
           <li class="tag">OCI</li>
           <li class="tag">ADB</li>
         </ul>
@@ -2810,10 +2789,9 @@
         <p class="excerpt">Move a VM between OCI regions: the boot volume as a custom image through a replicated bucket, block volumes as backups copied across regions.</p>
 
         <ul class="chips">
-          <li class="cat">Linux</li>
+          <li class="cat">Cloud</li>
           <li class="tag">OCI</li>
           <li class="tag">Migration</li>
-          <li class="tag">CLOUD</li>
         </ul>
       </li>
 
@@ -2837,8 +2815,9 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">CLOUD</li>
+          <li class="cat">Cloud</li>
           <li class="tag">OCI</li>
+          <li class="tag">Cloning</li>
         </ul>
       </li>
 
@@ -2865,10 +2844,9 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
+          <li class="cat">Oracle Database</li>
           <li class="tag">Patching</li>
-          <li class="tag">Autoupgrade</li>
-          <li class="tag">Oracle</li>
+          <li class="tag">Upgrade</li>
         </ul>
       </li>
 
@@ -2892,9 +2870,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
-          <li class="tag">Data Guard</li>
+          <li class="cat">Data Guard</li>
         </ul>
       </li>
 
@@ -2918,9 +2894,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
-          <li class="tag">Data Guard</li>
+          <li class="cat">Data Guard</li>
         </ul>
       </li>
 
@@ -2945,7 +2919,7 @@
 
         <ul class="chips">
           <li class="cat">Virtualization</li>
-          <li class="tag">Vmware</li>
+          <li class="tag">VMware</li>
           <li class="tag">Security</li>
         </ul>
       </li>
@@ -2968,9 +2942,8 @@
         <p class="excerpt">Install Oracle GoldenGate 23ai on Oracle Linux 8 &mdash; runInstaller, the shorter 7-step oggca.sh with separate Service Manager and deployment pages, registering the Service Manager as a daemon, and the redesigned web console.</p>
 
         <ul class="chips">
-          <li class="cat">Replication</li>
-          <li class="tag">Oracle</li>
-          <li class="tag">Goldengate</li>
+          <li class="cat">GoldenGate</li>
+          <li class="tag">Installation</li>
         </ul>
       </li>
 
@@ -2992,9 +2965,7 @@
         <p class="excerpt">Prepare the database for GoldenGate, add credential aliases under DB Connections in the GoldenGate 23ai Administration Service, test them, and add schema trandata.</p>
 
         <ul class="chips">
-          <li class="cat">Replication</li>
-          <li class="tag">Oracle</li>
-          <li class="tag">Goldengate</li>
+          <li class="cat">GoldenGate</li>
         </ul>
       </li>
 
@@ -3016,9 +2987,7 @@
         <p class="excerpt">Add a table to running GoldenGate replication &mdash; extend the Extract, run an initial load Extract and Replicat, add the MAP to the CDC Replicat, handle the overlap, and validate row counts.</p>
 
         <ul class="chips">
-          <li class="cat">Replication</li>
-          <li class="tag">Oracle</li>
-          <li class="tag">Goldengate</li>
+          <li class="cat">GoldenGate</li>
         </ul>
       </li>
 
@@ -3040,9 +3009,8 @@
         <p class="excerpt">Patch GoldenGate 21c Microservices from 21.3 to 21.14 with OPatch &mdash; update OPatch, stop the processes and Service Manager, check conflicts, apply, restart and verify.</p>
 
         <ul class="chips">
-          <li class="cat">Replication</li>
-          <li class="tag">Oracle</li>
-          <li class="tag">Goldengate</li>
+          <li class="cat">GoldenGate</li>
+          <li class="tag">Patching</li>
         </ul>
       </li>
 
@@ -3064,9 +3032,8 @@
         <p class="excerpt">Replicate a table between two Oracle PDBs with GoldenGate 21c Microservices &mdash; trandata, an integrated CDC extract, a parallel replicat, an initial load extract and replicat, handling the overlap with HANDLECOLLISIONS, and fixing OGG-02022.</p>
 
         <ul class="chips">
-          <li class="cat">Replication</li>
-          <li class="tag">Oracle</li>
-          <li class="tag">Goldengate</li>
+          <li class="cat">GoldenGate</li>
+          <li class="tag">Migration</li>
         </ul>
       </li>
 
@@ -3088,9 +3055,8 @@
         <p class="excerpt">Install Oracle GoldenGate 21c Microservices on Oracle Linux 7 &mdash; runInstaller, creating the Service Manager and prodogg deployment with oggca.sh, registering it as a systemd service, and logging in to the web consoles.</p>
 
         <ul class="chips">
-          <li class="cat">Replication</li>
-          <li class="tag">Oracle</li>
-          <li class="tag">Goldengate</li>
+          <li class="cat">GoldenGate</li>
+          <li class="tag">Installation</li>
         </ul>
       </li>
 
@@ -3112,8 +3078,7 @@
         <p class="excerpt">Prepare source and target Oracle databases for GoldenGate 21c &mdash; archivelog, force and supplemental logging, enable_goldengate_replication, streams pool, the c##ggadmin user and credential aliases.</p>
 
         <ul class="chips">
-          <li class="cat">Replication</li>
-          <li class="tag">Goldengate</li>
+          <li class="cat">GoldenGate</li>
         </ul>
       </li>
 
@@ -3135,8 +3100,7 @@
         <p class="excerpt">Patch a two-node 19c RAC to 19.23 by installing a fresh, pre-patched Grid home with -applyRU and switching each node to it with gridSetup.sh -switchGridHome.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">RAC & ASM</li>
           <li class="tag">Patching</li>
         </ul>
       </li>
@@ -3159,8 +3123,7 @@
         <p class="excerpt">Use opatchauto -outofplace to clone, patch and switch both the Grid and database homes of an Oracle Restart system &mdash; and why you should double-check datapatch afterwards.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">RAC & ASM</li>
           <li class="tag">Patching</li>
         </ul>
       </li>
@@ -3183,8 +3146,7 @@
         <p class="excerpt">Plug a 19c non-CDB into a container database by hand with DBMS_PDB &mdash; describe to XML, check compatibility, CREATE PLUGGABLE DATABASE &hellip; NOCOPY, run noncdb_to_pdb.sql, and troubleshoot ORA-65139.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">Oracle Database</li>
           <li class="tag">Migration</li>
         </ul>
       </li>
@@ -3209,8 +3171,8 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">Oracle Database</li>
+          <li class="tag">Cloning</li>
         </ul>
       </li>
 
@@ -3234,8 +3196,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">Oracle Database</li>
         </ul>
       </li>
 
@@ -3257,8 +3218,7 @@
         <p class="excerpt">Install Oracle Database 23ai Free on Oracle Linux 8 from the RPM &mdash; fixing the &ldquo;ORACLE_BASE not owned by oracle&rdquo; pre-install error, creating the FREE database with the configure script, and connecting with SQL*Plus.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">Oracle Database</li>
           <li class="tag">Installation</li>
         </ul>
       </li>
@@ -3281,8 +3241,7 @@
         <p class="excerpt">Purge years of old rows in seconds &mdash; convert a 29-million-row table to monthly interval partitions online with DBMS_REDEFINITION, then drop the old partitions.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">Oracle Database</li>
         </ul>
       </li>
 
@@ -3304,8 +3263,7 @@
         <p class="excerpt">Run Oracle Database Free (23ai) in Docker with a Portainer stack, keep the data in a volume, and connect with SQL Developer.</p>
 
         <ul class="chips">
-          <li class="cat">Docker</li>
-          <li class="cat">Database</li>
+          <li class="cat">Containers</li>
           <li class="tag">Oracle</li>
           <li class="tag">Installation</li>
         </ul>
@@ -3329,8 +3287,7 @@
         <p class="excerpt">Upgrade a 19c non-container database to 21c and plug it into an existing CDB as a PDB in one AutoUpgrade run &mdash; config file, analyze and deploy modes, stage timings and validating the new PDB.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">Oracle Database</li>
           <li class="tag">Upgrade</li>
           <li class="tag">Migration</li>
         </ul>
@@ -3383,8 +3340,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">Oracle Database</li>
           <li class="tag">Upgrade</li>
           <li class="tag">Migration</li>
         </ul>
@@ -3408,8 +3364,8 @@
         <p class="excerpt">Download Oracle&rsquo;s HR, CO, SH and OE sample schemas from GitHub and install them &mdash; per-schema scripts for the 23.x release, mksample.sql for older ones.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">Oracle Database</li>
+          <li class="tag">Installation</li>
         </ul>
       </li>
 
@@ -3463,8 +3419,9 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Automation</li>
-          <li class="tag">vagrant</li>
+          <li class="cat">Virtualization</li>
+          <li class="tag">Vagrant</li>
+          <li class="tag">Installation</li>
         </ul>
       </li>
 
@@ -3486,8 +3443,7 @@
         <p class="excerpt">Clone a running database in minutes with storage snapshots &mdash; backup mode, snapshot, clone the disks, mount, recover and open, demonstrated with VirtualBox.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">Backup & Recovery</li>
           <li class="tag">Migration</li>
         </ul>
       </li>
@@ -3558,8 +3514,9 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Automation</li>
+          <li class="cat">Cloud</li>
           <li class="tag">Terraform</li>
+          <li class="tag">Installation</li>
         </ul>
       </li>
 
@@ -3583,9 +3540,10 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">LAB</li>
+          <li class="cat">Homelab</li>
           <li class="tag">Security</li>
-          <li class="tag">Home LAB</li>
+          <li class="tag">Installation</li>
+          <li class="tag">Home Lab</li>
         </ul>
       </li>
 
@@ -3609,7 +3567,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">LAB</li>
+          <li class="cat">Virtualization</li>
           <li class="tag">Terraform</li>
           <li class="tag">VirtualBox</li>
         </ul>
@@ -3635,9 +3593,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
-          <li class="tag">Data Guard</li>
+          <li class="cat">Data Guard</li>
         </ul>
       </li>
 
@@ -3661,9 +3617,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
-          <li class="tag">Data Guard</li>
+          <li class="cat">Data Guard</li>
         </ul>
       </li>
 
@@ -3687,9 +3641,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
-          <li class="tag">Data Guard</li>
+          <li class="cat">Data Guard</li>
         </ul>
       </li>
 
@@ -3713,9 +3665,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
-          <li class="tag">Data Guard</li>
+          <li class="cat">Data Guard</li>
         </ul>
       </li>
 
@@ -3739,8 +3689,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">RAC & ASM</li>
           <li class="tag">Migration</li>
         </ul>
       </li>
@@ -3763,8 +3712,7 @@
         <p class="excerpt">Restore an RMAN backup on the new server early, keep it rolled forward with archived logs, and cut over in minutes.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">Oracle Database</li>
           <li class="tag">Migration</li>
         </ul>
       </li>
@@ -3787,8 +3735,8 @@
         <p class="excerpt">Install PostgreSQL 12 on Oracle Linux 7 from the PGDG Yum repository &mdash; add the repo, install the server, initdb, enable and start the service, connect with psql, and optionally open it up for remote connections.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Postgresql</li>
+          <li class="cat">PostgreSQL</li>
+          <li class="tag">Installation</li>
         </ul>
       </li>
 
@@ -3811,8 +3759,6 @@
 
         <ul class="chips">
           <li class="cat">Linux</li>
-          <li class="cat">CLOUD</li>
-          <li class="tag">Linux</li>
           <li class="tag">OCI</li>
         </ul>
       </li>
@@ -3835,8 +3781,7 @@
         <p class="excerpt">How LGWR writes redo to the online redo logs &mdash; when it writes, write-ahead logging, fast and group commits, multiplexed logs, 12c worker processes and the wait events to watch.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">Oracle Database</li>
         </ul>
       </li>
 
@@ -3860,8 +3805,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">Oracle Database</li>
         </ul>
       </li>
 
@@ -3886,7 +3830,6 @@
 
         <ul class="chips">
           <li class="cat">Linux</li>
-          <li class="tag">Linux</li>
         </ul>
       </li>
 
@@ -3910,7 +3853,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">CLOUD</li>
+          <li class="cat">Cloud</li>
           <li class="tag">Azure</li>
         </ul>
       </li>
@@ -3935,7 +3878,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">CLOUD</li>
+          <li class="cat">Cloud</li>
           <li class="tag">Azure</li>
           <li class="tag">Security</li>
         </ul>
@@ -3961,8 +3904,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">CLOUD</li>
-          <li class="tag">Fundamentals</li>
+          <li class="cat">Cloud</li>
         </ul>
       </li>
 
@@ -3986,7 +3928,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">CLOUD</li>
+          <li class="cat">Cloud</li>
           <li class="tag">Azure</li>
           <li class="tag">Security</li>
         </ul>
@@ -4012,7 +3954,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">CLOUD</li>
+          <li class="cat">Cloud</li>
           <li class="tag">Azure</li>
           <li class="tag">Network</li>
         </ul>
@@ -4038,9 +3980,8 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
-          <li class="tag">Rac</li>
+          <li class="cat">RAC & ASM</li>
+          <li class="tag">RAC</li>
         </ul>
       </li>
 
@@ -4067,9 +4008,8 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Encryption</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">Oracle Database</li>
+          <li class="tag">Security</li>
         </ul>
       </li>
 
@@ -4092,7 +4032,6 @@
 
         <ul class="chips">
           <li class="cat">Linux</li>
-          <li class="tag">Linux</li>
         </ul>
       </li>
 
@@ -4114,7 +4053,7 @@
         <p class="excerpt">Resources, users, groups, dynamic groups, compartments, tenancy, policies, home region, identity domains and the Administrators group in OCI.</p>
 
         <ul class="chips">
-          <li class="cat">CLOUD</li>
+          <li class="cat">Cloud</li>
           <li class="tag">OCI</li>
         </ul>
       </li>
@@ -4139,7 +4078,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">CLOUD</li>
+          <li class="cat">Cloud</li>
           <li class="tag">OCI</li>
           <li class="tag">Security</li>
         </ul>
@@ -4163,8 +4102,7 @@
         <p class="excerpt">Add a second copy of the control file &mdash; update control_files, shut down, copy, start up and verify, plus the pfile route and how to fix ORA-00214.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">Oracle Database</li>
         </ul>
       </li>
 
@@ -4186,7 +4124,7 @@
         <p class="excerpt">Pipe SQL into sqlplus from the shell &mdash; the one-liner, the $ quoting trap, here-documents, capturing a value in a variable and failing properly in scripts.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
+          <li class="cat">Oracle Database</li>
           <li class="tag">Linux</li>
         </ul>
       </li>
@@ -4209,8 +4147,7 @@
         <p class="excerpt">Move a PDB&rsquo;s data files with RMAN image copies &mdash; copy while open, switch to copy, recover and reopen &mdash; plus the ALTER DATABASE MOVE DATAFILE alternative.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">Oracle Database</li>
           <li class="tag">Migration</li>
         </ul>
       </li>
@@ -4233,8 +4170,9 @@
         <p class="excerpt">Install AWS CLI version 2 on Windows from the MSI, verify it, configure credentials safely, and update or uninstall it.</p>
 
         <ul class="chips">
-          <li class="cat">CLOUD</li>
+          <li class="cat">Cloud</li>
           <li class="tag">AWS</li>
+          <li class="tag">Installation</li>
         </ul>
       </li>
 
@@ -4258,7 +4196,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">CLOUD</li>
+          <li class="cat">Cloud</li>
           <li class="tag">AWS</li>
         </ul>
       </li>
@@ -4283,7 +4221,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">CLOUD</li>
+          <li class="cat">Cloud</li>
           <li class="tag">AWS</li>
         </ul>
       </li>
@@ -4307,7 +4245,6 @@
 
         <ul class="chips">
           <li class="cat">Linux</li>
-          <li class="tag">Linux</li>
         </ul>
       </li>
 
@@ -4330,7 +4267,6 @@
 
         <ul class="chips">
           <li class="cat">Linux</li>
-          <li class="tag">Linux</li>
           <li class="tag">Network</li>
         </ul>
       </li>
@@ -4353,7 +4289,7 @@
         <p class="excerpt">A bash script that builds a physical standby end to end &mdash; parameters, listener and TNS over ssh, standby redo logs, RMAN active duplicate and real-time apply.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
+          <li class="cat">Data Guard</li>
           <li class="tag">Scripts</li>
         </ul>
       </li>
@@ -4380,9 +4316,8 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Rac</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">RAC & ASM</li>
+          <li class="tag">RAC</li>
         </ul>
       </li>
 
@@ -4404,8 +4339,7 @@
         <p class="excerpt">Recover from a dropped tablespace by restoring the database to just before the mistake with RMAN &mdash; plus faster, less drastic alternatives.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">Backup & Recovery</li>
         </ul>
       </li>
 
@@ -4427,7 +4361,7 @@
         <p class="excerpt">A shell script for an online RMAN level 0 backup with pre-checks, crosscheck and clean-up, error scanning and email reports.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
+          <li class="cat">Backup & Recovery</li>
           <li class="tag">Scripts</li>
         </ul>
       </li>
@@ -4450,8 +4384,9 @@
         <p class="excerpt">One RMAN backup script for full, level 0, level 1 cumulative or differential and archived log backups, chosen by a profile number, with validation and logging.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
+          <li class="cat">Backup & Recovery</li>
           <li class="tag">Scripts</li>
+          <li class="tag">Backup</li>
         </ul>
       </li>
 
@@ -4473,8 +4408,9 @@
         <p class="excerpt">A shell script for a consistent cold RMAN backup &mdash; clean shutdown, backup in mount mode, restart, error scan and email report.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
+          <li class="cat">Backup & Recovery</li>
           <li class="tag">Scripts</li>
+          <li class="tag">Backup</li>
         </ul>
       </li>
 
@@ -4497,7 +4433,6 @@
 
         <ul class="chips">
           <li class="cat">Linux</li>
-          <li class="tag">Linux</li>
         </ul>
       </li>
 
@@ -4519,8 +4454,7 @@
         <p class="excerpt">Create an RMAN recovery catalog &mdash; tablespace, catalog owner, CREATE CATALOG &mdash; register a target database, verify it and keep it in sync.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">Backup & Recovery</li>
         </ul>
       </li>
 
@@ -4547,10 +4481,10 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
-          <li class="tag">Rac</li>
+          <li class="cat">RAC & ASM</li>
+          <li class="tag">RAC</li>
           <li class="tag">VirtualBox</li>
+          <li class="tag">Installation</li>
         </ul>
       </li>
 
@@ -4574,6 +4508,7 @@
         <ul class="chips">
           <li class="cat">Linux</li>
           <li class="tag">Storage</li>
+          <li class="tag">Migration</li>
         </ul>
       </li>
 
@@ -4597,6 +4532,7 @@
         <ul class="chips">
           <li class="cat">Linux</li>
           <li class="tag">Storage</li>
+          <li class="tag">Migration</li>
         </ul>
       </li>
 
@@ -4620,9 +4556,9 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">RAC & ASM</li>
           <li class="tag">Storage</li>
+          <li class="tag">Migration</li>
         </ul>
       </li>
 
@@ -4646,8 +4582,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">RAC & ASM</li>
           <li class="tag">Storage</li>
         </ul>
       </li>
@@ -4670,8 +4605,7 @@
         <p class="excerpt">Move a file-system database into Oracle ASM with RMAN &mdash; restore the control file into +DATA, backup as copy, switch to copy, move the temp file and redo logs, and point the FRA at +FRA.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">RAC & ASM</li>
           <li class="tag">Migration</li>
         </ul>
       </li>
@@ -4696,9 +4630,8 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
-          <li class="tag">Rac</li>
+          <li class="cat">RAC & ASM</li>
+          <li class="tag">RAC</li>
         </ul>
       </li>
 
@@ -4720,9 +4653,8 @@
         <p class="excerpt">Close a large Data Guard gap without rebuilding &mdash; incremental backup from SCN on the primary, standby control file, catalog, recover and restart redo apply.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
-          <li class="tag">Dataguard</li>
+          <li class="cat">Data Guard</li>
+          <li class="tag">Backup</li>
         </ul>
       </li>
 
@@ -4746,9 +4678,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
-          <li class="tag">RMAN</li>
+          <li class="cat">Backup & Recovery</li>
         </ul>
       </li>
 
@@ -4775,8 +4705,7 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">Oracle Database</li>
           <li class="tag">Upgrade</li>
         </ul>
       </li>
@@ -4799,8 +4728,7 @@
         <p class="excerpt">Reference for RMAN channels, the BACKUP command, incremental levels, options and FORMAT variables, with 14 worked examples.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">Backup & Recovery</li>
         </ul>
       </li>
 
@@ -4823,7 +4751,7 @@
 
         <ul class="chips">
           <li class="cat">Linux</li>
-          <li class="tag">Linux</li>
+          <li class="tag">Installation</li>
         </ul>
       </li>
 
@@ -4845,8 +4773,7 @@
         <p class="excerpt">Install the 11.2.0.4 database software on OL7: the two zips you need, the preinstall RPM, the installer steps, the ins_emagent.mk fix and the root scripts.</p>
 
         <ul class="chips">
-          <li class="cat">Database</li>
-          <li class="tag">Oracle</li>
+          <li class="cat">Oracle Database</li>
           <li class="tag">Installation</li>
         </ul>
       </li>
@@ -4873,8 +4800,8 @@
         </p>
 
         <ul class="chips">
-          <li class="cat">LAB</li>
-          <li class="tag">Home LAB</li>
+          <li class="cat">Homelab</li>
+          <li class="tag">Home Lab</li>
         </ul>
       </li>
 
@@ -4888,7 +4815,7 @@
       <h2 class="section"><label for="q">Search</label></h2>
       <div class="search-box">
         <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 20l-4.2-4.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        <input type="search" id="q" placeholder="Search post headings" autocomplete="off" spellcheck="false">
+        <input type="search" id="q" placeholder="Search titles, text and tags" autocomplete="off" spellcheck="false">
         <kbd aria-hidden="true">/</kbd>
       </div>
       <p class="search-status" id="search-status" aria-live="polite"></p>
@@ -4927,14 +4854,75 @@
   document.body.classList.remove('no-js');
 
   var posts    = Array.prototype.slice.call(document.querySelectorAll('.post'));
+  var list     = document.querySelector('ul.posts');
+  var order    = posts.slice();              // the original, newest-first order
   var catList  = document.getElementById('cat-list');
   var tagList  = document.getElementById('tag-list');
+  var barList  = document.getElementById('filter-bar');
+  var seriesEl = document.getElementById('series-strip');
   var resetBtn = document.getElementById('reset');
   var emptyMsg = document.getElementById('empty');
   var countEl  = document.getElementById('count');
+  var headingEl= document.getElementById('list-heading');
 
-  // Read each post's chips once, so the visible chips stay the single
-  // source of truth for both the post list and the sidebar counts.
+  // Multi-part walkthroughs, in reading order. A post can only sit in one.
+  var SERIES = [
+    { name: 'Azure SQL migrations', blurb: 'Seven ways in and out of Azure SQL Database',
+      slugs: ['azure-sql-database', 'sqlserver-to-azure-sql-bacpac', 'sqlserver-to-azure-sql-dms',
+              'sqlserver-to-azure-sql-dacpac-bcp', 'sqlserver-to-azure-sql-replication',
+              'azure-sql-to-sqlserver-bacpac-tde', 'azure-sql-to-sqlserver-dacpac-bcp-tde',
+              'azure-sql-to-sqlserver-dacpac-change-tracking'] },
+    { name: 'Proxmox VE', blurb: 'Bare metal to scheduled backups',
+      slugs: ['how-to-install-proxmox-ve-on-a-bare-metal-server-or-virtual-machine',
+              'how-to-add-additional-storage-disks-to-proxmox-ve',
+              'how-to-create-a-linux-virtual-machine-vm-in-proxmox-ve',
+              'how-to-create-a-windows-virtual-machine-vm-in-proxmox-ve',
+              'how-to-configure-cloud-init-in-proxmox-ve',
+              'install-and-configure-proxmox-backup-server-pbs-step-by-step-guide',
+              'how-to-schedule-automatic-backups-for-vms-in-proxmox-ve-with-proxmox-backup-server-pbs',
+              'how-to-restore-a-vm-from-proxmox-backup-server-pbs-backup-and-create-a-new-vm',
+              'download-and-create-proxmox-ve-a-step-by-step-guide'] },
+    { name: 'MongoDB from scratch', blurb: 'Install, model, secure, replicate',
+      slugs: ['introduction-to-mongodb', 'how-to-install-mongodb-on-oracle-enterprise-linux-8-oel-8',
+              'connecting-to-mongodb-on-oracle-enterprise-linux-8-shell-and-gui-methods',
+              'creating-a-database-in-mongodb', 'understanding-collections-in-mongodb',
+              'mastering-crud-operations-in-mongodb', 'understanding-indexes-in-mongodb',
+              'dropping-a-database-in-mongod', 'enable-authentication-in-mongodb',
+              'mongodb-user-management-a-comprehensive-guide-to-creating-and-managing-users',
+              'creating-user-defined-roles-in-mongodb-a-comprehensive-guide',
+              'database-backup-and-restore-using-mongodump-and-mongorestore-in-mongodb',
+              'A-comprehensive-guide-to-mongoexport-and-mongoimport-in-mongodb-steps-use-cases',
+              'setting-up-mongodb-replication-a-step-by-step-guide',
+              'migrating-mongodb-to-oracle-autonomous-database',
+              'migrating-mongodb-to-oracle-autonomous-database-with-oracle-goldengate'] },
+    { name: 'Non-CDB to PDB', blurb: 'Five routes off the deprecated non-CDB',
+      slugs: ['migrating-oracle-19c-non-cdb-to-pdb-using-autoupgrade',
+              'migrating-oracle-non-cdb-to-pdb-with-autoupgrade-using-refreshable-clones',
+              'migrating-oracle-19c-non-cdb-to-pdb-using-export-and-import',
+              'migrating-oracle-19c-non-cdb-to-pdb-using-the-m5-transportable-tablespaces-method',
+              'converting-oracle-19c-non-cdb-to-pdb-using-a-shell-script',
+              'steps-to-convert-non-cdb-database-to-cdb-in-19c-manually'] },
+    { name: 'GoldenGate 21c and 23ai', blurb: 'Install, configure, patch, replicate',
+      slugs: ['understand-oracle-goldengate-architecture-purposeuse-cases',
+              'steps-to-install-goldengate-21c-on-oel7', 'oracle-goldengate-21c-installation-step-by-step-guide',
+              'setup-for-oracle-databases-involved-in-goldengate-configuration',
+              'steps-to-migrate-replicate-tables-in-oracle-database-using-oracle-goldengate-21c',
+              'steps-to-add-a-new-table-tables-to-ongoing-replication',
+              'steps-to-apply-the-patch-on-oracle-goldengate-21c',
+              'how-to-uninstall-oracle-goldengate-21c-microservices-step-by-step',
+              'steps-to-install-goldengate-23ai', 'steps-to-add-database-connections-to-goldengate-23ai',
+              'oracle-goldengate-23ai-building-a-docker-image-from-oracle-github',
+              'how-to-export-a-docker-image-oracle-goldengate-23ai-example'] },
+    { name: 'VMware vSphere', blurb: 'ESXi, vCenter, certificates, upgrades',
+      slugs: ['how-to-install-vmware-esxi-7-step-by-step-guide-for-beginners',
+              'how-to-install-vcenter-server-7-vcsa-step-by-step-guide',
+              'steps-to-upgrade-vcenter-server-7-to-vcenter-8',
+              'certificate-renewal-of-esxi-8-host',
+              'how-to-configure-vmware-esxi-to-use-pfsense'] }
+  ];
+
+  // Read each post once. The visible chips stay the single source of truth
+  // for the post list, the filter bar and the sidebar counts.
   posts.forEach(function (post) {
     var read = function (sel) {
       return Array.prototype.map.call(
@@ -4942,20 +4930,31 @@
         function (li) { return li.textContent.trim(); }
       );
     };
-    post._cats = read('cat');
-    post._tags = read('tag');
+    var time = post.querySelector('time');
+    post._cats  = read('cat');
+    post._tags  = read('tag');
     post._link  = post.querySelector('h3 a');
+    post._slug  = (post._link.getAttribute('href') || '').split('/')[0];
     post._title = post._link.textContent.replace(/\s+/g, ' ').trim();
-    post._lower = post._title.toLowerCase();
+    post._year  = time ? (time.getAttribute('datetime') || '').slice(0, 4) : '';
+    var ex = post.querySelector('.excerpt');
+    // Search looks at everything a reader can see on the card, not just the heading.
+    post._hay = (post._title + ' ' + (ex ? ex.textContent : '') + ' ' +
+                 post._cats.join(' ') + ' ' + post._tags.join(' ')).toLowerCase();
+  });
+
+  var bySlug = {};
+  posts.forEach(function (p) { bySlug[p._slug] = p; });
+  SERIES.forEach(function (s) {
+    s.posts = s.slugs.map(function (sl) { return bySlug[sl]; }).filter(Boolean);
   });
 
   var searchEl = document.getElementById('q');
   var statusEl = document.getElementById('search-status');
-  var words = [];   // lower-case search words; a post must contain all of them
+  var words = [];
 
   function escapeRe(w) { return w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 
-  // Re-draw a heading, wrapping each matched word in <mark>.
   function highlight(post) {
     var link = post._link;
     link.textContent = '';
@@ -4985,7 +4984,13 @@
       .map(function (name) { return { name: name, count: counts[name] }; });
   }
 
-  var active = null; // { kind: 'cat' | 'tag', name: string }
+  var active = null; // { kind: 'cat' | 'tag' | 'series', name: string }
+
+  function toggle(kind, name) {
+    var same = active && active.kind === kind && active.name === name;
+    active = same ? null : { kind: kind, name: name };
+    apply();
+  }
 
   function render(listEl, items, kind) {
     listEl.textContent = '';
@@ -4994,6 +4999,8 @@
       var btn = document.createElement('button');
       btn.type = 'button';
       btn.setAttribute('aria-pressed', 'false');
+      btn.dataset.kind = kind;
+      btn.dataset.name = item.name;
 
       var name = document.createElement('span');
       name.className = 'name' + (kind === 'cat' ? ' cat-name' : '');
@@ -5005,37 +5012,134 @@
 
       btn.appendChild(name);
       btn.appendChild(count);
-      btn.addEventListener('click', function () {
-        var same = active && active.kind === kind && active.name === item.name;
-        active = same ? null : { kind: kind, name: item.name };
-        apply();
-      });
+      btn.addEventListener('click', function () { toggle(kind, item.name); });
 
       li.appendChild(btn);
       listEl.appendChild(li);
     });
   }
 
+  // The chip row above the list: every category, biggest first.
+  function renderBar(items) {
+    barList.textContent = '';
+    var all = document.createElement('button');
+    all.type = 'button';
+    all.className = 'chip-filter is-all';
+    all.textContent = 'All';
+    all.dataset.kind = 'all';
+    all.addEventListener('click', function () { active = null; apply(); });
+    barList.appendChild(all);
+
+    items.forEach(function (item) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'chip-filter';
+      btn.dataset.kind = 'cat';
+      btn.dataset.name = item.name;
+      btn.appendChild(document.createTextNode(item.name));
+      var n = document.createElement('span');
+      n.className = 'count';
+      n.textContent = item.count;
+      btn.appendChild(n);
+      btn.addEventListener('click', function () { toggle('cat', item.name); });
+      barList.appendChild(btn);
+    });
+  }
+
+  function renderSeries() {
+    seriesEl.textContent = '';
+    SERIES.forEach(function (s) {
+      if (!s.posts.length) return;
+      var card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'series-card';
+      card.dataset.kind = 'series';
+      card.dataset.name = s.name;
+
+      var h = document.createElement('span');
+      h.className = 'series-name';
+      h.textContent = s.name;
+
+      var b = document.createElement('span');
+      b.className = 'series-blurb';
+      b.textContent = s.blurb;
+
+      var n = document.createElement('span');
+      n.className = 'series-count';
+      n.textContent = s.posts.length + ' parts';
+
+      card.appendChild(h);
+      card.appendChild(b);
+      card.appendChild(n);
+      card.addEventListener('click', function () {
+        toggle('series', s.name);
+        document.getElementById('posts').scrollIntoView({ block: 'start' });
+      });
+      seriesEl.appendChild(card);
+    });
+  }
+
+  function seriesByName(name) {
+    for (var i = 0; i < SERIES.length; i++) if (SERIES[i].name === name) return SERIES[i];
+    return null;
+  }
+
+  function clearYears() {
+    Array.prototype.forEach.call(
+      list.querySelectorAll('.year-sep'),
+      function (el) { el.remove(); }
+    );
+  }
+
+  // Year headings only help when the list is in date order, so they are
+  // left out while a series is pinned (that list is in reading order).
+  function addYears() {
+    var seen = null;
+    posts.forEach(function (post) {
+      if (post.hidden) return;
+      if (post._year && post._year !== seen) {
+        seen = post._year;
+        var li = document.createElement('li');
+        li.className = 'year-sep';
+        li.setAttribute('aria-hidden', 'true');
+        li.textContent = post._year;
+        list.insertBefore(li, post);
+      }
+    });
+  }
+
+  function reorder(nodes) {
+    nodes.forEach(function (n) { list.appendChild(n); });
+  }
+
   function apply() {
     var shown = 0;
+    var series = active && active.kind === 'series' ? seriesByName(active.name) : null;
 
     posts.forEach(function (post) {
-      var inFilter = !active ||
-        (active.kind === 'cat' ? post._cats : post._tags).indexOf(active.name) !== -1;
-      var inSearch = words.every(function (w) { return post._lower.indexOf(w) !== -1; });
+      var inFilter;
+      if (!active) inFilter = true;
+      else if (active.kind === 'series') inFilter = series.posts.indexOf(post) !== -1;
+      else inFilter = (active.kind === 'cat' ? post._cats : post._tags).indexOf(active.name) !== -1;
+      var inSearch = words.every(function (w) { return post._hay.indexOf(w) !== -1; });
       var match = inFilter && inSearch;
       post.hidden = !match;
       highlight(post);
       if (match) shown++;
     });
 
+    clearYears();
+    reorder(series ? series.posts.concat(order.filter(function (p) {
+      return series.posts.indexOf(p) === -1;
+    })) : order);
+    if (!series) addYears();
+
     Array.prototype.forEach.call(
-      document.querySelectorAll('.widget button'),
+      document.querySelectorAll('[data-kind]'),
       function (btn) {
-        if (btn.id === 'reset') return;
-        var kind = btn.parentNode.parentNode.id === 'cat-list' ? 'cat' : 'tag';
-        var name = btn.querySelector('.name').textContent;
-        var on = !!active && active.kind === kind && active.name === name;
+        var on = btn.dataset.kind === 'all'
+          ? !active
+          : !!active && active.kind === btn.dataset.kind && active.name === btn.dataset.name;
         btn.setAttribute('aria-pressed', on ? 'true' : 'false');
       }
     );
@@ -5044,12 +5148,15 @@
     resetBtn.hidden = !filtering;
     emptyMsg.hidden = shown !== 0;
     emptyMsg.textContent = words.length
-      ? 'No post headings match \u201c' + searchEl.value.trim() + '\u201d' +
+      ? 'Nothing matches “' + searchEl.value.trim() + '”' +
         (active ? ' in ' + active.name : '') + '.'
       : 'No posts match that filter.';
     statusEl.textContent = words.length
       ? shown + (shown === 1 ? ' post matches' : ' posts match')
       : '';
+    headingEl.textContent = active
+      ? (active.kind === 'series' ? active.name : active.name + ' posts')
+      : 'Latest posts';
     countEl.textContent = filtering
       ? shown + ' of ' + posts.length
       : posts.length + (posts.length === 1 ? ' post' : ' posts');
@@ -5066,7 +5173,6 @@
     if (e.key === 'Escape') { searchEl.value = ''; setQuery(''); searchEl.blur(); }
   });
 
-  // Press "/" anywhere on the page to jump to the search box.
   document.addEventListener('keydown', function (e) {
     var t = e.target.tagName;
     if (e.key === '/' && t !== 'INPUT' && t !== 'TEXTAREA' && !e.ctrlKey && !e.metaKey) {
@@ -5081,8 +5187,18 @@
     setQuery('');
   });
 
-  render(catList, tally('_cats'), 'cat');
+  var cats = tally('_cats');
+  render(catList, cats, 'cat');
   render(tagList, tally('_tags'), 'tag');
+  renderBar(cats);
+  renderSeries();
+
+  // Hero figures, so they can never drift from the list.
+  var years = posts.map(function (p) { return p._year; }).filter(Boolean).sort();
+  document.getElementById('stat-posts').textContent = posts.length;
+  document.getElementById('stat-cats').textContent = cats.length;
+  document.getElementById('stat-years').textContent = years[0] + '–' + years[years.length - 1];
+
   apply();
 })();
 </script>
