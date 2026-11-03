@@ -11,7 +11,7 @@
 <meta property="og:description" content="Notes on Oracle Cloud Infrastructure, networking, and homelab infrastructure.">
 
 <!-- Relative, so the site works both opened from disk and served over HTTP. -->
-<link rel="stylesheet" href="style.css?v=5">
+<link rel="stylesheet" href="style.css?v=6">
 </head>
 
 <body class="no-js">
@@ -52,15 +52,14 @@
 
   <main id="posts">
     <div class="section-head">
-      <h2 class="section" id="list-heading">Browse by topic</h2>
+      <h2 class="section" id="list-heading">Latest posts</h2>
       <span class="n" id="count"></span>
     </div>
 
     <!-- Jump links, built from the categories the posts carry. -->
     <nav class="filter-bar" id="filter-bar" aria-label="Jump to a topic"></nav>
 
-    <!-- Topic sections are built here from the flat list below. -->
-    <div id="topics"></div>
+    <!-- The list below is the source; the script pages through it. -->
 
 
     <!-- To add a post: copy one <li class="post"> block and edit the fields.
@@ -4809,6 +4808,8 @@
 
     </ul>
 
+    <nav class="pager" id="pager" aria-label="Post pages"></nav>
+
     <p class="empty" id="empty" hidden>No posts match that filter.</p>
   </main>
 
@@ -4850,7 +4851,7 @@
   var list     = document.querySelector('ul.posts');
   var order    = posts.slice();              // the original, newest-first order
   var barList  = document.getElementById('filter-bar');
-  var topicsEl = document.getElementById('topics');
+  var pagerEl  = document.getElementById('pager');
   var seriesEl = document.getElementById('series-strip');
   var resetBtn = document.getElementById('reset');
   var emptyMsg = document.getElementById('empty');
@@ -4978,147 +4979,161 @@
       });
   })();
 
-  function slugify(name) {
-    return 'topic-' + name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  }
-
-  var openSeries = null;   // the series being read, or null for all topics
-  var PAGE = 10;           // posts shown per topic before "show all"
-  var expanded = Object.create(null);
-
-  function matches(post) {
-    return words.every(function (w) { return post._hay.indexOf(w) !== -1; });
-  }
+  var PER_PAGE   = 10;
+  var page       = 1;
+  var topic      = null;   // the category being shown, or null for all
+  var openSeries = null;   // the series being read, or null
 
   function plural(n) { return n + (n === 1 ? ' post' : ' posts'); }
 
-  // Builds one section and returns how many posts it is showing.
-  function section(name, items, note) {
-    var isSeries = !!note;
-    var shown = items.filter(matches);
-    if (!shown.length) return 0;
-
-    var sec = document.createElement('section');
-    sec.className = 'topic';
-    sec.id = slugify(name);
-
-    var head = document.createElement('div');
-    head.className = 'topic-head';
-
-    var h = document.createElement('h3');
-    h.className = 'topic-name';
-    h.textContent = name;
-
-    var n = document.createElement('span');
-    n.className = 'topic-count';
-    n.textContent = words.length
-      ? shown.length + ' of ' + plural(items.length)
-      : plural(items.length);
-    sec._setCount = function (visible) {
-      if (!words.length && visible < items.length) {
-        n.textContent = 'showing ' + visible + ' of ' + plural(items.length);
-      }
-    };
-
-    head.appendChild(h);
-    head.appendChild(n);
-    if (note) {
-      var sub = document.createElement('p');
-      sub.className = 'topic-note';
-      sub.textContent = note;
-      head.appendChild(sub);
-    }
-
-    // Long topics are trimmed to the newest few. A search is already a
-    // filter, so its results are never trimmed on top of that.
-    var trim = !words.length && !isSeries && shown.length > PAGE && !expanded[name];
-    var visible = trim ? shown.slice(0, PAGE) : shown;
-
-    var ul = document.createElement('ul');
-    ul.className = 'posts';
-    visible.forEach(function (post) {
-      post.hidden = false;
-      highlight(post);
-      ul.appendChild(post);          // moved, not copied
+  // The posts to page through, newest first unless a series sets the order.
+  function selection() {
+    var base = openSeries ? openSeries.posts
+             : topic ? topic.posts
+             : order;
+    if (!words.length) return base;
+    return base.filter(function (p) {
+      return words.every(function (w) { return p._hay.indexOf(w) !== -1; });
     });
+  }
 
-    sec.appendChild(head);
-    sec.appendChild(ul);
+  function pageButton(label, target, current, disabled) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'page-btn' + (current ? ' is-current' : '');
+    b.textContent = label;
+    if (current) b.setAttribute('aria-current', 'page');
+    if (disabled) b.disabled = true;
+    else b.addEventListener('click', function () { go(target); });
+    return b;
+  }
 
-    if (!words.length && !isSeries && shown.length > PAGE) {
-      var more = document.createElement('button');
-      more.type = 'button';
-      more.className = 'show-more';
-      more.setAttribute('aria-expanded', expanded[name] ? 'true' : 'false');
-      more.textContent = expanded[name]
-        ? 'Show fewer'
-        : 'Show all ' + shown.length + ' posts';
-      more.addEventListener('click', function () {
-        expanded[name] = !expanded[name];
-        var top = sec.getBoundingClientRect().top;
-        render();
-        // Keep the heading where it was, so collapsing does not jump the page.
-        var now = document.getElementById(slugify(name));
-        if (now) window.scrollBy(0, now.getBoundingClientRect().top - top);
-      });
-      sec.appendChild(more);
+  function gap() {
+    var s = document.createElement('span');
+    s.className = 'page-gap';
+    s.textContent = '…';
+    return s;
+  }
+
+  // First and last page always shown, plus the ones either side of this one.
+  function pageNumbers(total) {
+    var want = {}, out = [];
+    [1, total, page - 1, page, page + 1].forEach(function (n) {
+      if (n >= 1 && n <= total) want[n] = true;
+    });
+    if (page <= 3) { [2, 3, 4].forEach(function (n) { if (n <= total) want[n] = true; }); }
+    if (page >= total - 2) {
+      [total - 3, total - 2, total - 1].forEach(function (n) { if (n >= 1) want[n] = true; });
     }
+    Object.keys(want).map(Number).sort(function (a, b) { return a - b; })
+      .forEach(function (n, i, arr) {
+        if (i && n - arr[i - 1] > 1) out.push(null);
+        out.push(n);
+      });
+    return out;
+  }
 
-    sec._setCount(visible.length);
-    topicsEl.appendChild(sec);
-    return visible.length;
+  function renderPager(total, count) {
+    pagerEl.textContent = '';
+    if (total <= 1) { pagerEl.hidden = true; return; }
+    pagerEl.hidden = false;
+
+    pagerEl.appendChild(pageButton('← Prev', page - 1, false, page === 1));
+    pageNumbers(total).forEach(function (n) {
+      pagerEl.appendChild(n === null ? gap() : pageButton(String(n), n, n === page, false));
+    });
+    pagerEl.appendChild(pageButton('Next →', page + 1, false, page === total));
+
+    var note = document.createElement('span');
+    note.className = 'page-note';
+    note.textContent = 'Page ' + page + ' of ' + total + ' · ' + plural(count);
+    pagerEl.appendChild(note);
+  }
+
+  function go(n) {
+    page = n;
+    render();
+    document.getElementById('posts').scrollIntoView({ block: 'start' });
   }
 
   function render() {
-    topicsEl.textContent = '';
-    var shown = 0;
+    var picked = selection();
+    var total  = Math.max(1, Math.ceil(picked.length / PER_PAGE));
+    if (page > total) page = total;
 
-    if (openSeries) {
-      shown = section(openSeries.name, openSeries.posts,
-                      openSeries.blurb + ' \u00b7 in reading order');
-    } else {
-      topics.forEach(function (t) { shown += section(t.name, t.posts); });
-    }
+    var from = (page - 1) * PER_PAGE;
+    var slice = picked.slice(from, from + PER_PAGE);
+
+    posts.forEach(function (p) { p.hidden = true; });
+    list.textContent = '';
+    slice.forEach(function (post) {
+      post.hidden = false;
+      highlight(post);
+      list.appendChild(post);        // moved, not copied
+    });
 
     Array.prototype.forEach.call(
       document.querySelectorAll('[data-kind]'),
       function (btn) {
-        var on = btn.dataset.kind === 'series' &&
-                 !!openSeries && openSeries.name === btn.dataset.name;
+        var on = btn.dataset.kind === 'all'
+          ? (!topic && !openSeries)
+          : btn.dataset.kind === 'cat'
+            ? (!!topic && topic.name === btn.dataset.name)
+            : (!!openSeries && openSeries.name === btn.dataset.name);
         btn.setAttribute('aria-pressed', on ? 'true' : 'false');
       }
     );
 
-    var filtering = !!openSeries || words.length > 0;
+    renderPager(total, picked.length);
+
+    var filtering = !!topic || !!openSeries || words.length > 0;
     resetBtn.hidden = !filtering;
-    emptyMsg.hidden = shown !== 0;
+    emptyMsg.hidden = picked.length !== 0;
     emptyMsg.textContent = words.length
-      ? 'Nothing matches \u201c' + searchEl.value.trim() + '\u201d' +
-        (openSeries ? ' in ' + openSeries.name : '') + '.'
-      : 'No posts to show.';
+      ? 'Nothing matches “' + searchEl.value.trim() + '”' +
+        (topic ? ' in ' + topic.name : openSeries ? ' in ' + openSeries.name : '') + '.'
+      : 'No posts match that filter.';
     statusEl.textContent = words.length
-      ? shown + (shown === 1 ? ' post matches' : ' posts match')
+      ? picked.length + (picked.length === 1 ? ' post matches' : ' posts match')
       : '';
-    headingEl.textContent = openSeries ? openSeries.name : 'Browse by topic';
+    headingEl.textContent = openSeries ? openSeries.name
+                          : topic ? topic.name
+                          : 'Latest posts';
     countEl.textContent = filtering
-      ? shown + ' of ' + posts.length
-      : topics.length + ' topics \u00b7 ' + plural(posts.length);
-    barList.hidden = !!openSeries;
+      ? plural(picked.length)
+      : topics.length + ' topics · ' + plural(posts.length);
   }
 
-  // Jump links across the top: one per topic, with its count.
+  // Topic chips: filter the list, and carry the count of each topic.
   function renderBar() {
     barList.textContent = '';
+    var all = document.createElement('button');
+    all.type = 'button';
+    all.className = 'chip-filter is-all';
+    all.textContent = 'All';
+    all.dataset.kind = 'all';
+    all.addEventListener('click', function () {
+      topic = null; openSeries = null; go(1);
+    });
+    barList.appendChild(all);
+
     topics.forEach(function (t) {
-      var a = document.createElement('a');
-      a.className = 'chip-filter';
-      a.href = '#' + slugify(t.name);
-      a.appendChild(document.createTextNode(t.name));
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'chip-filter';
+      btn.dataset.kind = 'cat';
+      btn.dataset.name = t.name;
+      btn.appendChild(document.createTextNode(t.name));
       var n = document.createElement('span');
       n.className = 'count';
       n.textContent = t.posts.length;
-      a.appendChild(n);
-      barList.appendChild(a);
+      btn.appendChild(n);
+      btn.addEventListener('click', function () {
+        topic = topic === t ? null : t;
+        openSeries = null;
+        go(1);
+      });
+      barList.appendChild(btn);
     });
   }
 
@@ -5149,8 +5164,8 @@
       card.appendChild(n);
       card.addEventListener('click', function () {
         openSeries = openSeries === s ? null : s;
-        render();
-        document.getElementById('posts').scrollIntoView({ block: 'start' });
+        topic = null;
+        go(1);
       });
       seriesEl.appendChild(card);
     });
@@ -5158,6 +5173,7 @@
 
   function setQuery(value) {
     words = value.toLowerCase().split(/\s+/).filter(Boolean);
+    page = 1;
     render();
   }
 
@@ -5176,14 +5192,11 @@
   });
 
   resetBtn.addEventListener('click', function () {
+    topic = null;
     openSeries = null;
     searchEl.value = '';
     setQuery('');
   });
-
-  // The flat list was the no-JS fallback; its posts now live in the sections.
-  var flat = document.querySelector('main > ul.posts');
-  if (flat) flat.remove();
 
   renderBar();
   renderSeries();
@@ -5191,11 +5204,12 @@
   var years = posts.map(function (p) { return p._year; }).filter(Boolean).sort();
   document.getElementById('stat-posts').textContent = posts.length;
   document.getElementById('stat-cats').textContent = topics.length;
-  document.getElementById('stat-years').textContent = years[0] + '\u2013' + years[years.length - 1];
+  document.getElementById('stat-years').textContent = years[0] + '–' + years[years.length - 1];
 
   render();
 })();
 </script>
+
 
 </body>
 </html>

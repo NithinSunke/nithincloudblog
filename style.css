@@ -890,76 +890,70 @@ ol.sources a { overflow-wrap: anywhere; }
 .no-js .series-wrap,
 .no-js .filter-bar { display: none; }
 
-/* ---------------- home page: topic sections ---------------- */
 
-.topic { margin-bottom: 3rem; }
+/* ---------------- home page: pagination ---------------- */
 
-.topic:last-child { margin-bottom: 0; }
-
-.topic-head {
+.pager {
   display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: .3rem .75rem;
-  margin-bottom: 1rem;
-  padding-bottom: .5rem;
-  border-bottom: 1px solid var(--border-soft);
-  scroll-margin-top: 1rem;
-}
-
-.topic-name {
-  margin: 0;
-  font-size: 1.15rem;
-  font-weight: 650;
-  letter-spacing: -.015em;
-}
-
-.topic-count {
-  font-size: .8rem;
-  color: var(--faint);
-  font-variant-numeric: tabular-nums;
-}
-
-.topic-note {
-  flex-basis: 100%;
-  margin: .1rem 0 0;
-  font-size: .85rem;
-  color: var(--muted);
-}
-
-/* The heading is the anchor target, so leave room for it when jumping. */
-.topic { scroll-margin-top: 1.5rem; }
-
-.topic .posts { margin: 0; }
-
-/* Jump links share the chip look but are anchors, not filters. */
-a.chip-filter { text-decoration: none; }
-
-.show-more {
-  display: inline-flex;
   align-items: center;
-  gap: .4rem;
-  margin-top: .9rem;
-  padding: .45rem .9rem;
+  flex-wrap: wrap;
+  gap: .35rem;
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-soft);
+}
+
+.page-btn {
+  min-width: 2.25rem;
+  padding: .4rem .6rem;
   font: inherit;
-  font-size: .85rem;
+  font-size: .9rem;
+  font-variant-numeric: tabular-nums;
   color: var(--muted);
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: 8px;
   cursor: pointer;
   transition: color .15s, border-color .15s, background .15s;
 }
 
-.show-more:hover {
+.page-btn:hover:not(:disabled) {
   color: var(--accent);
   border-color: var(--accent);
   background: var(--accent-soft);
 }
 
-.show-more::after {
-  content: "\2193";
-  font-size: .9em;
+.page-btn.is-current {
+  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+  font-weight: 650;
 }
 
-.show-more[aria-expanded="true"]::after { content: "\2191"; }
+@media (prefers-color-scheme: dark) {
+  .page-btn.is-current { color: var(--bg); }
+}
+
+.page-btn:disabled {
+  opacity: .4;
+  cursor: default;
+}
+
+.page-gap {
+  padding: 0 .15rem;
+  color: var(--faint);
+}
+
+.page-note {
+  flex-basis: 100%;
+  margin-top: .6rem;
+  font-size: .8rem;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.pager[hidden] { display: none; }
+
+@media (max-width: 40rem) {
+  .page-btn { min-width: 2rem; padding: .35rem .45rem; font-size: .85rem; }
+}
