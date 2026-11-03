@@ -1229,3 +1229,27 @@ ol.sources a { overflow-wrap: anywhere; }
 }
 
 .no-js .topicbar { display: none; }
+
+/* ---------------- 404 ---------------- */
+
+.notfound { padding-block: 4rem 6rem; }
+
+.notfound .code {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 4rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--brand);
+  opacity: .25;
+}
+
+.notfound h1 {
+  margin: .4rem 0 .6rem;
+  font-size: 2rem;
+  letter-spacing: -.02em;
+}
+
+.notfound p { color: var(--muted); max-width: 34rem; }
+
+.notfound-actions { margin-top: 1.5rem; }
