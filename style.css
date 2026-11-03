@@ -934,3 +934,32 @@ ol.sources a { overflow-wrap: anywhere; }
 
 /* Jump links share the chip look but are anchors, not filters. */
 a.chip-filter { text-decoration: none; }
+
+.show-more {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  margin-top: .9rem;
+  padding: .45rem .9rem;
+  font: inherit;
+  font-size: .85rem;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color .15s, border-color .15s, background .15s;
+}
+
+.show-more:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.show-more::after {
+  content: "\2193";
+  font-size: .9em;
+}
+
+.show-more[aria-expanded="true"]::after { content: "\2191"; }

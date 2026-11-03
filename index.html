@@ -11,7 +11,7 @@
 <meta property="og:description" content="Notes on Oracle Cloud Infrastructure, networking, and homelab infrastructure.">
 
 <!-- Relative, so the site works both opened from disk and served over HTTP. -->
-<link rel="stylesheet" href="style.css?v=4">
+<link rel="stylesheet" href="style.css?v=5">
 </head>
 
 <body class="no-js">
@@ -4983,6 +4983,8 @@
   }
 
   var openSeries = null;   // the series being read, or null for all topics
+  var PAGE = 10;           // posts shown per topic before "show all"
+  var expanded = Object.create(null);
 
   function matches(post) {
     return words.every(function (w) { return post._hay.indexOf(w) !== -1; });
@@ -4992,6 +4994,7 @@
 
   // Builds one section and returns how many posts it is showing.
   function section(name, items, note) {
+    var isSeries = !!note;
     var shown = items.filter(matches);
     if (!shown.length) return 0;
 
@@ -5011,6 +5014,11 @@
     n.textContent = words.length
       ? shown.length + ' of ' + plural(items.length)
       : plural(items.length);
+    sec._setCount = function (visible) {
+      if (!words.length && visible < items.length) {
+        n.textContent = 'showing ' + visible + ' of ' + plural(items.length);
+      }
+    };
 
     head.appendChild(h);
     head.appendChild(n);
@@ -5021,9 +5029,14 @@
       head.appendChild(sub);
     }
 
+    // Long topics are trimmed to the newest few. A search is already a
+    // filter, so its results are never trimmed on top of that.
+    var trim = !words.length && !isSeries && shown.length > PAGE && !expanded[name];
+    var visible = trim ? shown.slice(0, PAGE) : shown;
+
     var ul = document.createElement('ul');
     ul.className = 'posts';
-    shown.forEach(function (post) {
+    visible.forEach(function (post) {
       post.hidden = false;
       highlight(post);
       ul.appendChild(post);          // moved, not copied
@@ -5031,8 +5044,29 @@
 
     sec.appendChild(head);
     sec.appendChild(ul);
+
+    if (!words.length && !isSeries && shown.length > PAGE) {
+      var more = document.createElement('button');
+      more.type = 'button';
+      more.className = 'show-more';
+      more.setAttribute('aria-expanded', expanded[name] ? 'true' : 'false');
+      more.textContent = expanded[name]
+        ? 'Show fewer'
+        : 'Show all ' + shown.length + ' posts';
+      more.addEventListener('click', function () {
+        expanded[name] = !expanded[name];
+        var top = sec.getBoundingClientRect().top;
+        render();
+        // Keep the heading where it was, so collapsing does not jump the page.
+        var now = document.getElementById(slugify(name));
+        if (now) window.scrollBy(0, now.getBoundingClientRect().top - top);
+      });
+      sec.appendChild(more);
+    }
+
+    sec._setCount(visible.length);
     topicsEl.appendChild(sec);
-    return shown.length;
+    return visible.length;
   }
 
   function render() {
