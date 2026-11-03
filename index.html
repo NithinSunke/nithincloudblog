@@ -11,7 +11,7 @@
 <meta property="og:description" content="Notes on Oracle Cloud Infrastructure, networking, and homelab infrastructure.">
 
 <!-- Relative, so the site works both opened from disk and served over HTTP. -->
-<link rel="stylesheet" href="style.css?v=3">
+<link rel="stylesheet" href="style.css?v=4">
 </head>
 
 <body class="no-js">
@@ -22,8 +22,7 @@
       <h1><a href="index.html">Nithin Cloud Blog</a></h1>
       <nav class="site-nav">
         <a href="#series">Series</a>
-        <a href="#posts">Posts</a>
-        <a href="#categories">Categories</a>
+        <a href="#posts">Topics</a>
       </nav>
     </div>
     <p class="tagline">
@@ -53,12 +52,15 @@
 
   <main id="posts">
     <div class="section-head">
-      <h2 class="section" id="list-heading">Latest posts</h2>
+      <h2 class="section" id="list-heading">Browse by topic</h2>
       <span class="n" id="count"></span>
     </div>
 
-    <!-- Category chips. Built from the same chips the posts carry. -->
-    <div class="filter-bar" id="filter-bar"></div>
+    <!-- Jump links, built from the categories the posts carry. -->
+    <nav class="filter-bar" id="filter-bar" aria-label="Jump to a topic"></nav>
+
+    <!-- Topic sections are built here from the flat list below. -->
+    <div id="topics"></div>
 
 
     <!-- To add a post: copy one <li class="post"> block and edit the fields.
@@ -4810,7 +4812,7 @@
     <p class="empty" id="empty" hidden>No posts match that filter.</p>
   </main>
 
-  <aside class="sidebar" id="categories">
+  <aside class="sidebar">
     <section class="widget search" id="search-widget" role="search">
       <h2 class="section"><label for="q">Search</label></h2>
       <div class="search-box">
@@ -4819,6 +4821,7 @@
         <kbd aria-hidden="true">/</kbd>
       </div>
       <p class="search-status" id="search-status" aria-live="polite"></p>
+      <button type="button" id="reset" hidden>Clear</button>
     </section>
 
     <section class="widget about">
@@ -4829,16 +4832,6 @@
       </p>
     </section>
 
-    <section class="widget">
-      <h2 class="section">Categories</h2>
-      <ul id="cat-list"></ul>
-    </section>
-
-    <section class="widget">
-      <h2 class="section">Tags</h2>
-      <ul id="tag-list"></ul>
-      <button type="button" id="reset" hidden>Clear filters</button>
-    </section>
   </aside>
 
 </div>
@@ -4856,9 +4849,8 @@
   var posts    = Array.prototype.slice.call(document.querySelectorAll('.post'));
   var list     = document.querySelector('ul.posts');
   var order    = posts.slice();              // the original, newest-first order
-  var catList  = document.getElementById('cat-list');
-  var tagList  = document.getElementById('tag-list');
   var barList  = document.getElementById('filter-bar');
+  var topicsEl = document.getElementById('topics');
   var seriesEl = document.getElementById('series-strip');
   var resetBtn = document.getElementById('reset');
   var emptyMsg = document.getElementById('empty');
@@ -4972,77 +4964,127 @@
     });
   }
 
-  function tally(key) {
-    var counts = Object.create(null);
+  // One topic per category, biggest first. Every post has exactly one.
+  var topics = (function () {
+    var byName = Object.create(null);
     posts.forEach(function (post) {
-      post[key].forEach(function (name) {
-        counts[name] = (counts[name] || 0) + 1;
+      var name = post._cats[0] || 'Other';
+      (byName[name] = byName[name] || []).push(post);
+    });
+    return Object.keys(byName)
+      .map(function (name) { return { name: name, posts: byName[name] }; })
+      .sort(function (a, b) {
+        return b.posts.length - a.posts.length || a.name.localeCompare(b.name);
       });
+  })();
+
+  function slugify(name) {
+    return 'topic-' + name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  }
+
+  var openSeries = null;   // the series being read, or null for all topics
+
+  function matches(post) {
+    return words.every(function (w) { return post._hay.indexOf(w) !== -1; });
+  }
+
+  function plural(n) { return n + (n === 1 ? ' post' : ' posts'); }
+
+  // Builds one section and returns how many posts it is showing.
+  function section(name, items, note) {
+    var shown = items.filter(matches);
+    if (!shown.length) return 0;
+
+    var sec = document.createElement('section');
+    sec.className = 'topic';
+    sec.id = slugify(name);
+
+    var head = document.createElement('div');
+    head.className = 'topic-head';
+
+    var h = document.createElement('h3');
+    h.className = 'topic-name';
+    h.textContent = name;
+
+    var n = document.createElement('span');
+    n.className = 'topic-count';
+    n.textContent = words.length
+      ? shown.length + ' of ' + plural(items.length)
+      : plural(items.length);
+
+    head.appendChild(h);
+    head.appendChild(n);
+    if (note) {
+      var sub = document.createElement('p');
+      sub.className = 'topic-note';
+      sub.textContent = note;
+      head.appendChild(sub);
+    }
+
+    var ul = document.createElement('ul');
+    ul.className = 'posts';
+    shown.forEach(function (post) {
+      post.hidden = false;
+      highlight(post);
+      ul.appendChild(post);          // moved, not copied
     });
-    return Object.keys(counts)
-      .sort(function (a, b) { return counts[b] - counts[a] || a.localeCompare(b); })
-      .map(function (name) { return { name: name, count: counts[name] }; });
+
+    sec.appendChild(head);
+    sec.appendChild(ul);
+    topicsEl.appendChild(sec);
+    return shown.length;
   }
 
-  var active = null; // { kind: 'cat' | 'tag' | 'series', name: string }
+  function render() {
+    topicsEl.textContent = '';
+    var shown = 0;
 
-  function toggle(kind, name) {
-    var same = active && active.kind === kind && active.name === name;
-    active = same ? null : { kind: kind, name: name };
-    apply();
+    if (openSeries) {
+      shown = section(openSeries.name, openSeries.posts,
+                      openSeries.blurb + ' \u00b7 in reading order');
+    } else {
+      topics.forEach(function (t) { shown += section(t.name, t.posts); });
+    }
+
+    Array.prototype.forEach.call(
+      document.querySelectorAll('[data-kind]'),
+      function (btn) {
+        var on = btn.dataset.kind === 'series' &&
+                 !!openSeries && openSeries.name === btn.dataset.name;
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      }
+    );
+
+    var filtering = !!openSeries || words.length > 0;
+    resetBtn.hidden = !filtering;
+    emptyMsg.hidden = shown !== 0;
+    emptyMsg.textContent = words.length
+      ? 'Nothing matches \u201c' + searchEl.value.trim() + '\u201d' +
+        (openSeries ? ' in ' + openSeries.name : '') + '.'
+      : 'No posts to show.';
+    statusEl.textContent = words.length
+      ? shown + (shown === 1 ? ' post matches' : ' posts match')
+      : '';
+    headingEl.textContent = openSeries ? openSeries.name : 'Browse by topic';
+    countEl.textContent = filtering
+      ? shown + ' of ' + posts.length
+      : topics.length + ' topics \u00b7 ' + plural(posts.length);
+    barList.hidden = !!openSeries;
   }
 
-  function render(listEl, items, kind) {
-    listEl.textContent = '';
-    items.forEach(function (item) {
-      var li  = document.createElement('li');
-      var btn = document.createElement('button');
-      btn.type = 'button';
-      btn.setAttribute('aria-pressed', 'false');
-      btn.dataset.kind = kind;
-      btn.dataset.name = item.name;
-
-      var name = document.createElement('span');
-      name.className = 'name' + (kind === 'cat' ? ' cat-name' : '');
-      name.textContent = item.name;
-
-      var count = document.createElement('span');
-      count.className = 'count';
-      count.textContent = item.count;
-
-      btn.appendChild(name);
-      btn.appendChild(count);
-      btn.addEventListener('click', function () { toggle(kind, item.name); });
-
-      li.appendChild(btn);
-      listEl.appendChild(li);
-    });
-  }
-
-  // The chip row above the list: every category, biggest first.
-  function renderBar(items) {
+  // Jump links across the top: one per topic, with its count.
+  function renderBar() {
     barList.textContent = '';
-    var all = document.createElement('button');
-    all.type = 'button';
-    all.className = 'chip-filter is-all';
-    all.textContent = 'All';
-    all.dataset.kind = 'all';
-    all.addEventListener('click', function () { active = null; apply(); });
-    barList.appendChild(all);
-
-    items.forEach(function (item) {
-      var btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'chip-filter';
-      btn.dataset.kind = 'cat';
-      btn.dataset.name = item.name;
-      btn.appendChild(document.createTextNode(item.name));
+    topics.forEach(function (t) {
+      var a = document.createElement('a');
+      a.className = 'chip-filter';
+      a.href = '#' + slugify(t.name);
+      a.appendChild(document.createTextNode(t.name));
       var n = document.createElement('span');
       n.className = 'count';
-      n.textContent = item.count;
-      btn.appendChild(n);
-      btn.addEventListener('click', function () { toggle('cat', item.name); });
-      barList.appendChild(btn);
+      n.textContent = t.posts.length;
+      a.appendChild(n);
+      barList.appendChild(a);
     });
   }
 
@@ -5072,99 +5114,17 @@
       card.appendChild(b);
       card.appendChild(n);
       card.addEventListener('click', function () {
-        toggle('series', s.name);
+        openSeries = openSeries === s ? null : s;
+        render();
         document.getElementById('posts').scrollIntoView({ block: 'start' });
       });
       seriesEl.appendChild(card);
     });
   }
 
-  function seriesByName(name) {
-    for (var i = 0; i < SERIES.length; i++) if (SERIES[i].name === name) return SERIES[i];
-    return null;
-  }
-
-  function clearYears() {
-    Array.prototype.forEach.call(
-      list.querySelectorAll('.year-sep'),
-      function (el) { el.remove(); }
-    );
-  }
-
-  // Year headings only help when the list is in date order, so they are
-  // left out while a series is pinned (that list is in reading order).
-  function addYears() {
-    var seen = null;
-    posts.forEach(function (post) {
-      if (post.hidden) return;
-      if (post._year && post._year !== seen) {
-        seen = post._year;
-        var li = document.createElement('li');
-        li.className = 'year-sep';
-        li.setAttribute('aria-hidden', 'true');
-        li.textContent = post._year;
-        list.insertBefore(li, post);
-      }
-    });
-  }
-
-  function reorder(nodes) {
-    nodes.forEach(function (n) { list.appendChild(n); });
-  }
-
-  function apply() {
-    var shown = 0;
-    var series = active && active.kind === 'series' ? seriesByName(active.name) : null;
-
-    posts.forEach(function (post) {
-      var inFilter;
-      if (!active) inFilter = true;
-      else if (active.kind === 'series') inFilter = series.posts.indexOf(post) !== -1;
-      else inFilter = (active.kind === 'cat' ? post._cats : post._tags).indexOf(active.name) !== -1;
-      var inSearch = words.every(function (w) { return post._hay.indexOf(w) !== -1; });
-      var match = inFilter && inSearch;
-      post.hidden = !match;
-      highlight(post);
-      if (match) shown++;
-    });
-
-    clearYears();
-    reorder(series ? series.posts.concat(order.filter(function (p) {
-      return series.posts.indexOf(p) === -1;
-    })) : order);
-    if (!series) addYears();
-
-    Array.prototype.forEach.call(
-      document.querySelectorAll('[data-kind]'),
-      function (btn) {
-        var on = btn.dataset.kind === 'all'
-          ? !active
-          : !!active && active.kind === btn.dataset.kind && active.name === btn.dataset.name;
-        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
-      }
-    );
-
-    var filtering = !!active || words.length > 0;
-    resetBtn.hidden = !filtering;
-    emptyMsg.hidden = shown !== 0;
-    emptyMsg.textContent = words.length
-      ? 'Nothing matches “' + searchEl.value.trim() + '”' +
-        (active ? ' in ' + active.name : '') + '.'
-      : 'No posts match that filter.';
-    statusEl.textContent = words.length
-      ? shown + (shown === 1 ? ' post matches' : ' posts match')
-      : '';
-    headingEl.textContent = active
-      ? (active.kind === 'series' ? active.name : active.name + ' posts')
-      : 'Latest posts';
-    countEl.textContent = filtering
-      ? shown + ' of ' + posts.length
-      : posts.length + (posts.length === 1 ? ' post' : ' posts');
-  }
-
   function setQuery(value) {
     words = value.toLowerCase().split(/\s+/).filter(Boolean);
-    apply();
+    render();
   }
 
   searchEl.addEventListener('input', function () { setQuery(searchEl.value); });
@@ -5182,24 +5142,24 @@
   });
 
   resetBtn.addEventListener('click', function () {
-    active = null;
+    openSeries = null;
     searchEl.value = '';
     setQuery('');
   });
 
-  var cats = tally('_cats');
-  render(catList, cats, 'cat');
-  render(tagList, tally('_tags'), 'tag');
-  renderBar(cats);
+  // The flat list was the no-JS fallback; its posts now live in the sections.
+  var flat = document.querySelector('main > ul.posts');
+  if (flat) flat.remove();
+
+  renderBar();
   renderSeries();
 
-  // Hero figures, so they can never drift from the list.
   var years = posts.map(function (p) { return p._year; }).filter(Boolean).sort();
   document.getElementById('stat-posts').textContent = posts.length;
-  document.getElementById('stat-cats').textContent = cats.length;
-  document.getElementById('stat-years').textContent = years[0] + '–' + years[years.length - 1];
+  document.getElementById('stat-cats').textContent = topics.length;
+  document.getElementById('stat-years').textContent = years[0] + '\u2013' + years[years.length - 1];
 
-  apply();
+  render();
 })();
 </script>
 

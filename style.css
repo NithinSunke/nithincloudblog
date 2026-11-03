@@ -880,28 +880,6 @@ ol.sources a { overflow-wrap: anywhere; }
 
 .chip-filter[aria-pressed="true"] .count { color: inherit; }
 
-/* ---------------- home page: year separators ---------------- */
-
-.year-sep {
-  display: flex;
-  align-items: center;
-  gap: .9rem;
-  margin: 2rem 0 1.1rem;
-  font-size: .75rem;
-  font-weight: 650;
-  letter-spacing: .1em;
-  color: var(--faint);
-  font-variant-numeric: tabular-nums;
-}
-
-.year-sep::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: var(--border-soft);
-}
-
-.posts > .year-sep:first-child { margin-top: 0; }
 
 @media (max-width: 40rem) {
   .stats { gap: 0 1.75rem; }
@@ -911,3 +889,48 @@ ol.sources a { overflow-wrap: anywhere; }
 /* Both are built by the script, so without JS they would be empty shells. */
 .no-js .series-wrap,
 .no-js .filter-bar { display: none; }
+
+/* ---------------- home page: topic sections ---------------- */
+
+.topic { margin-bottom: 3rem; }
+
+.topic:last-child { margin-bottom: 0; }
+
+.topic-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: .3rem .75rem;
+  margin-bottom: 1rem;
+  padding-bottom: .5rem;
+  border-bottom: 1px solid var(--border-soft);
+  scroll-margin-top: 1rem;
+}
+
+.topic-name {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 650;
+  letter-spacing: -.015em;
+}
+
+.topic-count {
+  font-size: .8rem;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.topic-note {
+  flex-basis: 100%;
+  margin: .1rem 0 0;
+  font-size: .85rem;
+  color: var(--muted);
+}
+
+/* The heading is the anchor target, so leave room for it when jumping. */
+.topic { scroll-margin-top: 1.5rem; }
+
+.topic .posts { margin: 0; }
+
+/* Jump links share the chip look but are anchors, not filters. */
+a.chip-filter { text-decoration: none; }
