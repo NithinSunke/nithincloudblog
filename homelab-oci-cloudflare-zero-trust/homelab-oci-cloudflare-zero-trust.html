@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Home Lab to OCI with Cloudflare Zero Trust</title>
+<meta name="description" content="Connecting a Proxmox home lab and Oracle Cloud (OCI) privately for free with Cloudflare Mesh, Tunnel and Access — steps, real issues and fixes, best practices.">
+<style>
+:root{--bg:#fbfaf7;--fg:#1f2328;--muted:#5b6470;--line:#e3e0d8;--card:#ffffff;--code:#f3f1ec;--accent:#e8590c;--accent2:#1c6fd1;--ok:#2f9e44}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15171a;--fg:#e6e8eb;--muted:#9aa3ad;--line:#2c3036;--card:#1c1f23;--code:#22262b;--accent:#ff8a4c;--accent2:#6aa8ff;--ok:#69db7c}}
+:root[data-theme="dark"]{--bg:#15171a;--fg:#e6e8eb;--muted:#9aa3ad;--line:#2c3036;--card:#1c1f23;--code:#22262b;--accent:#ff8a4c;--accent2:#6aa8ff;--ok:#69db7c}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+main{max-width:860px;margin:0 auto;padding:32px 16px 64px}
+h1{font-size:2rem;line-height:1.25;margin:.2em 0 .3em}
+h2{font-size:1.45rem;margin:2.2em 0 .6em;padding-bottom:.25em;border-bottom:1px solid var(--line)}
+h3{font-size:1.15rem;margin:1.6em 0 .4em}
+.meta{color:var(--muted);font-size:.92rem;margin-bottom:1.5em}
+a{color:var(--accent2)}
+code{background:var(--code);padding:.1em .35em;border-radius:4px;font:.88em ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+pre{background:var(--code);border:1px solid var(--line);border-radius:8px;padding:14px 16px;overflow-x:auto;font-size:.85rem;line-height:1.5}
+pre code{background:none;padding:0}
+.table-wrap{overflow-x:auto;margin:1em 0}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--code)}
+.callout{border-left:4px solid var(--accent);background:var(--card);padding:10px 14px;border-radius:0 8px 8px 0;margin:1em 0}
+figure{margin:1.5em 0;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px}
+figcaption{color:var(--muted);font-size:.88rem;text-align:center;margin-top:6px}
+svg{width:100%;height:auto;display:block}
+.chk{list-style:none;padding-left:0}.chk li:before{content:"☐ ";color:var(--ok)}
+</style>
+</head>
+<body>
+<main>
+<h1>Connecting a Proxmox Home Lab and Oracle Cloud (OCI) for Free with Cloudflare Zero Trust</h1>
+<div class="meta">9 November 2026 · Nithin Sunke · Cloudflare Mesh · Cloudflare Tunnel · Access · OCI · Proxmox</div>
+
+<h2>What we're building</h2>
+<p>A private, two-way network between a Proxmox home lab and an Oracle Cloud (OCI) VCN, plus remote access from a laptop or phone — with <strong>no open inbound ports, no public IPs on the servers, and ₹0 in licences</strong>. Cloudflare's free Zero Trust plan does the heavy lifting:</p>
+<ul>
+<li><strong>Cloudflare Mesh</strong> (formerly <em>WARP Connector</em>) links the two private subnets, site to site.</li>
+<li>The <strong>Cloudflare One Client</strong> (formerly <em>WARP</em>) on my laptop and phone reaches both subnets by private IP.</li>
+<li>A <strong>Cloudflare Tunnel</strong> (<code>cloudflared</code>) publishes the Proxmox web UI at a real HTTPS URL, protected by <strong>Cloudflare Access</strong> (email one-time PIN).</li>
+</ul>
+<p>This post is my build log: the steps that worked, the errors I actually hit, and how I fixed each one.</p>
+
+<h3>Architecture</h3>
+<figure>
+<svg viewBox="0 0 820 560" role="img" aria-labelledby="t d">
+<title id="t">Home lab and OCI connected through Cloudflare Zero Trust</title>
+<desc id="d">Laptop and browser clients connect to Cloudflare Zero Trust, which links a Proxmox home lab LAN and an OCI VCN private subnet through a Mesh node at each site, and publishes Proxmox through cloudflared.</desc>
+<defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 1L9 5L1 9z" fill="#8a94a0"/></marker></defs>
+<style>
+.bx{fill:var(--card);stroke:var(--line);stroke-width:1.2}
+.cf{fill:#fff1e6;stroke:#e8590c;stroke-width:1.4}
+.site{fill:none;stroke:#2f9e8f;stroke-width:1.4;stroke-dasharray:6 4}
+.oci{fill:none;stroke:#c92a2a;stroke-width:1.4;stroke-dasharray:6 4}
+.t{font:600 14px system-ui,sans-serif;fill:var(--fg)}
+.s{font:12px system-ui,sans-serif;fill:var(--muted)}
+.ct{font:600 15px system-ui,sans-serif;fill:#c2410c}
+.ln{stroke:#8a94a0;stroke-width:1.6;fill:none}
+.ds{stroke:#e8590c;stroke-width:1.6;fill:none;stroke-dasharray:5 4}
+@media (prefers-color-scheme:dark){.cf{fill:#3a2414}.ct{fill:#ffb27f}}
+</style>
+<!-- clients -->
+<rect class="bx" x="150" y="20" width="220" height="60" rx="8"/>
+<text class="t" x="260" y="45" text-anchor="middle">Laptop / phone</text>
+<text class="s" x="260" y="64" text-anchor="middle">Cloudflare One Client · 100.96.x.x</text>
+<rect class="bx" x="450" y="20" width="220" height="60" rx="8"/>
+<text class="t" x="560" y="45" text-anchor="middle">Any browser</text>
+<text class="s" x="560" y="64" text-anchor="middle">https://pve.&lt;yourdomain&gt;</text>
+<line class="ln" x1="260" y1="82" x2="260" y2="136" marker-end="url(#a)"/>
+<line class="ln" x1="560" y1="82" x2="560" y2="136" marker-end="url(#a)"/>
+<!-- cloudflare -->
+<rect class="cf" x="40" y="140" width="740" height="96" rx="10"/>
+<text class="ct" x="410" y="166" text-anchor="middle">Cloudflare Zero Trust (Free plan)</text>
+<text class="s" x="410" y="188" text-anchor="middle">Access (email PIN) · Gateway network policies · Mesh routes 192.168.1.0/24 + 10.0.0.0/16</text>
+<text class="s" x="410" y="208" text-anchor="middle">Device profiles / Split Tunnels · Tunnel "homelab" → pve.&lt;yourdomain&gt;</text>
+<!-- home site -->
+<rect class="site" x="40" y="290" width="350" height="250" rx="16"/>
+<text class="t" x="60" y="316">Home lab · Proxmox VE 9</text>
+<text class="s" x="60" y="334">LAN 192.168.1.0/24 · router static routes → .5</text>
+<rect class="bx" x="60" y="350" width="310" height="70" rx="8"/>
+<text class="t" x="215" y="376" text-anchor="middle">LXC "cudflrtnl" · 192.168.1.5</text>
+<text class="s" x="215" y="396" text-anchor="middle">Mesh node (100.96.0.4) + cloudflared</text>
+<text class="s" x="215" y="412" text-anchor="middle">Debian 12 · /dev/net/tun · ip_forward=1</text>
+<rect class="bx" x="60" y="450" width="145" height="70" rx="8"/>
+<text class="t" x="132" y="478" text-anchor="middle">Proxmox host</text>
+<text class="s" x="132" y="498" text-anchor="middle">192.168.1.10:8006</text>
+<rect class="bx" x="225" y="450" width="145" height="70" rx="8"/>
+<text class="t" x="297" y="478" text-anchor="middle">Lab VMs / DBs</text>
+<text class="s" x="297" y="498" text-anchor="middle">192.168.1.x</text>
+<line class="ln" x1="132" y1="422" x2="132" y2="448" marker-start="url(#a)" marker-end="url(#a)"/>
+<line class="ln" x1="297" y1="422" x2="297" y2="448" marker-start="url(#a)" marker-end="url(#a)"/>
+<!-- oci site -->
+<rect class="oci" x="430" y="290" width="350" height="250" rx="16"/>
+<text class="t" x="450" y="316">OCI VCN 10.0.0.0/16</text>
+<text class="s" x="450" y="334">Private subnet 10.0.1.0/24 · NAT gateway · no public IPs</text>
+<rect class="bx" x="450" y="350" width="310" height="70" rx="8"/>
+<text class="t" x="605" y="376" text-anchor="middle">VM "cftl-vm" · 10.0.1.5</text>
+<text class="s" x="605" y="396" text-anchor="middle">Mesh node (100.96.0.5) · Ubuntu · A1.Flex</text>
+<text class="s" x="605" y="412" text-anchor="middle">Skip src/dst check · iptables FORWARD open</text>
+<rect class="bx" x="450" y="450" width="310" height="70" rx="8"/>
+<text class="t" x="605" y="478" text-anchor="middle">DB / app VMs · 10.0.1.x</text>
+<text class="s" x="605" y="498" text-anchor="middle">Route table: 192.168.1.0/24 → 10.0.1.5</text>
+<line class="ln" x1="605" y1="422" x2="605" y2="448" marker-start="url(#a)" marker-end="url(#a)"/>
+<!-- tunnels -->
+<line class="ds" x1="215" y1="238" x2="215" y2="346" marker-start="url(#a)" marker-end="url(#a)"/>
+<line class="ds" x1="605" y1="238" x2="605" y2="346" marker-start="url(#a)" marker-end="url(#a)"/>
+<text class="s" x="225" y="270">outbound-only tunnel</text>
+<text class="s" x="615" y="270">outbound-only tunnel</text>
+</svg>
+<figcaption>Both sites only dial out to Cloudflare. Mesh carries home ↔ OCI and client traffic; cloudflared publishes Proxmox behind Access.</figcaption>
+</figure>
+
+<h3>Final topology</h3>
+<div class="table-wrap"><table>
+<tr><th>Piece</th><th>Where</th><th>Address</th></tr>
+<tr><td>Home lab LAN</td><td>Proxmox VE 9 host + VMs/LXCs</td><td>192.168.1.0/24 (Proxmox at 192.168.1.10)</td></tr>
+<tr><td>Home Mesh node</td><td>Debian 12 LXC on Proxmox</td><td>192.168.1.5 (Mesh IP 100.96.0.4)</td></tr>
+<tr><td>OCI VCN / private subnet</td><td>Any region</td><td>10.0.0.0/16 / 10.0.1.0/24</td></tr>
+<tr><td>OCI Mesh node</td><td>Ubuntu VM, private subnet, no public IP</td><td>10.0.1.5 (Mesh IP 100.96.0.5)</td></tr>
+<tr><td>Client devices</td><td>Laptop, phone</td><td>Get 100.96.x.x from Cloudflare</td></tr>
+<tr><td>Published app</td><td><code>pve.&lt;yourdomain&gt;</code></td><td>→ https://192.168.1.10:8006 via cloudflared</td></tr>
+</table></div>
+<p>Traffic paths once it's done:</p>
+<ul>
+<li><strong>Home VM ↔ OCI VM:</strong> VM → its site's Mesh node → Cloudflare → the other Mesh node → target. Both directions, real source IPs preserved.</li>
+<li><strong>Laptop (anywhere) → home or OCI:</strong> Cloudflare One Client → Cloudflare → that site's Mesh node.</li>
+<li><strong>Any browser → Proxmox:</strong> <code>https://pve.&lt;yourdomain&gt;</code> → Access login → cloudflared → 192.168.1.10:8006.</li>
+</ul>
+
+<h2>Why Cloudflare Zero Trust, and what's free</h2>
+<p>I'd previously linked the same lab to OCI with Tailscale subnet routers. Cloudflare's free tier gives a comparable mesh plus things Tailscale doesn't bundle: public HTTPS publishing for web apps, SSO in front of them, DNS filtering and per-port firewall policies — all from one dashboard.</p>
+<div class="table-wrap"><table>
+<tr><th>Free-plan feature</th><th>What I use it for</th></tr>
+<tr><td>Zero Trust, up to 50 users</td><td>Me + a few devices, no card charged</td></tr>
+<tr><td>Cloudflare Mesh (beta)</td><td>Site-to-site routing home ↔ OCI</td></tr>
+<tr><td>Cloudflare One Client</td><td>Laptop/phone access to both private subnets</td></tr>
+<tr><td>Cloudflare Tunnel</td><td>Publishing the Proxmox UI with no open ports</td></tr>
+<tr><td>Access (one-time PIN)</td><td>Login wall in front of published apps</td></tr>
+<tr><td>Gateway network policies</td><td>Allowing only the ports I need (22, 1521, 8006…)</td></tr>
+</table></div>
+<p>Limits worth knowing: 24-hour log retention, community support only, and Mesh is still labelled beta. For production database traffic, IPsec or FastConnect remains the standard (see the Data Guard section).</p>
+
+<h2>Prerequisites</h2>
+<ul>
+<li>A Cloudflare account and a domain whose nameservers point to Cloudflare. I used a free DigitalPlat (<code>dpdns.org</code>) subdomain — it works, but read Issue 10 below first.</li>
+<li>An OCI tenancy (Always Free is enough).</li>
+<li>Proxmox VE with a free static IP on the LAN for the Mesh node.</li>
+<li>Router access to add static routes, or willingness to add routes on each host.</li>
+<li>Non-overlapping CIDRs: home 192.168.1.0/24, OCI 10.0.0.0/16, and nothing inside Cloudflare's 100.96.0.0/12.</li>
+<li>Mesh node sizing (Cloudflare's supported list): Debian 12/13 or Ubuntu 22.04/24.04/26.04 (RHEL 9/10 also listed), <strong>3 vCPU minimum, 4 recommended</strong>, 1–2 GB RAM.</li>
+</ul>
+
+<h2>Step-by-step build</h2>
+<h3>Step 1 — Cloudflare Zero Trust org</h3>
+<ol>
+<li>Add your domain to Cloudflare (Free plan) and change its nameservers at the registrar. Wait for <strong>Active</strong>.</li>
+<li>Open Zero Trust, pick a team name (e.g. <code>mylab</code> → <code>mylab.cloudflareaccess.com</code>), choose the <strong>Free</strong> plan.</li>
+<li>Confirm <strong>One-time PIN</strong> is enabled as a login method.</li>
+<li><strong>Team &amp; Resources → Devices → Device enrollment:</strong> allow only your email.</li>
+<li><strong>Networking → Mesh → Get started:</strong> run the wizard. It sets Mesh IPs (100.96.0.0/12), device reachability and the Gateway proxy.</li>
+<li>Make sure the Gateway proxy has <strong>TCP, UDP and ICMP</strong> on, and device profiles use the <strong>MASQUE</strong> tunnel protocol (Mesh doesn't work on WireGuard).</li>
+</ol>
+
+<h3>Step 2 — OCI network and Mesh node</h3>
+<ol>
+<li>VCN <code>10.0.0.0/16</code>, a <strong>NAT gateway</strong>, and a private subnet <code>10.0.1.0/24</code> whose route table has <code>0.0.0.0/0 → NAT gateway</code>.</li>
+<li>Security list: ingress from <code>10.0.0.0/16</code>, <code>192.168.1.0/24</code> and <code>100.96.0.0/12</code>; egress all.</li>
+<li>Instance: Ubuntu 24.04 on <strong>A1.Flex (4 OCPU / 6 GB, Always Free)</strong>, private IP <code>10.0.1.5</code>, no public IP. Reach it via OCI Bastion or the serial console.</li>
+<li>VNIC → <strong>Skip source/destination check</strong> (otherwise OCI drops forwarded packets).</li>
+<li>Open Ubuntu's built-in iptables, which rejects forwarded traffic on OCI images:</li>
+</ol>
+<pre><code>sudo iptables -I FORWARD 1 -j ACCEPT
+sudo iptables -I INPUT 1 -s 192.168.1.0/24 -j ACCEPT
+sudo iptables -I INPUT 1 -s 100.96.0.0/12 -j ACCEPT
+sudo netfilter-persistent save</code></pre>
+<ol start="6"><li>Dashboard: <strong>Networking → Mesh → Add participant → Add node</strong> <code>oci-node</code> → Debian/Ubuntu. Then on the VM:</li></ol>
+<pre><code>curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | sudo gpg --yes --dearmor -o /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $(. /etc/os-release &amp;&amp; echo $VERSION_CODENAME) main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
+sudo apt-get update &amp;&amp; sudo apt-get install -y cloudflare-warp
+
+printf 'net.ipv4.ip_forward = 1\n' | sudo tee /etc/sysctl.d/99-zzz-cloudflare-warp-connector.conf
+sudo sysctl --system
+
+sudo warp-cli --accept-tos connector new &lt;OCI_NODE_TOKEN&gt; &amp;&amp; sudo warp-cli --accept-tos connect
+warp-cli status      # Connected</code></pre>
+<div class="callout"><strong>Rocky / AlmaLinux instead of Ubuntu?</strong> Not on Cloudflare's tested list, but it installs: <code>dnf config-manager --set-enabled crb</code>, <code>dnf install -y epel-release</code>, add <code>https://pkg.cloudflareclient.com/cloudflare-warp-ascii.repo</code> to <code>/etc/yum.repos.d/</code>, <code>dnf install -y cloudflare-warp</code>, and open firewalld (<code>--zone=trusted --add-source=192.168.1.0/24</code>, <code>--zone=public --add-forward</code>).</div>
+
+<h3>Step 3 — Home Mesh node in a Proxmox LXC</h3>
+<ol>
+<li>Create a Debian 12 LXC: 4 cores, 2 GB RAM, static IP <code>192.168.1.5/24</code>, <strong>nesting=1</strong>, start at boot.</li>
+<li>Give it the TUN device (on the Proxmox host):</li>
+</ol>
+<pre><code>pct set &lt;CTID&gt; -dev0 /dev/net/tun        # Proxmox 8.1+
+# older: add to /etc/pve/lxc/&lt;CTID&gt;.conf
+#   lxc.cgroup2.devices.allow: c 10:200 rwm
+#   lxc.mount.entry: /dev/net/tun dev/net/tun none bind,create=file</code></pre>
+<ol start="3"><li>Inside the container you are <strong>root and there is no <code>sudo</code>, <code>curl</code> or <code>gpg</code></strong> — install the basics, then drop <code>sudo</code> from every command:</li></ol>
+<pre><code>apt-get update &amp;&amp; apt-get install -y curl gpg ca-certificates
+curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | gpg --yes --dearmor -o /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $(. /etc/os-release &amp;&amp; echo $VERSION_CODENAME) main" &gt; /etc/apt/sources.list.d/cloudflare-client.list
+apt-get update &amp;&amp; apt-get install -y cloudflare-warp
+
+printf 'net.ipv4.ip_forward = 1\n' &gt; /etc/sysctl.d/99-zzz-cloudflare-warp-connector.conf
+sysctl -p /etc/sysctl.d/99-zzz-cloudflare-warp-connector.conf
+sysctl net.ipv4.ip_forward     # must print 1
+
+warp-cli --accept-tos connector new &lt;HOME_NODE_TOKEN&gt; &amp;&amp; warp-cli --accept-tos connect
+ip a show CloudflareWARP        # gets a 100.96.x.x address</code></pre>
+<p>Each site needs its <strong>own</strong> node token; reusing a token makes the second host a replica, not a second site.</p>
+
+<h3>Step 4 — Routes and split tunnels (where most of the pain is)</h3>
+<ol>
+<li><strong>Networking → Mesh → node → Routes:</strong> <code>192.168.1.0/24</code> on the home node, <code>10.0.1.0/24</code> (or the whole <code>10.0.0.0/16</code>) on the OCI node.</li>
+<li><strong>Know which profile your nodes use.</strong> Mesh nodes get their own <strong>Mesh Network Profile</strong>, not the Default device profile. In my account it was in <em>Include</em> mode with only Cloudflare's ranges, so home → OCI traffic never entered the tunnel. Fix it in that profile: either switch it to <strong>Exclude</strong> mode (and exclude each node's own LAN, see Issue 11) or add the <em>remote</em> subnets to its Include list.</li>
+<li>For client devices, edit the profile they use and remove <code>10.0.0.0/8</code>, <code>192.168.0.0/16</code> and <code>100.64.0.0/10</code> from Exclude. Keep <code>169.254.0.0/16</code>.</li>
+<li><strong>OCI route table:</strong> <code>192.168.1.0/24 → Private IP 10.0.1.5</code> and <code>100.96.0.0/12 → Private IP 10.0.1.5</code>.</li>
+<li><strong>Home side:</strong> router static routes <code>10.0.0.0/16 via 192.168.1.5</code> and <code>100.96.0.0/12 via 192.168.1.5</code>. On the Proxmox host itself (PVE 9 / Debian 13, ifupdown2) I used:</li>
+</ol>
+<pre><code># /etc/network/interfaces, under iface vmbr0
+        post-up ip route replace 10.0.0.0/16 via 192.168.1.5
+        post-up ip route replace 100.96.0.0/12 via 192.168.1.5</code></pre>
+<pre><code>ifquery -a &amp;&amp; ifreload -a      # there is no network.service on PVE 9
+ip route get 10.0.1.5          # must say via 192.168.1.5</code></pre>
+<ol start="6"><li>Test from both ends (<code>-n</code> skips the reverse-DNS noise):</li></ol>
+<pre><code># home LXC
+ip route get 10.0.1.5          # should leave via CloudflareWARP
+nc -nvz 10.0.1.5 22
+# OCI VM
+nc -nvz 192.168.1.5 22</code></pre>
+
+<h3>Step 5 — Laptop and phone</h3>
+<p>Install the Cloudflare One Client (Windows/macOS/Linux) or the Cloudflare One Agent app (Android/iOS), log in to your team name with the email PIN, and make sure it's in <strong>Traffic and DNS</strong> mode. Then <code>ssh</code> / <code>sqlplus</code> straight to <code>192.168.1.x</code> and <code>10.0.1.x</code> from anywhere.</p>
+
+<h3>Step 6 — Publish Proxmox with Cloudflare Tunnel + Access</h3>
+<ol>
+<li><strong>Networking → Tunnels → Create a tunnel → Cloudflared</strong>, name it <code>homelab</code>.</li>
+<li>Install <code>cloudflared</code> on the home LXC (as root, no <code>sudo</code>):</li>
+</ol>
+<pre><code>mkdir -p --mode=0755 /usr/share/keyrings
+curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg -o /usr/share/keyrings/cloudflare-main.gpg
+echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main' &gt; /etc/apt/sources.list.d/cloudflared.list
+apt-get update &amp;&amp; apt-get install -y cloudflared
+cloudflared service install &lt;TUNNEL_TOKEN&gt;
+systemctl status cloudflared</code></pre>
+<ol start="3">
+<li>Add a published route: <code>pve.&lt;yourdomain&gt;</code> → <code>https://192.168.1.10:8006</code>, and under <strong>Additional application settings → TLS</strong> turn on <strong>No TLS Verify</strong> (Proxmox's certificate is self-signed).</li>
+<li><strong>Access controls → Applications → Self-hosted:</strong> hostname <code>pve.&lt;yourdomain&gt;</code>, policy <em>Allow → Emails → your address</em>.</li>
+<li>Open <code>https://pve.&lt;yourdomain&gt;</code> in a private window: Access PIN page, then the Proxmox login.</li>
+</ol>
+
+<h2>Using DNS names instead of IPs</h2>
+<p>By default the Cloudflare One Client sends every DNS query to Cloudflare Gateway, which only knows public names. IPs work straight away; internal names need one of these:</p>
+<div class="table-wrap"><table>
+<tr><th>Approach</th><th>How</th><th>Good for</th></tr>
+<tr><td>Public hostname via Tunnel</td><td>Tunnel route <code>pve.&lt;domain&gt;</code> → internal URL, plus an Access app</td><td>Browser apps, no client needed</td></tr>
+<tr><td>Grey-cloud A records</td><td>Cloudflare DNS: <code>A pve.lab → 192.168.1.10</code>, proxy <strong>off</strong> (DNS only)</td><td>Quick private names; exposes your internal IP layout publicly (fine for a lab)</td></tr>
+<tr><td>Local Domain Fallback</td><td>Device profile → Local Domain Fallback: <code>lab.&lt;domain&gt;</code> → your home DNS (Pi-hole/AdGuard/Technitium)</td><td>Keeping internal records private</td></tr>
+<tr><td>Gateway resolver policy</td><td>DNS policy: domain <code>lab.&lt;domain&gt;</code> → resolve with 192.168.1.53</td><td>Central management</td></tr>
+</table></div>
+<ul>
+<li>Don't use <code>.local</code> (clashes with mDNS); use <code>lab.&lt;yourdomain&gt;</code> or <code>home.arpa</code>.</li>
+<li>Some routers and AdGuard/pfSense block public answers that contain private IPs (<em>DNS rebinding protection</em>). If <code>nslookup pve.lab.&lt;domain&gt; 1.1.1.1</code> works but normal lookups fail at home, whitelist <code>lab.&lt;domain&gt;</code>.</li>
+<li>A wildcard <code>*.lab</code> pointing at a reverse proxy (Caddy / Nginx Proxy Manager) plus a Let's Encrypt DNS-01 wildcard cert gives valid HTTPS on every internal app.</li>
+</ul>
+
+<h2>Issues I hit and how I fixed them</h2>
+<p>Every one of these happened during the real build, in roughly this order.</p>
+<div class="table-wrap"><table>
+<tr><th>#</th><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+<tr><td>1</td><td><code>WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED</code> when SSHing to <code>localhost</code> through the OCI Bastion tunnel</td><td>A rebuilt VM has a new host key, but SSH remembers one key for "localhost"</td><td><code>ssh-keygen -R localhost</code> (or <code>-R "[localhost]:2222"</code>), then a <code>HostKeyAlias</code> per host in <code>~/.ssh/config</code></td></tr>
+<tr><td>2</td><td><code>curl: command not found</code>, <code>gpg: command not found</code> in the LXC</td><td>Minimal Debian template</td><td><code>apt-get install -y curl gpg ca-certificates</code></td></tr>
+<tr><td>3</td><td><code>sudo: command not found</code>, <code>curl: (23) Failed writing body</code>, then apt <code>NO_PUBKEY 254B391D8CACCBF8</code></td><td>Root in the LXC with no sudo, so <code>| sudo tee keyfile</code> never wrote the key</td><td>Drop <code>sudo</code>; <code>curl -fsSL &lt;key-url&gt; -o /usr/share/keyrings/cloudflare-main.gpg</code></td></tr>
+<tr><td>4</td><td><code>net.ipv4.ip_forward = 0</code> in the LXC</td><td>Forwarding not set inside the container</td><td>Write <code>/etc/sysctl.d/99-zzz-cloudflare-warp-connector.conf</code> and <code>sysctl -p</code> it; if it won't stick, enable it on the Proxmox host and restart the CT</td></tr>
+<tr><td>5</td><td><code>nc: command not found</code>; <code>apt install nc</code> → no installation candidate</td><td>Package name differs on Ubuntu</td><td><code>sudo apt install -y netcat-openbsd</code>, and use full IPs (<code>10.0.1.5</code>, not <code>10.0.5</code>)</td></tr>
+<tr><td>6</td><td><code>inverse host lookup failed</code> from <code>nc</code></td><td>Only reverse DNS failing</td><td>Harmless; add <code>-n</code></td></tr>
+<tr><td>7</td><td>OCI → home works, home → OCI hangs; <code>ip route get 10.0.1.5</code> shows <code>via 192.168.1.1 dev eth0</code></td><td>Mesh nodes use the <strong>Mesh Network Profile</strong> (not Default, which showed 0 devices), and it was in Include mode without the OCI subnet</td><td>Switched the Mesh Network Profile to Exclude mode (or add <code>10.0.1.0/24</code> to its Include list), confirmed the OCI route; <code>warp-cli disconnect &amp;&amp; warp-cli connect</code></td></tr>
+<tr><td>8</td><td>Proxmox host still sends <code>10.0.0.0/16</code> to <code>192.168.1.14</code></td><td>Stale routes from an older lab; <code>post-up ip route add … || true</code> failed silently on the duplicate</td><td><code>ip route replace … via 192.168.1.5</code>, and use <code>replace</code> (not <code>add || true</code>) in <code>/etc/network/interfaces</code></td></tr>
+<tr><td>9</td><td><code>systemctl restart network</code> → unit not found on Proxmox</td><td>PVE 9 (Debian 13) uses ifupdown2</td><td><code>ifquery -a</code> to check, <code>ifreload -a</code> to apply</td></tr>
+<tr><td>10</td><td>Browser <code>ERR_NAME_NOT_RESOLVED</code>; <code>nslookup -type=NS &lt;domain&gt; 1.1.1.1</code> → Non-existent domain</td><td>Free DigitalPlat subdomain not delegated; NS were being added as DNS <em>records</em>, which the panel rejects</td><td>Use DigitalPlat's <strong>nameserver</strong> setting (custom NS) with the two <code>*.ns.cloudflare.com</code> servers; then <code>ipconfig /flushdns</code></td></tr>
+<tr><td>11</td><td>After switching to Exclude mode, the node can't reach its own LAN</td><td>Local subnet now routed into the tunnel</td><td>Add the node's own subnet (<code>192.168.1.0/24</code> for home) to that profile's Exclude list</td></tr>
+<tr><td>12</td><td><code>pve.&lt;domain&gt;</code> returns <strong>502 Bad Gateway</strong>; cloudflared log: <code>x509: certificate signed by unknown authority</code></td><td>Proxmox self-signed cert</td><td>Route → Additional application settings → TLS → <strong>No TLS Verify</strong></td></tr>
+<tr><td>13</td><td>cloudflared logs <code>already connected to this server, trying another address</code></td><td>Retrying one extra edge connection</td><td>Harmless while the tunnel shows Healthy</td></tr>
+<tr><td>14</td><td><code>nslookup: command not found</code> on Ubuntu</td><td>Package name</td><td><code>sudo apt install -y dnsutils</code>, or <code>resolvectl query &lt;name&gt;</code></td></tr>
+</table></div>
+<p>The two that cost the most time were <strong>#7</strong> (always check which device profile your Mesh nodes actually receive) and <strong>#8</strong> (an <code>|| true</code> hiding a failed route).</p>
+
+<h2>Best practices</h2>
+<p><strong>Network design</strong></p>
+<ul>
+<li>Pick non-overlapping, uncommon CIDRs. <code>192.168.1.0/24</code> and <code>10.0.0.0/16</code> are the most common ranges on home, hotel and office Wi-Fi; when your laptop sits on such a network, the local LAN wins and that site becomes unreachable. A VLAN like <code>192.168.50.0/24</code> and an OCI range like <code>10.42.0.0/16</code> avoid this.</li>
+<li>Advertise only what each node can reach, and prefer specific routes (<code>10.0.1.0/24</code>) over whole VCNs if you plan a hub-and-spoke later.</li>
+<li>Route the Mesh device range <code>100.96.0.0/12</code> back to the local node at each site, not the broader <code>100.64.0.0/10</code>.</li>
+<li>Use <code>ip route replace</code> in persistent config, never <code>add … || true</code>.</li>
+</ul>
+<p><strong>Security</strong></p>
+<ul>
+<li>Put an Access application in front of <strong>every</strong> published hostname; never publish SSH or 1521 publicly — use the client for those.</li>
+<li>Gateway network policies, top-down: allow <em>your email</em> to the lab CIDRs on the ports you use; allow <code>warp_connector@&lt;team&gt;.cloudflareaccess.com</code> (node-to-node traffic) on DB/SSH ports; block everything else to the lab CIDRs.</li>
+<li>Tighten OCI security lists from "All" to specific ports once things work.</li>
+<li>Treat node and tunnel tokens as secrets; delete and recreate a node if one leaks.</li>
+<li>Only your email in the device-enrollment rule.</li>
+</ul>
+<p><strong>Operations</strong></p>
+<ul>
+<li>Size Mesh nodes to Cloudflare's minimum (3 vCPU); set <strong>Start at boot</strong> on the LXC — the whole site depends on it.</li>
+<li>Running cloudflared on the same LXC as the Mesh node works; a separate small LXC makes restarts and troubleshooting independent.</li>
+<li>After any profile change, run <code>warp-cli disconnect &amp;&amp; warp-cli connect</code> and check <code>ip route get &lt;remote IP&gt;</code> — it tells you instantly whether traffic uses <code>CloudflareWARP</code>.</li>
+<li>Turn on Gateway logging and read Logs → Gateway → Network after each test (free plan keeps 24 h).</li>
+<li>For HA later, run a second host with the <strong>same</strong> node token — it becomes a replica.</li>
+</ul>
+
+<h2>Can it carry Data Guard and OCI GoldenGate?</h2>
+<p>Yes, at lab scale. Mesh is plain routed IP in both directions with real source IPs, so both products just see a network between 192.168.1.0/24 and 10.0.0.0/16.</p>
+<ul>
+<li><strong>Data Guard:</strong> redo transport is SQL*Net on 1521. Use <strong>ASYNC</strong> (SYNC over an internet path slows primary commits), keep MTU at Cloudflare's 1381 and set a sensible <code>SDU</code>; after a node restart, expect gap resolution — good practice for a lab.</li>
+<li><strong>OCI GoldenGate service:</strong> its private endpoint's subnet needs the route <code>192.168.1.0/24 → 10.0.1.5</code> and a security rule for 1521 from home; create the connection to the home DB by private IP. Add GoldenGate Microservices ports to the Gateway allow rule if you run on-prem GG too.</li>
+<li><strong>Where it falls short:</strong> throughput is limited by node CPU and home upload; Mesh is beta and each node is a single point of failure. For sustained load or production-like practice, move site-to-site traffic to <strong>OCI Site-to-Site IPsec VPN</strong> (DRG + Libreswan on Proxmox; needs a public IP that isn't behind CG-NAT) and keep Mesh for people.</li>
+</ul>
+
+<h2>Validation checklist</h2>
+<ul class="chk">
+<li>Both Mesh nodes <strong>Online</strong> in Networking → Mesh; <code>warp-cli status</code> = Connected</li>
+<li><code>ip route get 10.0.1.5</code> on the home node leaves via <code>CloudflareWARP</code></li>
+<li>Home LXC → OCI: <code>nc -nvz 10.0.1.5 22</code> open</li>
+<li>OCI → home: <code>nc -nvz 192.168.1.5 22</code> open</li>
+<li>Another home VM → another OCI VM (proves routing and forwarding, not just the nodes)</li>
+<li>Laptop on mobile data → <code>ssh</code> to a 10.0.1.x and a 192.168.1.x host</li>
+<li><code>https://pve.&lt;yourdomain&gt;</code> shows the Access PIN page, then Proxmox</li>
+<li>A port not in your Gateway allow rule is blocked</li>
+<li>Reboot both nodes; everything above still passes</li>
+</ul>
+
+<h2>Wrapping up</h2>
+<p>With one free Cloudflare account I now have a home lab and an OCI VCN that talk to each other privately, a Proxmox UI I can open from any browser behind a login, and full private access from my laptop and phone — without a single inbound port. The biggest lessons: check which device profile your Mesh nodes really use, verify routes with <code>ip route get</code>, and never hide a failing command behind <code>|| true</code>.</p>
+<p>Next up: tightening Gateway policies, private DNS with Local Domain Fallback, and a Data Guard standby in OCI over this link.</p>
+
+<h3>References</h3>
+<ul>
+<li><a href="https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-mesh/guides/connect-sites/">Connect two private networks with Cloudflare Mesh</a></li>
+<li><a href="https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-mesh/guides/run-mesh-on-linux/">Run Cloudflare Mesh on Linux</a></li>
+<li><a href="https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/private-net/warp-connector">WARP Connector (now Cloudflare Mesh) overview</a></li>
+<li><a href="https://zerometric.net/research/cloudflare-zero-trust-free-plan-limits-2026/">Cloudflare Zero Trust free plan limits</a></li>
+</ul>
+</main>
+</body>
+</html>
