@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Azure Resource Hierarchy</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Azure tenant, management groups, subscriptions, resource groups and resources explained with diagrams and a hands-on portal lab.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: single reading column (~70ch) with full-width figures; hierarchy levels carry a fixed colour each, used in diagrams, headings and lab tags. */
+:root{
+  --bg:#f6f8fb; --surface:#ffffff; --fg:#17202e; --muted:#566275; --line:#dbe2ec;
+  --accent:#1d5fd1; --accent-soft:#e4edfc; --code-bg:#eef2f8;
+  --l-tenant:#5b3fc4; --l-mg:#1d5fd1; --l-sub:#c98a05; --l-rg:#0f8a7a; --l-res:#c2410c;
+  --good:#16794a; --bad:#b42318;
+  --f-display:"Space Grotesk",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f141c; --surface:#161d28; --fg:#e6ebf2; --muted:#9aa6b8; --line:#2a3443;
+  --accent:#7aa7ff; --accent-soft:#1b2a45; --code-bg:#1b2330;
+  --l-tenant:#a493f5; --l-mg:#7aa7ff; --l-sub:#f0bd4a; --l-rg:#3fc6b2; --l-res:#fb8a55;
+  --good:#4cc38a; --bad:#ff7a6e; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f141c; --surface:#161d28; --fg:#e6ebf2; --muted:#9aa6b8; --line:#2a3443;
+  --accent:#7aa7ff; --accent-soft:#1b2a45; --code-bg:#1b2330;
+  --l-tenant:#a493f5; --l-mg:#7aa7ff; --l-sub:#f0bd4a; --l-rg:#3fc6b2; --l-res:#fb8a55;
+  --good:#4cc38a; --bad:#ff7a6e; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:17px;line-height:1.7;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:760px;margin:0 auto;padding-block:48px 80px}
+h1,h2,h3{font-family:var(--f-display);line-height:1.2;text-wrap:balance;margin:0}
+h1{font-size:clamp(2rem,5vw,2.9rem);font-weight:700;letter-spacing:-.02em}
+h2{font-size:1.7rem;font-weight:600;margin-top:64px;margin-bottom:12px;letter-spacing:-.01em}
+h3{font-size:1.2rem;font-weight:600;margin-top:32px;margin-bottom:8px}
+p{margin:0 0 16px}
+a{color:var(--accent)}
+.eyebrow{font-family:var(--f-mono);font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lede{font-size:1.15rem;color:var(--muted);margin-top:16px}
+.meta{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:20px;font-size:.88rem;color:var(--muted)}
+code{font-family:var(--f-mono);font-size:.86em;background:var(--code-bg);padding:.1em .35em;border-radius:4px}
+pre{font-family:var(--f-mono);font-size:.84rem;line-height:1.6;background:var(--code-bg);border:1px solid var(--line);
+  border-radius:8px;padding:16px 18px;overflow-x:auto;margin:0 0 20px}
+pre code{background:none;padding:0;font-size:inherit}
+.cmt{color:var(--muted)}
+ul,ol{padding-left:1.3em;margin:0 0 16px}
+li{margin-bottom:6px}
+strong{font-weight:600}
+
+/* level tag */
+.lvl{display:inline-flex;align-items:center;gap:8px}
+.lvl::before{content:"";width:12px;height:12px;border-radius:3px;background:var(--c);flex:none}
+h2.lvl::before{width:16px;height:16px;border-radius:4px}
+.t{--c:var(--l-tenant)} .m{--c:var(--l-mg)} .s{--c:var(--l-sub)} .r{--c:var(--l-rg)} .x{--c:var(--l-res)}
+
+.toc{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding-block:18px;margin-top:36px;
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px 24px;font-size:.93rem}
+.toc a{color:var(--fg);text-decoration:none}
+.toc a:hover{color:var(--accent);text-decoration:underline}
+
+figure{margin:28px 0}
+figcaption{font-size:.86rem;color:var(--muted);margin-top:10px}
+.diagram{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;overflow-x:auto}
+.diagram svg{display:block;width:100%;height:auto;min-width:520px}
+.shot img{display:block;width:100%;border:1px solid var(--line);border-radius:8px;background:#fff}
+
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:20px 0}
+.fact{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;font-size:.92rem;line-height:1.55}
+.fact b{display:block;font-family:var(--f-display);font-size:1.25rem;font-weight:600;color:var(--c,var(--accent));margin-bottom:2px}
+
+.note{border-left:3px solid var(--accent);background:var(--accent-soft);padding:12px 16px;border-radius:0 8px 8px 0;margin:20px 0;font-size:.95rem}
+.note p:last-child{margin:0}
+
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+.tbl{overflow-x:auto;margin:20px 0}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--f-display);font-weight:600;font-size:.88rem;color:var(--muted)}
+
+/* lab steps */
+.step{margin-top:40px}
+.step-h{display:flex;align-items:baseline;gap:12px}
+.step-n{font-family:var(--f-mono);font-size:.8rem;color:var(--muted);flex:none}
+.step h3{margin:0}
+
+/* quiz */
+.quiz{display:grid;gap:18px;margin-top:20px}
+.q{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 18px 14px}
+.q p.qt{font-weight:600;margin-bottom:12px}
+.opts{display:grid;gap:8px}
+.opts button{font:inherit;font-size:.95rem;text-align:left;color:var(--fg);background:var(--bg);border:1px solid var(--line);
+  border-radius:7px;padding:9px 12px;cursor:pointer}
+.opts button:hover:not(:disabled){border-color:var(--accent)}
+.opts button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.opts button.ok{border-color:var(--good);color:var(--good);font-weight:600}
+.opts button.no{border-color:var(--bad);color:var(--bad)}
+.opts button:disabled{cursor:default}
+.why{font-size:.9rem;color:var(--muted);margin:10px 0 0}
+.score{font-family:var(--f-display);font-weight:600;margin-top:6px}
+.reset{font:inherit;font-size:.9rem;background:none;border:1px solid var(--line);color:var(--fg);border-radius:7px;padding:7px 14px;cursor:pointer}
+
+footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);font-size:.88rem;color:var(--muted)}
+
+/* svg tokens */
+.sv-box{fill:var(--surface);stroke-width:2}
+.sv-t{fill:var(--fg);font-family:var(--f-display);font-weight:600;font-size:15px}
+.sv-s{fill:var(--muted);font-family:var(--f-body);font-size:12px}
+.sv-m{fill:var(--fg);font-family:var(--f-mono);font-size:12px}
+.sv-line{stroke:var(--muted);stroke-width:1.5;fill:none}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+</style>
+</head><body>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Azure fundamentals · AZ-900 · Hands-on lab</div>
+  <h1 style="margin-top:10px">Azure Resource Hierarchy: Tenant, Management Groups, Subscriptions, Resource Groups and Resources</h1>
+  <p class="lede">Before you deploy a single VM in Azure, you should know where it will live, who controls it and who pays for it. All three answers come from the same five-level hierarchy. This post explains each level, then walks through building it in the Azure portal.</p>
+  <div class="meta"><span>Sunke Nithin</span><span>November 2026</span><span>~15 min read + 15 min lab</span></div>
+</header>
+
+<nav class="toc" aria-label="Contents">
+  <a href="#big-picture">1. The big picture</a>
+  <a href="#tenant">2. Tenant</a>
+  <a href="#mg">3. Management groups</a>
+  <a href="#sub">4. Subscriptions</a>
+  <a href="#rg">5. Resource groups</a>
+  <a href="#res">6. Resources</a>
+  <a href="#inherit">7. How settings flow down</a>
+  <a href="#lab">8. Lab: build it in the portal</a>
+  <a href="#cli">9. The same lab with Azure CLI</a>
+  <a href="#real">10. Real-world design</a>
+  <a href="#quiz">11. Quiz</a>
+  <a href="#takeaways">12. Key takeaways</a>
+</nav>
+
+<!-- 1 -->
+<h2 id="big-picture">1. The big picture</h2>
+<p>Azure organizes everything in a tree. Each level sits inside the one above it:</p>
+<ol>
+  <li><span class="lvl t"><strong>Tenant</strong></span>: your organization's identity directory (Microsoft Entra ID).</li>
+  <li><span class="lvl m"><strong>Management groups</strong></span>: folders that group subscriptions so you can apply governance once.</li>
+  <li><span class="lvl s"><strong>Subscriptions</strong></span>: the billing and access boundary where resources are paid for.</li>
+  <li><span class="lvl r"><strong>Resource groups</strong></span>: logical containers for resources that share a lifecycle.</li>
+  <li><span class="lvl x"><strong>Resources</strong></span>: the things you actually run, such as VMs, storage accounts and databases.</li>
+</ol>
+
+<figure>
+<div class="diagram">
+<svg viewBox="0 0 720 470" role="img" aria-labelledby="d1t">
+  <title id="d1t">Azure hierarchy: tenant contains the tenant root group, which contains management groups, which contain subscriptions, which contain resource groups, which contain resources.</title>
+  <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--muted)"/></marker></defs>
+  <!-- tenant frame -->
+  <rect x="10" y="10" width="700" height="450" rx="12" style="fill:none;stroke:var(--l-tenant);stroke-width:2;stroke-dasharray:6 5"/>
+  <text x="28" y="36" class="sv-t" style="fill:var(--l-tenant)">Tenant (Microsoft Entra ID)</text>
+  <text x="28" y="54" class="sv-s">users · groups · apps · yourname.onmicrosoft.com</text>
+  <!-- root -->
+  <rect x="250" y="72" width="220" height="50" rx="8" class="sv-box" style="stroke:var(--l-mg)"/>
+  <text x="360" y="94" text-anchor="middle" class="sv-t">Tenant Root Group</text>
+  <text x="360" y="111" text-anchor="middle" class="sv-s">created automatically</text>
+  <!-- child MGs -->
+  <rect x="90" y="160" width="200" height="46" rx="8" class="sv-box" style="stroke:var(--l-mg)"/>
+  <text x="190" y="188" text-anchor="middle" class="sv-t">MG: scslabs</text>
+  <rect x="430" y="160" width="200" height="46" rx="8" class="sv-box" style="stroke:var(--l-mg)"/>
+  <text x="530" y="188" text-anchor="middle" class="sv-t">MG: Production</text>
+  <path d="M360 122 V140 H190 V158" class="sv-line" marker-end="url(#ah)"/>
+  <path d="M360 140 H530 V158" class="sv-line" marker-end="url(#ah)"/>
+  <!-- subs -->
+  <rect x="90" y="244" width="200" height="46" rx="8" class="sv-box" style="stroke:var(--l-sub)"/>
+  <text x="190" y="272" text-anchor="middle" class="sv-t">Azure subscription 1</text>
+  <rect x="430" y="244" width="200" height="46" rx="8" class="sv-box" style="stroke:var(--l-sub)"/>
+  <text x="530" y="272" text-anchor="middle" class="sv-t">Prod subscription</text>
+  <path d="M190 206 V242" class="sv-line" marker-end="url(#ah)"/>
+  <path d="M530 206 V242" class="sv-line" marker-end="url(#ah)"/>
+  <!-- RGs -->
+  <rect x="40" y="328" width="150" height="44" rx="8" class="sv-box" style="stroke:var(--l-rg)"/>
+  <text x="115" y="355" text-anchor="middle" class="sv-t">scslabs-rg</text>
+  <rect x="200" y="328" width="150" height="44" rx="8" class="sv-box" style="stroke:var(--l-rg)"/>
+  <text x="275" y="355" text-anchor="middle" class="sv-t">network-rg</text>
+  <rect x="455" y="328" width="150" height="44" rx="8" class="sv-box" style="stroke:var(--l-rg)"/>
+  <text x="530" y="355" text-anchor="middle" class="sv-t">app-prod-rg</text>
+  <path d="M190 290 V310 H115 V326" class="sv-line" marker-end="url(#ah)"/>
+  <path d="M190 310 H275 V326" class="sv-line" marker-end="url(#ah)"/>
+  <path d="M530 290 V326" class="sv-line" marker-end="url(#ah)"/>
+  <!-- resources -->
+  <g style="font-size:12px">
+  <rect x="30" y="408" width="78" height="34" rx="6" class="sv-box" style="stroke:var(--l-res)"/><text x="69" y="430" text-anchor="middle" class="sv-m">VM</text>
+  <rect x="116" y="408" width="78" height="34" rx="6" class="sv-box" style="stroke:var(--l-res)"/><text x="155" y="430" text-anchor="middle" class="sv-m">Storage</text>
+  <rect x="236" y="408" width="78" height="34" rx="6" class="sv-box" style="stroke:var(--l-res)"/><text x="275" y="430" text-anchor="middle" class="sv-m">VNet</text>
+  <rect x="446" y="408" width="78" height="34" rx="6" class="sv-box" style="stroke:var(--l-res)"/><text x="485" y="430" text-anchor="middle" class="sv-m">App Svc</text>
+  <rect x="532" y="408" width="78" height="34" rx="6" class="sv-box" style="stroke:var(--l-res)"/><text x="571" y="430" text-anchor="middle" class="sv-m">SQL DB</text>
+  </g>
+  <path d="M115 372 V390 H69 V406" class="sv-line" marker-end="url(#ah)"/>
+  <path d="M115 390 H155 V406" class="sv-line" marker-end="url(#ah)"/>
+  <path d="M275 372 V406" class="sv-line" marker-end="url(#ah)"/>
+  <path d="M530 372 V390 H485 V406" class="sv-line" marker-end="url(#ah)"/>
+  <path d="M530 390 H571 V406" class="sv-line" marker-end="url(#ah)"/>
+</svg>
+</div>
+<figcaption>Figure 1. The five levels. The left branch matches what we build in the lab; the right branch shows how a production environment would sit beside it.</figcaption>
+</figure>
+
+<p>A simple way to remember it: the <strong>tenant</strong> answers <em>who</em> (identities), the <strong>subscription</strong> answers <em>who pays</em>, the <strong>resource group</strong> answers <em>what belongs together</em>, and <strong>management groups</strong> let you set rules for many subscriptions at once.</p>
+
+<div class="note"><p><strong>Coming from OCI?</strong> The closest match is: tenant ≈ OCI tenancy, management groups and resource groups ≈ nested compartments, subscription ≈ a billing account inside the tenancy. The difference is that Azure separates billing (subscription) from grouping (resource group), while OCI uses compartments for both access and grouping.</p></div>
+
+<!-- 2 -->
+<h2 id="tenant" class="lvl t">2. Tenant</h2>
+<p>A <strong>tenant</strong> is a dedicated instance of <strong>Microsoft Entra ID</strong> (formerly Azure Active Directory) that represents one organization. It is created automatically when you sign up for Azure, Microsoft 365 or another Microsoft cloud service. In the portal it appears as the <em>Directory</em>, for example "Default Directory".</p>
+<p>The tenant holds identities, not workloads:</p>
+<ul>
+  <li><strong>Users and groups</strong> who sign in to Azure.</li>
+  <li><strong>App registrations and service principals</strong> used by applications and automation.</li>
+  <li><strong>Domains</strong>: every tenant gets a default <code>&lt;name&gt;.onmicrosoft.com</code> domain, and you can add your own custom domain.</li>
+  <li>A unique <strong>Tenant ID</strong> (a GUID).</li>
+</ul>
+<div class="facts">
+  <div class="fact t" style="--c:var(--l-tenant)"><b>1 → many</b>One tenant can own many subscriptions.</div>
+  <div class="fact t" style="--c:var(--l-tenant)"><b>1 only</b>Each subscription trusts exactly one tenant at a time.</div>
+  <div class="fact t" style="--c:var(--l-tenant)"><b>Root group</b>Every tenant gets one Tenant Root Group, whose ID is the tenant ID.</div>
+</div>
+<p>Because the subscription trusts the tenant, only identities from that tenant (plus invited guest users) can be given access to its resources.</p>
+
+<!-- 3 -->
+<h2 id="mg" class="lvl m">3. Management groups</h2>
+<p>A <strong>management group</strong> is a container for subscriptions and other management groups. You use it when you have more than a couple of subscriptions and want to apply <strong>Azure Policy</strong> and <strong>role-based access control (RBAC)</strong> once instead of repeating them on every subscription.</p>
+<p>Every tenant has a single top-level management group called the <strong>Tenant Root Group</strong>. All management groups and subscriptions fold up into it, so a policy assigned at the root applies to everything in the directory.</p>
+<div class="facts">
+  <div class="fact" style="--c:var(--l-mg)"><b>6 levels</b>Maximum depth below the root, not counting the root or the subscription level.</div>
+  <div class="fact" style="--c:var(--l-mg)"><b>10,000</b>Management groups supported in one directory.</div>
+  <div class="fact" style="--c:var(--l-mg)"><b>1 parent</b>Each management group or subscription has exactly one parent.</div>
+</div>
+<p>Things to know before you create one:</p>
+<ul>
+  <li>The <strong>management group ID</strong> cannot be changed after creation. The display name can.</li>
+  <li>New subscriptions land under the root group by default, unless you change the default management group in its settings.</li>
+  <li>Moving a subscription to a different management group changes which policies and role assignments it inherits. The portal warns you about this (you will see it in the lab).</li>
+  <li>Management groups cost nothing.</li>
+</ul>
+
+<!-- 4 -->
+<h2 id="sub" class="lvl s">4. Subscriptions</h2>
+<p>A <strong>subscription</strong> is an agreement with Microsoft to use Azure services, and every resource you create is billed to one. It is the level most people touch first: the free account you sign up with creates "Azure subscription 1".</p>
+<p>A subscription is three kinds of boundary at once:</p>
+<div class="tbl"><table>
+  <thead><tr><th>Boundary</th><th>What it means</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Billing</strong></td><td>Costs are reported and invoiced per subscription. Teams often get separate subscriptions so their costs stay apart.</td></tr>
+    <tr><td><strong>Access</strong></td><td>RBAC roles such as Owner, Contributor or Reader can be assigned at subscription scope and apply to everything inside.</td></tr>
+    <tr><td><strong>Scale / quota</strong></td><td>Limits such as vCPU quota per region apply per subscription. Large workloads are sometimes split across subscriptions to stay under them.</td></tr>
+  </tbody>
+</table></div>
+<p>Common subscription types: <strong>Free trial</strong>, <strong>Pay-As-You-Go</strong>, <strong>Enterprise Agreement</strong>, <strong>Microsoft Customer Agreement</strong> and <strong>CSP</strong> (bought through a partner). A typical company separates environments into subscriptions, such as Dev, Test and Prod, or by business unit.</p>
+
+<!-- 5 -->
+<h2 id="rg" class="lvl r">5. Resource groups</h2>
+<p>A <strong>resource group</strong> is a logical container inside a subscription for resources that belong to the same solution and share a lifecycle. If you deploy them together, update them together and delete them together, they belong in the same resource group.</p>
+<ul>
+  <li>Every resource must be in <strong>exactly one</strong> resource group.</li>
+  <li>Resource groups <strong>cannot be nested</strong>.</li>
+  <li>A resource group has a <strong>region</strong>, but that is only where its metadata is stored. Resources inside it can be in other regions.</li>
+  <li><strong>Deleting a resource group deletes every resource in it.</strong> This is very handy for cleaning up a lab, and very dangerous in production. Use <em>resource locks</em> (CanNotDelete or ReadOnly) to protect important groups.</li>
+  <li>Most resources can be moved between resource groups, and between subscriptions.</li>
+  <li>Tags, RBAC, policies, locks and budgets can all be applied at resource group scope.</li>
+</ul>
+<p>Two common ways to divide resources into groups: <strong>by application</strong> (everything for the payroll app in <code>payroll-prod-rg</code>) or <strong>by function</strong> (all shared networking in <code>network-rg</code>). Most organizations mix both.</p>
+
+<!-- 6 -->
+<h2 id="res" class="lvl x">6. Resources</h2>
+<p>A <strong>resource</strong> is any manageable item you create in Azure: a virtual machine, a disk, a storage account, a virtual network, a public IP, an Azure SQL database, a Key Vault. Each resource is created by a <strong>resource provider</strong> (for example <code>Microsoft.Compute</code> for VMs or <code>Microsoft.Storage</code> for storage accounts), and all requests pass through <strong>Azure Resource Manager (ARM)</strong>, the deployment and management layer behind the portal, CLI, PowerShell and templates.</p>
+<p>Every resource has a unique <strong>resource ID</strong>, and its path shows exactly where the resource sits in the hierarchy:</p>
+
+<figure>
+<div class="diagram">
+<svg viewBox="0 0 740 150" role="img" aria-labelledby="d2t">
+  <title id="d2t">Anatomy of an Azure resource ID: subscription ID, resource group name, resource provider, resource type and resource name.</title>
+  <text x="10" y="40" class="sv-m" style="font-size:13px">
+    <tspan style="fill:var(--muted)">/subscriptions/</tspan><tspan style="fill:var(--l-sub);font-weight:500">{subscription-id}</tspan><tspan style="fill:var(--muted)">/resourceGroups/</tspan><tspan style="fill:var(--l-rg);font-weight:500">scslabs-rg</tspan>
+  </text>
+  <text x="10" y="66" class="sv-m" style="font-size:13px">
+    <tspan style="fill:var(--muted)">/providers/</tspan><tspan style="fill:var(--accent);font-weight:500">Microsoft.Storage</tspan><tspan style="fill:var(--muted)">/</tspan><tspan style="fill:var(--accent);font-weight:500">storageAccounts</tspan><tspan style="fill:var(--muted)">/</tspan><tspan style="fill:var(--l-res);font-weight:500">scslabsst01</tspan>
+  </text>
+  <g class="sv-s">
+    <rect x="10" y="96" width="12" height="12" rx="3" style="fill:var(--l-sub)"/><text x="28" y="107">subscription</text>
+    <rect x="130" y="96" width="12" height="12" rx="3" style="fill:var(--l-rg)"/><text x="148" y="107">resource group</text>
+    <rect x="268" y="96" width="12" height="12" rx="3" style="fill:var(--accent)"/><text x="286" y="107">provider / resource type</text>
+    <rect x="450" y="96" width="12" height="12" rx="3" style="fill:var(--l-res)"/><text x="468" y="107">resource name</text>
+  </g>
+  <text x="10" y="138" class="sv-s">The tenant and management groups are not part of the ID: they govern the subscription from above.</text>
+</svg>
+</div>
+<figcaption>Figure 2. A resource ID reads like a file path through the hierarchy.</figcaption>
+</figure>
+
+<!-- 7 -->
+<h2 id="inherit">7. How settings flow down</h2>
+<p>The reason the hierarchy matters is <strong>inheritance</strong>. Anything you assign at one level, whether an RBAC role, an Azure Policy or a budget, applies to every level below it.</p>
+
+<figure>
+<div class="diagram">
+<svg viewBox="0 0 720 300" role="img" aria-labelledby="d3t">
+  <title id="d3t">Inheritance: a policy assigned at the management group and a role at the subscription flow down to resource groups and resources.</title>
+  <defs><marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--accent)"/></marker></defs>
+  <g>
+    <rect x="20" y="20" width="350" height="48" rx="8" class="sv-box" style="stroke:var(--l-mg)"/>
+    <text x="36" y="49" class="sv-t">Management group: scslabs</text>
+    <rect x="60" y="90" width="310" height="48" rx="8" class="sv-box" style="stroke:var(--l-sub)"/>
+    <text x="76" y="119" class="sv-t">Subscription</text>
+    <rect x="100" y="160" width="270" height="48" rx="8" class="sv-box" style="stroke:var(--l-rg)"/>
+    <text x="116" y="189" class="sv-t">Resource group: scslabs-rg</text>
+    <rect x="140" y="230" width="230" height="48" rx="8" class="sv-box" style="stroke:var(--l-res)"/>
+    <text x="156" y="259" class="sv-t">Resource: storage account</text>
+  </g>
+  <!-- policy arrow -->
+  <path d="M400 44 V252" style="stroke:var(--accent);stroke-width:3;fill:none" marker-end="url(#ah2)"/>
+  <text x="414" y="40" class="sv-t" style="fill:var(--accent);font-size:13px">Policy assigned here:</text>
+  <text x="414" y="58" class="sv-s">"Allowed locations = West US 3"</text>
+  <text x="414" y="76" class="sv-s">applies to everything below</text>
+  <path d="M560 114 V252" style="stroke:var(--accent);stroke-width:3;fill:none" marker-end="url(#ah2)"/>
+  <text x="574" y="110" class="sv-t" style="fill:var(--accent);font-size:13px">Role here:</text>
+  <text x="574" y="128" class="sv-s">"Contributor" for</text>
+  <text x="574" y="146" class="sv-s">the dev team</text>
+  <text x="414" y="290" class="sv-s">The storage account inherits both.</text>
+</svg>
+</div>
+<figcaption>Figure 3. Assign once at a high level and every child inherits it. A policy set at a higher level cannot be removed or overridden by someone who only has rights lower down.</figcaption>
+</figure>
+
+<div class="tbl"><table>
+  <thead><tr><th>Scope</th><th>Typical things to assign there</th></tr></thead>
+  <tbody>
+    <tr><td><span class="lvl m">Management group</span></td><td>Company-wide policies (allowed regions, required tags), security baselines, platform team roles</td></tr>
+    <tr><td><span class="lvl s">Subscription</span></td><td>Budgets and cost alerts, environment owners, Defender for Cloud plans</td></tr>
+    <tr><td><span class="lvl r">Resource group</span></td><td>Application team access, resource locks, tags for cost allocation</td></tr>
+    <tr><td><span class="lvl x">Resource</span></td><td>Very specific access, for example one person allowed to read one Key Vault</td></tr>
+  </tbody>
+</table></div>
+
+<!-- 8 LAB -->
+<h2 id="lab">8. Lab: build the hierarchy in the portal</h2>
+<p><strong>Goal:</strong> create a management group called <code>scslabs</code>, move the free subscription under it, and create a resource group called <code>scslabs-rg</code> in West US 3.</p>
+<p><strong>You need:</strong> an Azure free account (or any subscription) and a user who is Owner of the subscription. Everything in this lab is free.</p>
+
+<div class="step">
+  <div class="step-h"><span class="step-n">STEP 1</span><h3>Open Management groups and look at the default tree</h3></div>
+  <p>In the portal search bar, type <strong>Management groups</strong> (it lives under <em>Resource Manager → Organization</em>). Out of the box you see one <span class="lvl m"><strong>Tenant Root Group</strong></span> with your <span class="lvl s"><strong>Azure subscription 1</strong></span> directly under it. You never created the root group; Azure made it for the tenant.</p>
+  <figure class="shot"><img src="images/step1.png" alt="Management groups page showing Tenant Root Group with Azure subscription 1 underneath" loading="lazy"><figcaption>The default hierarchy: 1 subscription in 1 group.</figcaption></figure>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="step-n">STEP 2</span><h3>Create the management group</h3></div>
+  <p>Click <strong>+ Create</strong>. Enter <code>scslabs</code> as the <strong>Management group ID</strong> and <code>scslabs</code> as the <strong>display name</strong>, then submit. Notice the label "Cannot be updated after creation" next to the ID, so pick IDs carefully in real environments. The panel also confirms the new group will be a child of the Tenant Root Group.</p>
+  <figure class="shot"><img src="images/step2.png" alt="Create management group panel with ID and display name set to scslabs" loading="lazy"><figcaption>Management group ID is permanent; display name can be changed later.</figcaption></figure>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="step-n">STEP 3</span><h3>Check the new group's details</h3></div>
+  <p>Open <strong>scslabs</strong>. The Essentials section shows the <strong>Path</strong> <code>Tenant Root Group / scslabs</code>, the parent group, and <strong>0</strong> subscriptions and child groups. The left menu shows that a management group has its own <strong>Access control (IAM)</strong>, <strong>Governance</strong> (policy) and <strong>Cost Management</strong>, which is where you would assign the inherited settings from section 7.</p>
+  <figure class="shot"><img src="images/step3.png" alt="scslabs management group overview with path Tenant Root Group / scslabs and zero subscriptions" loading="lazy"><figcaption>The new management group is empty.</figcaption></figure>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="step-n">STEP 4</span><h3>Confirm the tree now has two groups</h3></div>
+  <p>Back on the Management groups list, the tree shows "1 subscriptions in 2 groups". At this point <code>scslabs</code> and the subscription are siblings, both directly under the root.</p>
+  <figure class="shot"><img src="images/step4.png" alt="Management groups list with Tenant Root Group, Azure subscription 1 and scslabs as siblings" loading="lazy"><figcaption>scslabs exists but has no subscriptions yet.</figcaption></figure>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="step-n">STEP 5</span><h3>Move the subscription into scslabs</h3></div>
+  <p>Open <strong>scslabs</strong> and click <strong>+ Add subscription</strong>. Choose <strong>Azure subscription 1</strong> and click <strong>Save</strong>. Read the warning: moving a subscription under a different management group can change the access and policies applied to it. That is inheritance at work.</p>
+  <figure class="shot"><img src="images/step5.png" alt="Add subscription panel moving Azure subscription 1 under scslabs with a warning about changed access and policies" loading="lazy"><figcaption>"Add subscription" moves an existing subscription; it does not create a new one.</figcaption></figure>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="step-n">STEP 6</span><h3>Verify the new hierarchy</h3></div>
+  <p>Refresh the list. The tree is now <strong>Tenant Root Group → scslabs → Azure subscription 1</strong>. Any policy or role assigned on <code>scslabs</code> now applies to the subscription and everything in it.</p>
+  <figure class="shot"><img src="images/step6.png" alt="Tree view showing Tenant Root Group, then scslabs, then Azure subscription 1" loading="lazy"><figcaption>The subscription now sits one level deeper.</figcaption></figure>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="step-n">STEP 7</span><h3>Open Resource groups</h3></div>
+  <p>Search for <strong>Resource groups</strong>. The list is filtered to <em>Subscription equals Azure subscription 1</em> and is empty, because a new subscription has no resource groups.</p>
+  <figure class="shot"><img src="images/step7.png" alt="Empty Resource groups page filtered by Azure subscription 1" loading="lazy"><figcaption>No resource groups yet.</figcaption></figure>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="step-n">STEP 8</span><h3>Create the resource group</h3></div>
+  <p>Click <strong>+ Create</strong> and fill in the <strong>Basics</strong> tab:</p>
+  <ul>
+    <li><strong>Subscription:</strong> Azure subscription 1</li>
+    <li><strong>Resource group name:</strong> <code>scslabs-rg</code></li>
+    <li><strong>Region:</strong> (US) West US 3</li>
+  </ul>
+  <p>Optionally add tags such as <code>env=lab</code> and <code>owner=nithin</code> on the <strong>Tags</strong> tab, then <strong>Review + create → Create</strong>. Remember the region here only decides where the group's metadata is stored.</p>
+  <figure class="shot"><img src="images/step8.png" alt="Create a resource group form with subscription, name scslabs-rg and region West US 3" loading="lazy"><figcaption>Three required fields: subscription, name and region.</figcaption></figure>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="step-n">STEP 9</span><h3>Verify the resource group</h3></div>
+  <p><code>scslabs-rg</code> now appears in the list, in Azure subscription 1, location West US 3. The full chain is in place: <span class="lvl t">Tenant</span> → <span class="lvl m">Tenant Root Group</span> → <span class="lvl m">scslabs</span> → <span class="lvl s">Azure subscription 1</span> → <span class="lvl r">scslabs-rg</span>.</p>
+  <figure class="shot"><img src="images/step9.png" alt="Resource groups list showing scslabs-rg in Azure subscription 1, West US 3" loading="lazy"><figcaption>The resource group is ready for resources.</figcaption></figure>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="step-n">STEP 10</span><h3>Add a resource (try it yourself)</h3></div>
+  <p>To complete the last level, open <code>scslabs-rg</code> → <strong>+ Create</strong> → <strong>Storage account</strong>. Use a globally unique lowercase name such as <code>scslabsst&lt;yourinitials&gt;01</code>, region West US 3, <strong>Standard</strong> performance and <strong>LRS</strong> redundancy. After deployment, open the storage account → <strong>Properties</strong> (or <strong>JSON View</strong>) and compare its <strong>Resource ID</strong> with Figure 2.</p>
+</div>
+
+<h3>Clean up</h3>
+<p>Delete <code>scslabs-rg</code> (this also deletes the storage account). If you don't want to keep the management group, move the subscription back to the Tenant Root Group first, then delete <code>scslabs</code>. A management group can only be deleted when it has no children.</p>
+
+<!-- 9 CLI -->
+<h2 id="cli">9. The same lab with Azure CLI</h2>
+<p>Everything above can be scripted, which is the first step toward the automation you will want later. Run these in <strong>Azure Cloud Shell</strong> (Bash) or a local Azure CLI after <code>az login</code>.</p>
+<pre><code><span class="cmt"># Find your subscription ID</span>
+az account show --query "{name:name, id:id, tenant:tenantId}" -o table
+
+<span class="cmt"># 1. Create the management group</span>
+az account management-group create --name scslabs --display-name scslabs
+
+<span class="cmt"># 2. Move the subscription under it</span>
+az account management-group subscription add \
+  --name scslabs --subscription "&lt;subscription-id&gt;"
+
+<span class="cmt"># 3. View the hierarchy</span>
+az account management-group show --name scslabs --expand -o jsonc
+
+<span class="cmt"># 4. Create the resource group</span>
+az group create --name scslabs-rg --location westus3 --tags env=lab
+
+<span class="cmt"># 5. Create a resource inside it</span>
+az storage account create --name scslabsst01xyz \
+  --resource-group scslabs-rg --location westus3 \
+  --sku Standard_LRS --kind StorageV2
+
+<span class="cmt"># 6. Show the resource ID</span>
+az storage account show -n scslabsst01xyz -g scslabs-rg --query id -o tsv</code></pre>
+<p>Clean up:</p>
+<pre><code>az group delete --name scslabs-rg --yes --no-wait
+az account management-group subscription remove \
+  --name scslabs --subscription "&lt;subscription-id&gt;"
+az account management-group delete --name scslabs</code></pre>
+
+<!-- 10 REAL -->
+<h2 id="real">10. Real-world design: a growing company</h2>
+<p>Imagine a mid-size company, "Northwind Health" (a made-up name), moving its workloads to Azure. It has a central platform team, two business apps, and developers who want somewhere to experiment. A management group layout based on Microsoft's Cloud Adoption Framework landing zone pattern could look like this:</p>
+
+<figure>
+<div class="diagram">
+<svg viewBox="0 0 740 340" role="img" aria-labelledby="d4t">
+  <title id="d4t">Example enterprise management group design with Platform, Landing Zones, Sandbox and Decommissioned groups.</title>
+  <defs><marker id="ah3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--muted)"/></marker></defs>
+  <rect x="270" y="10" width="200" height="40" rx="8" class="sv-box" style="stroke:var(--l-mg)"/>
+  <text x="370" y="35" text-anchor="middle" class="sv-t">Tenant Root Group</text>
+  <rect x="270" y="80" width="200" height="40" rx="8" class="sv-box" style="stroke:var(--l-mg)"/>
+  <text x="370" y="105" text-anchor="middle" class="sv-t">Northwind</text>
+  <path d="M370 50 V78" class="sv-line" marker-end="url(#ah3)"/>
+  <!-- level 2 -->
+  <g>
+  <rect x="10" y="160" width="170" height="40" rx="8" class="sv-box" style="stroke:var(--l-mg)"/><text x="95" y="185" text-anchor="middle" class="sv-t">Platform</text>
+  <rect x="195" y="160" width="170" height="40" rx="8" class="sv-box" style="stroke:var(--l-mg)"/><text x="280" y="185" text-anchor="middle" class="sv-t">Landing Zones</text>
+  <rect x="380" y="160" width="170" height="40" rx="8" class="sv-box" style="stroke:var(--l-mg)"/><text x="465" y="185" text-anchor="middle" class="sv-t">Sandbox</text>
+  <rect x="565" y="160" width="170" height="40" rx="8" class="sv-box" style="stroke:var(--l-mg)"/><text x="650" y="185" text-anchor="middle" class="sv-t">Decommissioned</text>
+  </g>
+  <path d="M370 120 V140 H95 V158" class="sv-line" marker-end="url(#ah3)"/>
+  <path d="M280 140 V158" class="sv-line" marker-end="url(#ah3)"/>
+  <path d="M370 140 H465 V158" class="sv-line" marker-end="url(#ah3)"/>
+  <path d="M465 140 H650 V158" class="sv-line" marker-end="url(#ah3)"/>
+  <!-- subs -->
+  <g class="sv-m">
+  <rect x="10" y="240" width="170" height="86" rx="8" class="sv-box" style="stroke:var(--l-sub)"/>
+  <text x="22" y="263">sub-identity</text><text x="22" y="284">sub-connectivity</text><text x="22" y="305">sub-management</text>
+  <rect x="195" y="240" width="170" height="86" rx="8" class="sv-box" style="stroke:var(--l-sub)"/>
+  <text x="207" y="263">sub-claims-prod</text><text x="207" y="284">sub-claims-dev</text><text x="207" y="305">sub-portal-prod</text>
+  <rect x="380" y="240" width="170" height="44" rx="8" class="sv-box" style="stroke:var(--l-sub)"/>
+  <text x="392" y="267">sub-dev-sandbox</text>
+  <rect x="565" y="240" width="170" height="44" rx="8" class="sv-box" style="stroke:var(--l-sub)"/>
+  <text x="577" y="267">sub-old-crm</text>
+  </g>
+  <path d="M95 200 V238" class="sv-line" marker-end="url(#ah3)"/>
+  <path d="M280 200 V238" class="sv-line" marker-end="url(#ah3)"/>
+  <path d="M465 200 V238" class="sv-line" marker-end="url(#ah3)"/>
+  <path d="M650 200 V238" class="sv-line" marker-end="url(#ah3)"/>
+</svg>
+</div>
+<figcaption>Figure 4. Management groups split by purpose, with one subscription per workload and environment.</figcaption>
+</figure>
+
+<div class="tbl"><table>
+  <thead><tr><th>Management group</th><th>What goes in it</th><th>Example policies / roles</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Northwind</strong> (top)</td><td>Everything the company owns</td><td>Allowed regions = Central India, South India; tags <code>costcenter</code> and <code>owner</code> required</td></tr>
+    <tr><td><strong>Platform</strong></td><td>Shared services: identity, hub network, logging</td><td>Only the platform team has Contributor</td></tr>
+    <tr><td><strong>Landing Zones</strong></td><td>Business application subscriptions</td><td>No public IPs on VMs; diagnostics must go to central Log Analytics</td></tr>
+    <tr><td><strong>Sandbox</strong></td><td>Developer experiments</td><td>Low budget alerts; no connection to the corporate network</td></tr>
+    <tr><td><strong>Decommissioned</strong></td><td>Subscriptions being retired</td><td>Deny all new deployments</td></tr>
+  </tbody>
+</table></div>
+
+<p>Inside <code>sub-claims-prod</code>, resource groups follow the application's lifecycle: <code>claims-web-rg</code> (App Service, Front Door), <code>claims-data-rg</code> (Azure SQL, storage, with a delete lock) and <code>claims-monitor-rg</code>. When the dev team needs a fresh environment, they deploy into <code>sub-claims-dev</code>, where the same company policies already apply because they are inherited from the top.</p>
+<p>The result: finance sees cost per subscription, security sets rules once at the top, and application teams get Contributor on only their own resource groups.</p>
+
+<!-- 11 QUIZ -->
+<h2 id="quiz">11. Quiz: test yourself</h2>
+<p>Pick an answer to see whether it's right and why.</p>
+<div class="quiz" id="quiz"></div>
+<p class="score" id="score" aria-live="polite"></p>
+<button class="reset" id="reset" type="button">Reset quiz</button>
+
+<!-- 12 -->
+<h2 id="takeaways">12. Key takeaways</h2>
+<ul>
+  <li>The order is <strong>Tenant → Management groups → Subscriptions → Resource groups → Resources</strong>.</li>
+  <li>The <strong>tenant</strong> is your Microsoft Entra ID directory: identities, not workloads.</li>
+  <li><strong>Management groups</strong> apply policy and RBAC across many subscriptions; up to 6 levels below the root, and the ID is permanent.</li>
+  <li>A <strong>subscription</strong> is the billing, access and quota boundary, and trusts exactly one tenant.</li>
+  <li>A <strong>resource group</strong> holds resources with a shared lifecycle; it can't be nested, and deleting it deletes everything inside.</li>
+  <li>Assignments <strong>inherit downward</strong>, so assign broad rules high and specific access low.</li>
+</ul>
+<p><strong>Next in the series:</strong> Azure RBAC and Azure Policy, assigning both on the <code>scslabs</code> management group we built today.</p>
+
+<footer>
+  Written by Nithin Sunke while learning Azure for AZ-900. Lab performed on an Azure free account; subscription and tenant IDs in the screenshots are blurred.
+</footer>
+</div>
+
+<script>
+const QS=[
+ {q:"Which is the correct order of the Azure hierarchy, from top to bottom?",
+  o:["Subscription → Tenant → Resource group → Resource","Tenant → Management group → Subscription → Resource group → Resource","Management group → Tenant → Resource group → Subscription","Tenant → Resource group → Subscription → Resource"],a:1,
+  w:"The tenant (Entra ID) is at the top, management groups organize subscriptions, and resource groups inside subscriptions hold the resources."},
+ {q:"Your company wants one policy that blocks deployments outside India for all 40 subscriptions. Where should you assign it?",
+  o:["On each resource group","On each subscription","On a management group that contains all 40 subscriptions","In Microsoft Entra ID user settings"],a:2,
+  w:"Policies assigned at a management group are inherited by every subscription, resource group and resource below it."},
+ {q:"How many tenants can a single subscription trust at one time?",
+  o:["Exactly one","Up to two","Up to six","Unlimited"],a:0,
+  w:"A tenant can own many subscriptions, but each subscription trusts exactly one tenant."},
+ {q:"You created a resource group in West US 3. Can a VM inside it be deployed in Central India?",
+  o:["No, resources must match the resource group region","Yes, the resource group region only stores its metadata","Only if the subscription allows it","Only for storage accounts"],a:1,
+  w:"The resource group's location is where its metadata is kept. Resources inside can be in any supported region, unless a policy restricts it."},
+ {q:"What happens when you delete a resource group?",
+  o:["Only empty resource groups can be deleted","Resources move to the default resource group","All resources in it are deleted too","The resources move to the subscription level"],a:2,
+  w:"Deleting a resource group deletes everything inside it. Use resource locks to protect important groups."},
+ {q:"Which property of a management group cannot be changed after it's created?",
+  o:["Display name","Parent management group","Management group ID","Subscriptions inside it"],a:2,
+  w:"The ID is permanent. The display name, the parent and the subscriptions can all be changed later."},
+ {q:"What is the maximum depth of a management group hierarchy?",
+  o:["3 levels","6 levels, not counting the root and subscription levels","10 levels","There is no limit"],a:1,
+  w:"Azure supports up to six levels of management groups below the Tenant Root Group."}
+];
+const box=document.getElementById('quiz'),score=document.getElementById('score');
+let answered=0,right=0;
+function render(){
+  box.innerHTML='';answered=0;right=0;score.textContent='';
+  QS.forEach((it,i)=>{
+    const d=document.createElement('div');d.className='q';
+    d.innerHTML=`<p class="qt">${i+1}. ${it.q}</p><div class="opts"></div><p class="why" hidden></p>`;
+    const opts=d.querySelector('.opts'),why=d.querySelector('.why');
+    it.o.forEach((t,j)=>{
+      const b=document.createElement('button');b.type='button';b.id=`q${i}o${j}`;b.textContent=t;
+      b.addEventListener('click',()=>{
+        opts.querySelectorAll('button').forEach((x,k)=>{x.disabled=true;if(k===it.a)x.classList.add('ok')});
+        if(j!==it.a)b.classList.add('no');else right++;
+        answered++;
+        why.textContent=(j===it.a?'Correct. ':'Not quite. ')+it.w;why.hidden=false;
+        if(answered===QS.length)score.textContent=`You scored ${right} out of ${QS.length}.`;
+      });
+      opts.appendChild(b);
+    });
+    box.appendChild(d);
+  });
+}
+document.getElementById('reset').addEventListener('click',render);
+render();
+</script>
+</body></html>
