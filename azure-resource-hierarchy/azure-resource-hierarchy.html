@@ -109,10 +109,16 @@ footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);font-si
 .sv-m{fill:var(--fg);font-family:var(--f-mono);font-size:12px}
 .sv-line{stroke:var(--muted);stroke-width:1.5;fill:none}
 @media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+
+/* Back to the blog index; uses this page's own accent so it fits either theme. */
+.back-home{display:inline-block;margin:0 0 18px;font-size:14px;font-weight:600;
+  color:var(--accent);text-decoration:none}
+.back-home:hover{text-decoration:underline}
 </style>
 </head><body>
 
 <div class="wrap">
+<a class="back-home" href="../index.html">&#8592;&nbsp;All articles</a>
 <header>
   <div class="eyebrow">Azure fundamentals · AZ-900 · Hands-on lab</div>
   <h1 style="margin-top:10px">Azure Resource Hierarchy: Tenant, Management Groups, Subscriptions, Resource Groups and Resources</h1>

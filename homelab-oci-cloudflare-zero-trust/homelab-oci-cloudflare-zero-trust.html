@@ -29,10 +29,16 @@ figure{margin:1.5em 0;background:var(--card);border:1px solid var(--line);border
 figcaption{color:var(--muted);font-size:.88rem;text-align:center;margin-top:6px}
 svg{width:100%;height:auto;display:block}
 .chk{list-style:none;padding-left:0}.chk li:before{content:"☐ ";color:var(--ok)}
+
+/* Back to the blog index; uses this page's own accent so it fits either theme. */
+.back-home{display:inline-block;margin:0 0 18px;font-size:14px;font-weight:600;
+  color:var(--accent);text-decoration:none}
+.back-home:hover{text-decoration:underline}
 </style>
 </head>
 <body>
 <main>
+<a class="back-home" href="../index.html">&#8592;&nbsp;All articles</a>
 <h1>Connecting a Proxmox Home Lab and Oracle Cloud (OCI) for Free with Cloudflare Zero Trust</h1>
 <div class="meta">9 November 2026 · Nithin Sunke · Cloudflare Mesh · Cloudflare Tunnel · Access · OCI · Proxmox</div>
 
