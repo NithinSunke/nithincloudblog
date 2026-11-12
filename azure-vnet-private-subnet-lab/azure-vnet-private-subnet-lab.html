@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Virtual Network Lab</title>
+<meta name="description" content="Azure VNet address spaces, subnets, reserved IPs, private subnets, NSGs, NAT gateway and peering, with a hands-on portal lab and Azure CLI steps.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: single reading column (~70ch) with full-width figures; hierarchy levels carry a fixed colour each, used in diagrams, headings and lab tags. */
+:root{
+  --bg:#f6f8fb; --surface:#ffffff; --fg:#17202e; --muted:#566275; --line:#dbe2ec;
+  --accent:#1d5fd1; --accent-soft:#e4edfc; --code-bg:#eef2f8;
+  --l-tenant:#5b3fc4; --l-mg:#1d5fd1; --l-sub:#c98a05; --l-rg:#0f8a7a; --l-res:#c2410c;
+  --good:#16794a; --bad:#b42318;
+  --f-display:"Space Grotesk",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f141c; --surface:#161d28; --fg:#e6ebf2; --muted:#9aa6b8; --line:#2a3443;
+  --accent:#7aa7ff; --accent-soft:#1b2a45; --code-bg:#1b2330;
+  --l-tenant:#a493f5; --l-mg:#7aa7ff; --l-sub:#f0bd4a; --l-rg:#3fc6b2; --l-res:#fb8a55;
+  --good:#4cc38a; --bad:#ff7a6e; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f141c; --surface:#161d28; --fg:#e6ebf2; --muted:#9aa6b8; --line:#2a3443;
+  --accent:#7aa7ff; --accent-soft:#1b2a45; --code-bg:#1b2330;
+  --l-tenant:#a493f5; --l-mg:#7aa7ff; --l-sub:#f0bd4a; --l-rg:#3fc6b2; --l-res:#fb8a55;
+  --good:#4cc38a; --bad:#ff7a6e; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:17px;line-height:1.7;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:760px;margin:0 auto;padding-block:48px 80px}
+h1,h2,h3{font-family:var(--f-display);line-height:1.2;text-wrap:balance;margin:0}
+h1{font-size:clamp(2rem,5vw,2.9rem);font-weight:700;letter-spacing:-.02em}
+h2{font-size:1.7rem;font-weight:600;margin-top:64px;margin-bottom:12px;letter-spacing:-.01em}
+h3{font-size:1.2rem;font-weight:600;margin-top:32px;margin-bottom:8px}
+p{margin:0 0 16px}
+a{color:var(--accent)}
+.eyebrow{font-family:var(--f-mono);font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lede{font-size:1.15rem;color:var(--muted);margin-top:16px}
+.meta{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:20px;font-size:.88rem;color:var(--muted)}
+code{font-family:var(--f-mono);font-size:.86em;background:var(--code-bg);padding:.1em .35em;border-radius:4px}
+pre{font-family:var(--f-mono);font-size:.84rem;line-height:1.6;background:var(--code-bg);border:1px solid var(--line);
+  border-radius:8px;padding:16px 18px;overflow-x:auto;margin:0 0 20px}
+pre code{background:none;padding:0;font-size:inherit}
+.cmt{color:var(--muted)}
+ul,ol{padding-left:1.3em;margin:0 0 16px}
+li{margin-bottom:6px}
+strong{font-weight:600}
+
+/* level tag */
+.lvl{display:inline-flex;align-items:center;gap:8px}
+.lvl::before{content:"";width:12px;height:12px;border-radius:3px;background:var(--c);flex:none}
+h2.lvl::before{width:16px;height:16px;border-radius:4px}
+.t{--c:var(--l-tenant)} .m{--c:var(--l-mg)} .s{--c:var(--l-sub)} .r{--c:var(--l-rg)} .x{--c:var(--l-res)}
+
+.toc{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding-block:18px;margin-top:36px;
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px 24px;font-size:.93rem}
+.toc a{color:var(--fg);text-decoration:none}
+.toc a:hover{color:var(--accent);text-decoration:underline}
+
+figure{margin:28px 0}
+figcaption{font-size:.86rem;color:var(--muted);margin-top:10px}
+.diagram{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;overflow-x:auto}
+.diagram svg{display:block;width:100%;height:auto;min-width:520px}
+.shot img{display:block;width:100%;border:1px solid var(--line);border-radius:8px;background:#fff}
+
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:20px 0}
+.fact{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;font-size:.92rem;line-height:1.55}
+.fact b{display:block;font-family:var(--f-display);font-size:1.25rem;font-weight:600;color:var(--c,var(--accent));margin-bottom:2px}
+
+.note{border-left:3px solid var(--accent);background:var(--accent-soft);padding:12px 16px;border-radius:0 8px 8px 0;margin:20px 0;font-size:.95rem}
+.note p:last-child{margin:0}
+
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+.tbl{overflow-x:auto;margin:20px 0}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--f-display);font-weight:600;font-size:.88rem;color:var(--muted)}
+
+/* lab steps */
+.step{margin-top:40px}
+.step-h{display:flex;align-items:baseline;gap:12px}
+.step-n{font-family:var(--f-mono);font-size:.8rem;color:var(--muted);flex:none}
+.step h3{margin:0}
+
+/* quiz */
+.quiz{display:grid;gap:18px;margin-top:20px}
+.q{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 18px 14px}
+.q p.qt{font-weight:600;margin-bottom:12px}
+.opts{display:grid;gap:8px}
+.opts button{font:inherit;font-size:.95rem;text-align:left;color:var(--fg);background:var(--bg);border:1px solid var(--line);
+  border-radius:7px;padding:9px 12px;cursor:pointer}
+.opts button:hover:not(:disabled){border-color:var(--accent)}
+.opts button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.opts button.ok{border-color:var(--good);color:var(--good);font-weight:600}
+.opts button.no{border-color:var(--bad);color:var(--bad)}
+.opts button:disabled{cursor:default}
+.why{font-size:.9rem;color:var(--muted);margin:10px 0 0}
+.score{font-family:var(--f-display);font-weight:600;margin-top:6px}
+.reset{font:inherit;font-size:.9rem;background:none;border:1px solid var(--line);color:var(--fg);border-radius:7px;padding:7px 14px;cursor:pointer}
+
+footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);font-size:.88rem;color:var(--muted)}
+
+/* svg tokens */
+.sv-box{fill:var(--surface);stroke-width:2}
+.sv-t{fill:var(--fg);font-family:var(--f-display);font-weight:600;font-size:15px}
+.sv-s{fill:var(--muted);font-family:var(--f-body);font-size:12px}
+.sv-m{fill:var(--fg);font-family:var(--f-mono);font-size:12px}
+.sv-line{stroke:var(--muted);stroke-width:1.5;fill:none}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+/* Back to the blog index; uses this page's own accent so it fits either theme. */
+.back-home{display:inline-block;margin:0 0 18px;font-size:14px;font-weight:600;
+  color:var(--accent);text-decoration:none}
+.back-home:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+<style>
+:root{--c-vnet:#1d5fd1;--c-sub:#0f8a7a;--c-sec:#c2410c;--c-out:#c98a05;--warn:#9a5b00;--warn-soft:#fff4e0}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--c-vnet:#7aa7ff;--c-sub:#3fc6b2;--c-sec:#fb8a55;--c-out:#f0bd4a;--warn:#f0b35a;--warn-soft:#2e2414}}
+:root[data-theme="dark"]{--c-vnet:#7aa7ff;--c-sub:#3fc6b2;--c-sec:#fb8a55;--c-out:#f0bd4a;--warn:#f0b35a;--warn-soft:#2e2414}
+.cost{border-left:3px solid var(--warn);background:var(--warn-soft);padding:12px 16px;border-radius:0 8px 8px 0;margin:20px 0;font-size:.95rem}
+.cost p:last-child{margin:0}
+.lab{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px 22px 6px;margin:28px 0}
+.lab>h3{margin-top:0}
+.verify{font-size:.95rem}
+.verify::before{content:"Check: ";font-weight:600;color:var(--good)}
+</style>
+
+<div class="wrap">
+<a class="back-home" href="../index.html">&#8592;&nbsp;All articles</a>
+<header>
+  <div class="eyebrow">Azure fundamentals · AZ-900 · Hands-on lab</div>
+  <h1 style="margin-top:10px">Azure Virtual Network (VNet): Address Spaces, Private Subnets and a Hands-On Portal Lab</h1>
+  <p class="lede">Every VM, private endpoint and internal load balancer in Azure needs a virtual network to live in. This post explains how a VNet and its subnets work, what changed with private subnets in 2026, and then builds <code>VNET-SP1</code> step by step in the portal and again with the Azure CLI.</p>
+  <div class="meta"><span>Sunke Nithin</span><span>November 2026</span><span>~15 min read + 20 min lab</span></div>
+</header>
+
+<nav class="toc" aria-label="Contents">
+  <a href="#what">1. What is a VNet?</a>
+  <a href="#address">2. Address space and subnets</a>
+  <a href="#reserved">3. The 5 reserved IPs</a>
+  <a href="#outbound">4. Private subnets and outbound access</a>
+  <a href="#security">5. Filtering traffic: NSGs and routes</a>
+  <a href="#connect">6. Connecting VNets and on-premises</a>
+  <a href="#lab">7. Lab: build VNET-SP1 in the portal</a>
+  <a href="#cli">8. The same lab with Azure CLI</a>
+  <a href="#extend">9. Extend the lab</a>
+  <a href="#gotchas">10. Limits and gotchas</a>
+  <a href="#quiz">11. Quiz</a>
+  <a href="#takeaways">12. Key takeaways</a>
+</nav>
+
+<!-- 1 -->
+<h2 id="what">1. What is a VNet?</h2>
+<p>An <strong>Azure Virtual Network (VNet)</strong> is your own private, isolated network inside Azure. Resources in the same VNet talk to each other over private IP addresses, and nothing outside can reach them unless you allow it. It works much like the network in your own datacenter, except there are no switches or cables to manage.</p>
+<ul>
+  <li>A VNet belongs to <strong>one subscription</strong> and <strong>one region</strong>, and lives in a resource group (here, <code>Network-RG</code> in West US 3).</li>
+  <li>It spans <strong>all availability zones</strong> in that region, so you don't need a separate VNet per zone.</li>
+  <li>VNets and subnets themselves are <strong>free</strong>. You pay for things attached to them: NAT gateways, public IPs, VPN gateways, peering data transfer, Bastion and so on.</li>
+</ul>
+
+<figure>
+<div class="diagram">
+<svg viewBox="0 0 720 330" role="img" aria-labelledby="f1t">
+  <title id="f1t">VNET-SP1 with address space 10.0.0.0/16 containing SUBNET1 10.0.0.0/24 (private) and SUBNET2 10.0.1.0/24 with an NSG and a NAT gateway for outbound internet.</title>
+  <defs><marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--muted)"/></marker></defs>
+  <rect x="10" y="10" width="700" height="310" rx="12" style="fill:none;stroke:var(--line);stroke-width:2;stroke-dasharray:6 5"/>
+  <text x="26" y="34" class="sv-s">Region: West US 3 · Resource group: Network-RG</text>
+  <rect x="30" y="48" width="480" height="256" rx="12" style="fill:none;stroke:var(--c-vnet);stroke-width:2.5"/>
+  <text x="46" y="74" class="sv-t" style="fill:var(--c-vnet)">VNET-SP1</text>
+  <text x="46" y="92" class="sv-m">address space 10.0.0.0/16 · 65,536 addresses</text>
+  <rect x="50" y="108" width="210" height="176" rx="10" class="sv-box" style="stroke:var(--c-sub)"/>
+  <text x="64" y="132" class="sv-t" style="font-size:14px">SUBNET1</text>
+  <text x="64" y="150" class="sv-m">10.0.0.0/24</text>
+  <text x="64" y="168" class="sv-s">private subnet (no default</text>
+  <text x="64" y="183" class="sv-s">outbound internet)</text>
+  <rect x="64" y="200" width="80" height="34" rx="6" class="sv-box" style="stroke:var(--muted)"/><text x="104" y="222" text-anchor="middle" class="sv-m">DB VM</text>
+  <text x="150" y="222" class="sv-m" style="font-size:11px">10.0.0.4</text>
+  <rect x="280" y="108" width="210" height="176" rx="10" class="sv-box" style="stroke:var(--c-sub)"/>
+  <text x="294" y="132" class="sv-t" style="font-size:14px">SUBNET2 (lab §9)</text>
+  <text x="294" y="150" class="sv-m">10.0.1.0/24</text>
+  <rect x="294" y="162" width="120" height="26" rx="5" style="fill:none;stroke:var(--c-sec);stroke-width:1.5"/>
+  <text x="354" y="180" text-anchor="middle" class="sv-m" style="fill:var(--c-sec);font-size:11px">NSG: allow 443</text>
+  <rect x="294" y="200" width="80" height="34" rx="6" class="sv-box" style="stroke:var(--muted)"/><text x="334" y="222" text-anchor="middle" class="sv-m">Web VM</text>
+  <text x="380" y="222" class="sv-m" style="font-size:11px">10.0.1.4</text>
+  <path d="M146 217 H292" class="sv-line" marker-end="url(#a1)"/>
+  <text x="168" y="256" class="sv-s">SUBNET1 ↔ SUBNET2: private</text>
+  <text x="168" y="271" class="sv-s">traffic allowed by default</text>
+  <rect x="550" y="150" width="140" height="50" rx="8" class="sv-box" style="stroke:var(--c-out)"/>
+  <text x="620" y="172" text-anchor="middle" class="sv-t" style="font-size:13px">NAT gateway</text>
+  <text x="620" y="189" text-anchor="middle" class="sv-s">static public IP</text>
+  <path d="M155 284 V296 H530 V190 H548" class="sv-line" style="stroke:var(--c-out)" marker-end="url(#a1)"/>
+  <text x="536" y="292" class="sv-s">SUBNET1 outbound (lab 9b)</text>
+  <path d="M620 148 V96" class="sv-line" marker-end="url(#a1)"/>
+  <text x="620" y="86" text-anchor="middle" class="sv-t" style="font-size:13px">Internet</text>
+</svg>
+</div>
+<figcaption>Figure 1. A VNet is carved into subnets. Resources in any subnet reach each other privately; internet access is something you add.</figcaption>
+</figure>
+
+<div class="note"><p><strong>Coming from OCI?</strong> A VNet is an OCI VCN. Azure subnets are always regional (OCI also has AD-specific subnets), a NAT gateway works the same way, and an NSG covers what OCI splits between security lists and NSGs. Azure has no Internet Gateway resource: internet routing is built into the VNet's system routes.</p></div>
+
+<!-- 2 -->
+<h2 id="address">2. Address space and subnets</h2>
+<p>The <strong>address space</strong> is the range of private IPs the whole VNet can use, written in CIDR notation. <code>10.0.0.0/16</code> means the first 16 bits are fixed, which leaves 65,536 addresses from <code>10.0.0.0</code> to <code>10.0.255.255</code>. Use the private RFC 1918 ranges: <code>10.0.0.0/8</code>, <code>172.16.0.0/12</code> or <code>192.168.0.0/16</code>.</p>
+<p>A <strong>subnet</strong> is a slice of that address space. Every resource with a network interface goes into a subnet, and subnets are where you attach NSGs, route tables and NAT gateways.</p>
+<div class="tbl"><table>
+  <thead><tr><th>CIDR</th><th>Addresses</th><th>Usable in Azure</th><th>Typical use</th></tr></thead>
+  <tbody>
+    <tr><td><code>/16</code></td><td>65,536</td><td>VNet only</td><td>A whole VNet</td></tr>
+    <tr><td><code>/24</code></td><td>256</td><td>251</td><td>A normal workload subnet</td></tr>
+    <tr><td><code>/26</code></td><td>64</td><td>59</td><td>Minimum for <code>AzureBastionSubnet</code> and <code>AzureFirewallSubnet</code></td></tr>
+    <tr><td><code>/27</code></td><td>32</td><td>27</td><td>Recommended for <code>GatewaySubnet</code></td></tr>
+    <tr><td><code>/29</code></td><td>8</td><td>3</td><td>Smallest IPv4 subnet Azure allows</td></tr>
+  </tbody>
+</table></div>
+<p><strong>Plan before you build.</strong> Address spaces of VNets you want to peer or connect to on-premises must not overlap. If your office uses <code>10.0.0.0/16</code>, pick something else for Azure, such as <code>10.20.0.0/16</code>. Leave gaps so subnets can grow later.</p>
+
+<!-- 3 -->
+<h2 id="reserved">3. The 5 reserved IPs in every subnet</h2>
+<p>Azure keeps five addresses in every subnet, which is why a <code>/24</code> gives you 251 usable IPs instead of 256. That's also why the first VM you deploy into <code>10.0.0.0/24</code> gets <code>10.0.0.4</code>.</p>
+
+<figure>
+<div class="diagram">
+<svg viewBox="0 0 720 170" role="img" aria-labelledby="f2t">
+  <title id="f2t">Reserved addresses in 10.0.0.0/24: .0 network, .1 default gateway, .2 and .3 Azure DNS, .255 broadcast. Usable range .4 to .254.</title>
+  <g class="sv-m">
+    <rect x="20" y="30" width="70" height="46" rx="6" style="fill:var(--c-sec);opacity:.2"/><text x="55" y="58" text-anchor="middle">.0</text>
+    <rect x="96" y="30" width="70" height="46" rx="6" style="fill:var(--c-sec);opacity:.2"/><text x="131" y="58" text-anchor="middle">.1</text>
+    <rect x="172" y="30" width="70" height="46" rx="6" style="fill:var(--c-sec);opacity:.2"/><text x="207" y="58" text-anchor="middle">.2</text>
+    <rect x="248" y="30" width="70" height="46" rx="6" style="fill:var(--c-sec);opacity:.2"/><text x="283" y="58" text-anchor="middle">.3</text>
+    <rect x="324" y="30" width="300" height="46" rx="6" style="fill:var(--c-sub);opacity:.25"/><text x="474" y="58" text-anchor="middle">.4 – .254 · 251 addresses for you</text>
+    <rect x="630" y="30" width="70" height="46" rx="6" style="fill:var(--c-sec);opacity:.2"/><text x="665" y="58" text-anchor="middle">.255</text>
+  </g>
+  <g class="sv-s">
+    <text x="55" y="100" text-anchor="middle">network</text>
+    <text x="131" y="100" text-anchor="middle">default</text><text x="131" y="115" text-anchor="middle">gateway</text>
+    <text x="245" y="100" text-anchor="middle">Azure DNS mapping</text>
+    <text x="474" y="100" text-anchor="middle">first VM gets 10.0.0.4</text>
+    <text x="665" y="100" text-anchor="middle">broadcast</text>
+  </g>
+  <text x="20" y="150" class="sv-s">Example: SUBNET1 = 10.0.0.0/24. The same five positions are reserved in every subnet, whatever its size.</text>
+</svg>
+</div>
+<figcaption>Figure 2. Five reserved addresses per subnet.</figcaption>
+</figure>
+
+<!-- 4 -->
+<h2 id="outbound">4. Private subnets and outbound internet access</h2>
+<p>For years, a VM in Azure without a public IP could still reach the internet through a hidden, Microsoft-owned IP. This is called <strong>default outbound access</strong>. It was convenient, but the IP could change without notice, you couldn't control or log it, and workloads ended up with internet access nobody had planned for.</p>
+<p>Azure is moving away from it. A <strong>private subnet</strong> has default outbound access turned off, and as the portal notes in step 7 of the lab, <strong>after 31 March 2026 private subnet is the default for new virtual networks</strong>. Your <code>SUBNET1</code> was created this way.</p>
+<p>In a private subnet, a VM can still reach other private IPs and Azure services over private endpoints, but it can't reach the internet until you add one of these explicit methods:</p>
+<div class="tbl"><table>
+  <thead><tr><th>Method</th><th>How it works</th><th>When to use it</th></tr></thead>
+  <tbody>
+    <tr><td><strong>NAT gateway</strong> (recommended)</td><td>Attached to the subnet; all outbound traffic leaves through its static public IP(s)</td><td>Many VMs need outbound access, like OS updates or calling APIs</td></tr>
+    <tr><td><strong>Public IP on the VM</strong></td><td>That VM uses its own IP for inbound and outbound traffic</td><td>A single VM that must also be reachable from the internet</td></tr>
+    <tr><td><strong>Load balancer outbound rules</strong></td><td>VMs behind a Standard public load balancer share its frontend IP</td><td>Already using a public load balancer</td></tr>
+    <tr><td><strong>Azure Firewall / NVA</strong></td><td>A route table sends <code>0.0.0.0/0</code> to a firewall in a hub VNet</td><td>Enterprise hub-and-spoke with central inspection</td></tr>
+  </tbody>
+</table></div>
+<div class="cost"><p>As the portal warns, in a private subnet with no outbound method, Windows activation and OS updates can fail. For a lab VM, either add a public IP or attach a NAT gateway (section 9); a NAT gateway is billed per hour plus data processed.</p></div>
+
+<!-- 5 -->
+<h2 id="security">5. Filtering traffic: NSGs and routes</h2>
+<p>A <strong>network security group (NSG)</strong> is a stateful firewall made of allow/deny rules. Each rule matches on source, destination, port and protocol and has a <strong>priority</strong> from 100 to 4096; lower numbers are evaluated first and the first match wins. You can attach an NSG to a <strong>subnet</strong>, to a <strong>network interface</strong>, or to both, in which case traffic must pass both.</p>
+<p>Every NSG starts with default rules you can't delete but can override with higher-priority ones:</p>
+<div class="tbl"><table>
+  <thead><tr><th>Direction</th><th>Default rule</th><th>Effect</th></tr></thead>
+  <tbody>
+    <tr><td>Inbound</td><td>AllowVNetInBound (65000)</td><td>Anything inside the VNet (and peered VNets) can reach you</td></tr>
+    <tr><td>Inbound</td><td>AllowAzureLoadBalancerInBound (65001)</td><td>Health probes work</td></tr>
+    <tr><td>Inbound</td><td>DenyAllInBound (65500)</td><td>Everything else from outside is blocked</td></tr>
+    <tr><td>Outbound</td><td>AllowVNetOutBound, AllowInternetOutBound, DenyAllOutBound</td><td>Outbound is open unless you restrict it</td></tr>
+  </tbody>
+</table></div>
+<p><strong>Routing</strong> happens automatically. Azure adds <strong>system routes</strong> so all subnets in a VNet can reach each other, plus routes for peered VNets and gateways. A <strong>route table</strong> (user-defined routes) overrides them, for example to send all traffic through a firewall. The portal's <em>Add a subnet</em> panel in step 7 has fields for an NSG, a NAT gateway and a route table; we left them empty and add an NSG in section 9.</p>
+<p>Two more subnet features you'll see in that panel: <strong>service endpoints</strong> let a subnet reach services like Storage over Azure's backbone, and <strong>private endpoints</strong> go further by giving the service a private IP inside your subnet.</p>
+
+<!-- 6 -->
+<h2 id="connect">6. Connecting VNets and on-premises</h2>
+<p>The name <code>VNET-SP1</code> fits a common pattern: <strong>hub-and-spoke</strong>. Shared services such as a firewall, VPN gateway and Bastion sit in a hub VNet, and each workload gets its own spoke VNet peered to the hub.</p>
+
+<figure>
+<div class="diagram">
+<svg viewBox="0 0 720 250" role="img" aria-labelledby="f3t">
+  <title id="f3t">Hub-and-spoke: a hub VNet with firewall, VPN gateway and Bastion, peered to spoke VNET-SP1 and VNET-SP2, connected to on-premises over VPN or ExpressRoute.</title>
+  <rect x="260" y="20" width="200" height="120" rx="12" class="sv-box" style="stroke:var(--c-vnet);stroke-width:2.5"/>
+  <text x="360" y="46" text-anchor="middle" class="sv-t" style="fill:var(--c-vnet)">VNET-HUB</text>
+  <text x="360" y="64" text-anchor="middle" class="sv-m" style="font-size:11px">10.100.0.0/16</text>
+  <text x="360" y="88" text-anchor="middle" class="sv-s">Azure Firewall</text>
+  <text x="360" y="106" text-anchor="middle" class="sv-s">VPN / ExpressRoute gateway</text>
+  <text x="360" y="124" text-anchor="middle" class="sv-s">Azure Bastion</text>
+  <rect x="30" y="160" width="180" height="70" rx="10" class="sv-box" style="stroke:var(--c-sub);stroke-width:2"/>
+  <text x="120" y="190" text-anchor="middle" class="sv-t" style="font-size:14px">VNET-SP1</text>
+  <text x="120" y="210" text-anchor="middle" class="sv-m" style="font-size:11px">10.0.0.0/16</text>
+  <rect x="510" y="160" width="180" height="70" rx="10" class="sv-box" style="stroke:var(--c-sub);stroke-width:2"/>
+  <text x="600" y="190" text-anchor="middle" class="sv-t" style="font-size:14px">VNET-SP2</text>
+  <text x="600" y="210" text-anchor="middle" class="sv-m" style="font-size:11px">10.1.0.0/16</text>
+  <path d="M258 110 L160 158" style="stroke:var(--accent);stroke-width:2.5;fill:none"/>
+  <path d="M462 110 L560 158" style="stroke:var(--accent);stroke-width:2.5;fill:none"/>
+  <text x="170" y="128" class="sv-s" style="fill:var(--accent)">peering</text>
+  <text x="510" y="128" class="sv-s" style="fill:var(--accent)">peering</text>
+  <path d="M212 210 H508" style="stroke:var(--muted);stroke-width:1.5;stroke-dasharray:5 5;fill:none"/>
+  <text x="360" y="204" text-anchor="middle" class="sv-s">no direct path: peering isn't transitive</text>
+  <rect x="560" y="30" width="140" height="44" rx="8" class="sv-box" style="stroke:var(--muted)"/>
+  <text x="630" y="57" text-anchor="middle" class="sv-t" style="font-size:13px">On-premises</text>
+  <path d="M462 52 H558" style="stroke:var(--c-out);stroke-width:2.5;fill:none"/>
+  <text x="510" y="44" text-anchor="middle" class="sv-s">VPN / ER</text>
+</svg>
+</div>
+<figcaption>Figure 3. Spokes peer to the hub. Spoke-to-spoke traffic must go through the hub firewall or have its own peering.</figcaption>
+</figure>
+<ul>
+  <li><strong>VNet peering</strong> joins two VNets over Microsoft's backbone with low latency, in the same region or across regions (global peering). Address spaces must not overlap, and peering is <strong>not transitive</strong>: if SP1 peers with the hub and the hub with SP2, SP1 still can't reach SP2 directly.</li>
+  <li><strong>VPN Gateway</strong> connects a VNet to on-premises over encrypted IPsec tunnels across the internet. It needs a subnet named exactly <code>GatewaySubnet</code>.</li>
+  <li><strong>ExpressRoute</strong> is a private circuit through a connectivity provider, with no internet path, higher bandwidth and more predictable latency.</li>
+  <li><strong>Azure Bastion</strong> lets you RDP or SSH to VMs from the portal without public IPs on them. It needs a subnet named <code>AzureBastionSubnet</code>, at least <code>/26</code>. This is the <em>Azure Bastion</em> option on the VNet wizard's <strong>Security</strong> tab, along with Azure Firewall and DDoS Protection.</li>
+</ul>
+
+<!-- 7 LAB -->
+<h2 id="lab">7. Lab: build VNET-SP1 in the portal</h2>
+<p><strong>Goal:</strong> create the resource group <code>Network-RG</code>, then the VNet <code>VNET-SP1</code> (<code>10.0.0.0/16</code>) with one private subnet <code>SUBNET1</code> (<code>10.0.0.0/24</code>) in West US 3. Everything in this part of the lab is free.</p>
+
+<div class="step">
+  <div class="step-h"><span class="step-n">STEP 1</span><h3>Create the resource group</h3></div>
+  <p>Search for <strong>Resource groups</strong> → <strong>+ Create</strong>. Choose your subscription, enter <code>Network-RG</code> and pick <strong>(US) West US 3</strong>, then <strong>Review + create → Create</strong>. Keeping network resources in their own resource group is common practice: the network team can own it while application teams get their own groups.</p>
+  <figure class="shot"><img src="images/step1.png" alt="Create a resource group form with name Network-RG in West US 3" loading="lazy"><figcaption>A dedicated resource group for networking.</figcaption></figure>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="step-n">STEP 2</span><h3>Confirm the resource group</h3></div>
+  <p><code>Network-RG</code> now appears in the Resource groups list.</p>
+  <figure class="shot"><img src="images/step2.png" alt="Resource groups list showing Network-RG" loading="lazy"><figcaption>The resource group is ready.</figcaption></figure>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="step-n">STEP 3</span><h3>Start the VNet wizard: Basics</h3></div>
+  <p>Search for <strong>Virtual networks</strong> → <strong>+ Create</strong>. On <strong>Basics</strong>, pick the subscription and <code>Network-RG</code>, name it <code>VNET-SP1</code> and use the same region, <strong>West US 3</strong>. A VNet can only hold resources from its own region, so choose the region your VMs will use.</p>
+  <figure class="shot"><img src="images/step3.png" alt="Create virtual network Basics tab with name VNET-SP1 in Network-RG, West US 3" loading="lazy"><figcaption>Name and region are fixed once the VNet is created.</figcaption></figure>
+  <p>Leave the <strong>Security</strong> tab at its defaults (Bastion, Firewall and DDoS Protection off) for this lab. All three are paid services.</p>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="step-n">STEP 4</span><h3>Look at the default address space</h3></div>
+  <p>On <strong>Address space</strong>, the portal proposes <code>10.0.0.0/16</code> with a subnet called <code>default</code> (<code>10.0.0.0/24</code>). We'll replace it with our own naming.</p>
+  <figure class="shot"><img src="images/step4.png" alt="Address space tab showing 10.0.0.0/16 with a default subnet 10.0.0.0/24" loading="lazy"><figcaption>The wizard's suggested layout.</figcaption></figure>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="step-n">STEP 5</span><h3>See what happens with no address space</h3></div>
+  <p>If you click <strong>Delete address space</strong>, the tab shows the error <em>"You must add at least one address space to the virtual network."</em> A VNet can't exist without one. This tab also has <strong>Advertised address prefixes</strong>, which control which ranges a gateway in this VNet advertises to on-premises; leave it empty.</p>
+  <figure class="shot"><img src="images/step5.png" alt="Address space tab with validation error: You must add at least one address space" loading="lazy"><figcaption>At least one address space is required.</figcaption></figure>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="step-n">STEP 6</span><h3>Add the address space back</h3></div>
+  <p>Click <strong>Add IPv4 address space</strong>, enter starting address <code>10.0.0.0</code> and size <code>/16</code> (65,536 addresses). The subnet list is now empty.</p>
+  <figure class="shot"><img src="images/step6.png" alt="Address space 10.0.0.0/16 with no subnets" loading="lazy"><figcaption>An address space with no subnets yet.</figcaption></figure>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="step-n">STEP 7</span><h3>Add SUBNET1 as a private subnet</h3></div>
+  <p>Click <strong>+ Add a subnet</strong> and set:</p>
+  <ul>
+    <li><strong>Subnet purpose:</strong> Default. Other options set up special subnets such as Bastion or Firewall.</li>
+    <li><strong>Name:</strong> <code>SUBNET1</code></li>
+    <li><strong>Starting address:</strong> <code>10.0.0.0</code>, <strong>Size:</strong> <code>/24</code> (range 10.0.0.0–10.0.0.255)</li>
+    <li><strong>Enable private subnet (no default outbound access):</strong> ticked, as recommended (see section 4)</li>
+    <li><strong>NAT gateway, Network security group, Route table:</strong> None for now</li>
+  </ul>
+  <p>Then click <strong>Add</strong>. Note the two information messages: private subnet becomes the default for new VNets after 31 March 2026, and a NAT gateway is the recommended way to give it internet access.</p>
+  <figure class="shot"><img src="images/step7.png" alt="Add a subnet panel with name SUBNET1, 10.0.0.0/24, private subnet enabled, no NAT gateway, NSG or route table" loading="lazy"><figcaption>Everything a subnet can carry is set in this one panel.</figcaption></figure>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="step-n">STEP 8</span><h3>Check the subnet layout</h3></div>
+  <p><code>SUBNET1</code> now sits in <code>10.0.0.0/16</code> with 256 addresses, of which 251 are usable. The rest of the <code>/16</code> is free for future subnets such as <code>10.0.1.0/24</code>.</p>
+  <figure class="shot"><img src="images/step8.png" alt="Address space with SUBNET1 10.0.0.0/24" loading="lazy"><figcaption>One subnet in, room for 255 more /24s.</figcaption></figure>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="step-n">STEP 9</span><h3>Review and create</h3></div>
+  <p>Open <strong>Review + create</strong>. Validation passes and the summary confirms the name, region, address space, <code>SUBNET1</code> and <strong>Private subnet: Enabled</strong>. Before clicking <strong>Create</strong>, click <strong>View automation template</strong> to see the ARM template the portal generated; you can save it to recreate the VNet later.</p>
+  <figure class="shot"><img src="images/step9.png" alt="Review and create summary with validation passed, private subnet enabled" loading="lazy"><figcaption>Validation passed.</figcaption></figure>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="step-n">STEP 10</span><h3>Verify the VNet</h3></div>
+  <p>After a few seconds, <code>VNET-SP1</code> appears under <strong>Virtual networks</strong> in <code>Network-RG</code>, West US 3. Open it and look at <strong>Subnets</strong>, <strong>Connected devices</strong> (empty until you deploy a VM) and <strong>Peerings</strong>.</p>
+  <figure class="shot"><img src="images/step10.png" alt="Virtual networks list showing VNET-SP1 in Network-RG, West US 3" loading="lazy"><figcaption>VNET-SP1 is created.</figcaption></figure>
+</div>
+
+<!-- 8 CLI -->
+<h2 id="cli">8. The same lab with Azure CLI</h2>
+<p>Run these in Cloud Shell (Bash). They build exactly what the portal built.</p>
+<pre><code>RG=Network-RG
+LOCATION=westus3
+
+<span class="cmt"># 1. Resource group</span>
+az group create --name $RG --location $LOCATION
+
+<span class="cmt"># 2. VNet with its address space and SUBNET1</span>
+az network vnet create -g $RG -n VNET-SP1 -l $LOCATION \
+  --address-prefixes 10.0.0.0/16 \
+  --subnet-name SUBNET1 --subnet-prefixes 10.0.0.0/24
+
+<span class="cmt"># 3. Make SUBNET1 a private subnet (no default outbound access)</span>
+az network vnet subnet update -g $RG --vnet-name VNET-SP1 -n SUBNET1 \
+  --default-outbound-access false
+
+<span class="cmt"># 4. Verify</span>
+az network vnet show -g $RG -n VNET-SP1 \
+  --query "{name:name, space:addressSpace.addressPrefixes, location:location}" -o jsonc
+az network vnet subnet list -g $RG --vnet-name VNET-SP1 \
+  --query "[].{name:name, prefix:addressPrefix, defaultOutbound:defaultOutboundAccess}" -o table</code></pre>
+<p class="verify">The subnet list shows <code>SUBNET1  10.0.0.0/24  False</code>. If your CLI doesn't recognise <code>--default-outbound-access</code>, update it with <code>az upgrade</code>.</p>
+
+<!-- 9 extend -->
+<h2 id="extend">9. Extend the lab</h2>
+<div class="lab">
+  <h3>9a. Add SUBNET2 with an NSG (free)</h3>
+<pre><code><span class="cmt"># NSG that allows HTTPS from the internet</span>
+az network nsg create -g $RG -n NSG-SUBNET2
+az network nsg rule create -g $RG --nsg-name NSG-SUBNET2 \
+  -n allow-https --priority 100 --direction Inbound \
+  --access Allow --protocol Tcp --destination-port-ranges 443
+
+<span class="cmt"># Second subnet in the free part of the address space, with the NSG attached</span>
+az network vnet subnet create -g $RG --vnet-name VNET-SP1 -n SUBNET2 \
+  --address-prefixes 10.0.1.0/24 \
+  --network-security-group NSG-SUBNET2 \
+  --default-outbound-access false
+
+<span class="cmt"># See the NSG's rules, including the defaults</span>
+az network nsg rule list -g $RG --nsg-name NSG-SUBNET2 --include-default -o table</code></pre>
+  <p class="verify">In the portal, VNET-SP1 → <strong>Subnets</strong> shows SUBNET1 and SUBNET2, with <code>NSG-SUBNET2</code> in the security group column for SUBNET2.</p>
+</div>
+
+<div class="lab">
+  <h3>9b. Give SUBNET1 outbound internet with a NAT gateway (paid)</h3>
+<pre><code>az network public-ip create -g $RG -n PIP-NATGW --sku Standard --allocation-method Static
+az network nat gateway create -g $RG -n NATGW-SP1 \
+  --public-ip-addresses PIP-NATGW --idle-timeout 4
+az network vnet subnet update -g $RG --vnet-name VNET-SP1 -n SUBNET1 \
+  --nat-gateway NATGW-SP1
+
+<span class="cmt"># The public IP every VM in SUBNET1 will use for outbound traffic</span>
+az network public-ip show -g $RG -n PIP-NATGW --query ipAddress -o tsv</code></pre>
+  <p class="verify">A VM in SUBNET1 without its own public IP can now run <code>curl ifconfig.me</code>, and the address it prints is the NAT gateway's IP.</p>
+  <div class="cost"><p>The NAT gateway and its public IP are billed hourly. Remove them when you're done: <code>az network vnet subnet update -g $RG --vnet-name VNET-SP1 -n SUBNET1 --remove natGateway</code>, then <code>az network nat gateway delete -g $RG -n NATGW-SP1</code> and <code>az network public-ip delete -g $RG -n PIP-NATGW</code>.</p></div>
+</div>
+
+<div class="lab">
+  <h3>9c. Peer a second spoke (data transfer is billed, the peering itself is free)</h3>
+<pre><code>az network vnet create -g $RG -n VNET-SP2 -l $LOCATION \
+  --address-prefixes 10.1.0.0/16 --subnet-name SUBNET1 --subnet-prefixes 10.1.0.0/24
+
+<span class="cmt"># Peering is created in both directions</span>
+az network vnet peering create -g $RG -n SP1-to-SP2 \
+  --vnet-name VNET-SP1 --remote-vnet VNET-SP2 --allow-vnet-access
+az network vnet peering create -g $RG -n SP2-to-SP1 \
+  --vnet-name VNET-SP2 --remote-vnet VNET-SP1 --allow-vnet-access
+
+az network vnet peering list -g $RG --vnet-name VNET-SP1 \
+  --query "[].{name:name, state:peeringState}" -o table</code></pre>
+  <p class="verify">The state shows <code>Connected</code>. Try creating a third VNet with <code>10.0.0.0/16</code> and peering it to SP1: Azure rejects it because the address spaces overlap.</p>
+</div>
+
+<p><strong>Clean up:</strong> <code>az group delete --name Network-RG --yes --no-wait</code> removes the VNets, subnets, NSG, NAT gateway, public IP and peerings.</p>
+
+<!-- 10 -->
+<h2 id="gotchas">10. Limits and gotchas</h2>
+<ul>
+  <li><strong>Region is permanent.</strong> You can't move a VNet to another region; you recreate it there.</li>
+  <li><strong>Changing address spaces is possible but limited.</strong> You can add or resize address ranges, but a subnet's range can't be changed while resources are using it, and a peered VNet's peering must be synced after a change.</li>
+  <li><strong>Overlapping ranges block peering and VPN.</strong> Plan your IP scheme across Azure, other clouds and on-premises before building.</li>
+  <li><strong>Special subnet names are exact.</strong> <code>GatewaySubnet</code>, <code>AzureBastionSubnet</code> and <code>AzureFirewallSubnet</code> must be spelled exactly like that and must not have other resources in them.</li>
+  <li><strong>Azure's DNS is at <code>168.63.129.16</code>.</strong> VMs use it by default for name resolution; don't block it in NSGs or the guest firewall.</li>
+  <li><strong>Private subnets need a planned outbound path.</strong> Decide on NAT gateway, a firewall or public IPs before deploying VMs that need updates.</li>
+</ul>
+
+<!-- 11 quiz -->
+<h2 id="quiz">11. Quiz: test yourself</h2>
+<p>Pick an answer to see whether it's right and why.</p>
+<div class="quiz" id="quiz"></div>
+<p class="score" id="score" aria-live="polite"></p>
+<button class="reset" id="reset" type="button">Reset quiz</button>
+
+<!-- 12 -->
+<h2 id="takeaways">12. Key takeaways</h2>
+<ul>
+  <li>A VNet is a private network in <strong>one region</strong> and one subscription, and spans all zones in that region.</li>
+  <li>The <strong>address space</strong> is the VNet's IP range; <strong>subnets</strong> are slices of it where resources, NSGs, NAT gateways and route tables attach.</li>
+  <li>Azure reserves <strong>5 IPs per subnet</strong>, so a /24 gives 251 usable addresses and the first VM gets <code>.4</code>.</li>
+  <li><strong>Private subnets</strong> (the default for new VNets after 31 March 2026) have no default outbound internet; add a <strong>NAT gateway</strong> or another explicit method.</li>
+  <li><strong>NSGs</strong> filter traffic by priority; lower numbers win. <strong>Peering</strong> connects VNets, needs non-overlapping ranges and isn't transitive.</li>
+</ul>
+<p><strong>Next in the series:</strong> deploying a VM into <code>SUBNET1</code> and reaching it securely with Azure Bastion.</p>
+
+<footer>
+  Written by Sunke Nithin while learning Azure for AZ-900. Lab performed on an Azure free account; the directory name in the screenshots is blurred.
+</footer>
+</div>
+
+<script>
+const QS=[
+ {q:"How many usable IP addresses does a /24 subnet give you in Azure?",
+  o:["256","254","251","248"],a:2,
+  w:"Azure reserves 5 addresses in every subnet (.0, .1, .2, .3 and the last one), so 256 − 5 = 251."},
+ {q:"You deploy the first VM into subnet 10.0.0.0/24. Which private IP does it get by default?",
+  o:["10.0.0.0","10.0.0.1","10.0.0.4","10.0.0.10"],a:2,
+  w:".0 to .3 are reserved, so the first address Azure hands out is 10.0.0.4."},
+ {q:"A VNet in West US 3 needs to hold a VM in Central India. What should you do?",
+  o:["Add a Central India subnet to the VNet","Create a VNet in Central India and peer the two","Move the VNet to Central India","Add a second address space"],a:1,
+  w:"A VNet is tied to one region. Create a VNet in the other region and use global VNet peering to connect them."},
+ {q:"A VM in a private subnet with no public IP can't download OS updates. What's the recommended fix?",
+  o:["Turn off the NSG","Attach a NAT gateway to the subnet","Add a second address space","Use a /16 subnet"],a:1,
+  w:"Private subnets have no default outbound access. A NAT gateway gives every VM in the subnet outbound internet through a static public IP."},
+ {q:"An NSG has a Deny rule at priority 200 and an Allow rule at priority 100 for the same traffic. What happens?",
+  o:["Traffic is denied","Traffic is allowed","Both rules apply and traffic is logged","The NSG fails to save"],a:1,
+  w:"Rules are processed from the lowest number up and the first match wins, so the Allow at 100 applies."},
+ {q:"VNET-SP1 peers with VNET-HUB, and VNET-HUB peers with VNET-SP2. Can SP1 reach SP2 directly?",
+  o:["Yes, peering is transitive","No, peering isn't transitive","Only if both are in the same region","Only for ICMP traffic"],a:1,
+  w:"Peering only connects the two VNets in the pair. Route through a hub firewall or add a direct SP1–SP2 peering."},
+ {q:"Which subnet name must you use for Azure Bastion?",
+  o:["BastionSubnet","AzureBastionSubnet","GatewaySubnet","Bastion-Subnet"],a:1,
+  w:"Bastion requires a subnet named exactly AzureBastionSubnet, at least /26."}
+];
+const box=document.getElementById('quiz'),score=document.getElementById('score');
+let answered=0,right=0;
+function render(){
+  box.innerHTML='';answered=0;right=0;score.textContent='';
+  QS.forEach((it,i)=>{
+    const d=document.createElement('div');d.className='q';
+    d.innerHTML=`<p class="qt">${i+1}. ${it.q}</p><div class="opts"></div><p class="why" hidden></p>`;
+    const opts=d.querySelector('.opts'),why=d.querySelector('.why');
+    it.o.forEach((t,j)=>{
+      const b=document.createElement('button');b.type='button';b.id=`q${i}o${j}`;b.textContent=t;
+      b.addEventListener('click',()=>{
+        opts.querySelectorAll('button').forEach((x,k)=>{x.disabled=true;if(k===it.a)x.classList.add('ok')});
+        if(j!==it.a)b.classList.add('no');else right++;
+        answered++;
+        why.textContent=(j===it.a?'Correct. ':'Not quite. ')+it.w;why.hidden=false;
+        if(answered===QS.length)score.textContent=`You scored ${right} out of ${QS.length}.`;
+      });
+      opts.appendChild(b);
+    });
+    box.appendChild(d);
+  });
+}
+document.getElementById('reset').addEventListener('click',render);
+render();
+</script>
+</body>
+</html>
