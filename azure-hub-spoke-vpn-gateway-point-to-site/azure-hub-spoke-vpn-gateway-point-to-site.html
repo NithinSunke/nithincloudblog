@@ -141,7 +141,7 @@ footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);font-si
 <header>
   <div class="eyebrow">Azure networking · AZ-900 / AZ-104 · Hands-on lab</div>
   <h1 style="margin-top:10px">Azure Hub-and-Spoke with a VPN Gateway: Peering Two Spokes and Connecting from Windows with Point-to-Site VPN</h1>
-  <p class="lede">This lab builds a small hub-and-spoke network: <code>VNET-HUB</code> with a VPN gateway, peered to <code>VNET-SP1</code> and <code>VNET-SP2</code>. It then adds point-to-site (P2S) VPN with certificate authentication so a Windows laptop can join the network privately. Every step is a screenshot from the real build, including the errors along the way and the three settings worth fixing afterwards.</p>
+  <p class="lede">This lab builds a small hub-and-spoke network: <code>VNET-HUB</code> with a VPN gateway, peered to <code>VNET-SP1</code> and <code>VNET-SP2</code>. It then adds point-to-site (P2S) VPN with certificate authentication so a Windows laptop can join the network privately. Every step is a screenshot from the real build, including the errors along the way: the first ping to a spoke VM timed out, and section 6 shows how to diagnose and fix it.</p>
   <div class="meta"><span>Sunke Nithin</span><span>November 2026</span><span>~20 min read + ~90 min lab (most of it waiting for the gateway)</span></div>
 </header>
 
@@ -151,8 +151,8 @@ footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);font-si
   <a href="#p2s">3. Point-to-site and certificates</a>
   <a href="#transit">4. Peering and gateway transit</a>
   <a href="#lab">5. Lab, phase by phase</a>
-  <a href="#verify">6. Verify the tunnel</a>
-  <a href="#fixes">7. Three things to fix</a>
+  <a href="#verify">6. Reach the spoke: troubleshooting</a>
+  <a href="#fixes">7. Two more things to fix</a>
   <a href="#cli">8. CLI reference</a>
   <a href="#cost">9. Cost and clean-up</a>
   <a href="#quiz">10. Quiz</a>
@@ -231,7 +231,7 @@ footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);font-si
 <div class="tbl"><table>
   <thead><tr><th>Setting</th><th>Options</th><th>Lab choice</th></tr></thead>
   <tbody>
-    <tr><td><strong>Address pool</strong></td><td>A private range that doesn't overlap any VNet <em>or</em> the client's own network. Each connected client gets one address from it.</td><td><code>192.168.1.0/24</code> (see fix 1)</td></tr>
+    <tr><td><strong>Address pool</strong></td><td>A private range that doesn't overlap any VNet <em>or</em> the client's own network. Each connected client gets one address from it.</td><td><code>192.168.1.0/24</code> (see section 7, fix 1)</td></tr>
     <tr><td><strong>Tunnel type</strong></td><td><strong>OpenVPN</strong> (TLS on 443, works through most firewalls; needs the Azure VPN Client or an OpenVPN client), <strong>IKEv2</strong> (native in Windows and macOS), <strong>SSTP</strong> (Windows only, legacy)</td><td>IKEv2 and OpenVPN</td></tr>
     <tr><td><strong>Authentication</strong></td><td><strong>Azure certificate</strong>, <strong>Microsoft Entra ID</strong> (OpenVPN only; supports MFA and Conditional Access), <strong>RADIUS</strong></td><td>Azure certificate</td></tr>
   </tbody>
@@ -284,7 +284,7 @@ footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);font-si
 <div class="diagram">
 <svg viewBox="0 0 800 200" role="img" aria-labelledby="f3t">
   <title id="f3t">Without gateway transit, P2S clients reach only VNET-HUB. With gateway transit enabled on both sides, the gateway advertises VNET-SP1's range to clients and SP1 routes return traffic back through the gateway.</title>
-  <text x="20" y="28" class="sv-t" style="font-size:14px">Without transit (as built)</text>
+  <text x="20" y="28" class="sv-t" style="font-size:14px">Without transit (first attempt)</text>
   <g class="sv-m" style="font-size:12px">
     <rect x="20" y="40" width="110" height="40" rx="6" class="sv-box" style="stroke:var(--muted)"/><text x="75" y="65" text-anchor="middle">Laptop</text>
     <rect x="180" y="40" width="130" height="40" rx="6" class="sv-box" style="stroke:var(--c-hub)"/><text x="245" y="65" text-anchor="middle">VNET-HUB ✓</text>
@@ -294,7 +294,7 @@ footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);font-si
   <path d="M312 60 H358" style="stroke:var(--c-bad);stroke-width:2;fill:none;stroke-dasharray:5 4"/>
   <text x="510" y="56" class="sv-s">gateway doesn't advertise 10.0.0.0/16;</text>
   <text x="510" y="72" class="sv-s">SP1 has no route back to 192.168.1.0/24</text>
-  <text x="20" y="128" class="sv-t" style="font-size:14px">With transit (fix 2)</text>
+  <text x="20" y="128" class="sv-t" style="font-size:14px">With transit (section 6)</text>
   <g class="sv-m" style="font-size:12px">
     <rect x="20" y="140" width="110" height="40" rx="6" class="sv-box" style="stroke:var(--muted)"/><text x="75" y="165" text-anchor="middle">Laptop</text>
     <rect x="180" y="140" width="130" height="40" rx="6" class="sv-box" style="stroke:var(--c-hub)"/><text x="245" y="165" text-anchor="middle">VNET-HUB ✓</text>
@@ -318,7 +318,7 @@ footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);font-si
 <!-- Phase 1 -->
 <div class="phase">Phase 1 · The three VNets</div>
 <h3>Create the hub and the second spoke</h3>
-<p>Create <code>VNET-HUB</code> (<code>12.0.0.0/16</code>, see fix 3) and <code>VNET-SP2</code> in <code>Network-RG</code>, West US 3, the same way as VNET-SP1 in the VNet post. Peering also works across regions, but keeping everything in one region keeps the lab simple.</p>
+<p>Create <code>VNET-HUB</code> (<code>12.0.0.0/16</code>, see section 7, fix 2) and <code>VNET-SP2</code> in <code>Network-RG</code>, West US 3, the same way as VNET-SP1 in the VNet post. Peering also works across regions, but keeping everything in one region keeps the lab simple.</p>
 <figure class="shot"><img src="images/step01.png" alt="Virtual networks list showing VNET-HUB, VNET-SP1 and VNET-SP2 in Network-RG, West US 3" loading="lazy"><figcaption>Three VNets, one resource group.</figcaption></figure>
 <div class="pair">
   <figure class="shot"><img src="images/step02.png" alt="VNET-HUB overview with address space 12.0.0.0/16 and one subnet" loading="lazy"><figcaption>VNET-HUB: 12.0.0.0/16, Azure-provided DNS.</figcaption></figure>
@@ -350,7 +350,7 @@ footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);font-si
 <!-- Phase 3 -->
 <div class="phase">Phase 3 · Peer the spokes to the hub</div>
 <h3>Add the SP1 peering</h3>
-<p>VNET-HUB → <strong>Peerings → + Add</strong>. One form creates <strong>both directions</strong>: the "remote" link (from SP1's side) and the "local" link (from the hub's side). The lab names were <code>hub-sp1</code> for the remote link and <code>SP1-HUB</code> for the local one. <em>Allow access</em> and <em>Allow forwarded traffic</em> are ticked on both sides. The two gateway checkboxes were left unticked here, and section 7 fixes that.</p>
+<p>VNET-HUB → <strong>Peerings → + Add</strong>. One form creates <strong>both directions</strong>: the "remote" link (from SP1's side) and the "local" link (from the hub's side). The lab names were <code>hub-sp1</code> for the remote link and <code>SP1-HUB</code> for the local one. <em>Allow access</em> and <em>Allow forwarded traffic</em> are ticked on both sides. The two gateway checkboxes were left unticked here. That's why the first ping to the spoke VM failed, and section 6 walks through the fix. If you're building this fresh, tick them now as described there.</p>
 <div class="pair">
   <figure class="shot"><img src="images/step09.png" alt="VNET-HUB peerings list, empty" loading="lazy"><figcaption>No peerings yet.</figcaption></figure>
   <figure class="shot"><img src="images/step10.png" alt="Add peering form for VNET-SP1 with access and forwarded traffic allowed, gateway options unticked" loading="lazy"><figcaption>One form, two peering links.</figcaption></figure>
@@ -459,41 +459,64 @@ $cert = Get-ChildItem -Path "Cert:\CurrentUser\My\&lt;root-thumbprint&gt;"</code
 </div>
 
 <!-- 6 -->
-<h2 id="verify">6. Verify the tunnel</h2>
-<pre><code><span class="cmt">:: 1. Your VPN address, from the P2S pool</span>
-ipconfig | findstr /i "VNET-HUB 192.168.1"
+<h2 id="verify">6. Reach the spoke: troubleshooting the first ping</h2>
+<p>With the VPN connected, the real test is reaching a VM by its private IP. The VM is <code>vnet1srv01</code> at <code>10.0.0.4</code> in <strong>VNET-SP1</strong>. The first attempt failed:</p>
+<figure class="shot"><img src="images/step32.png" alt="ping 10.0.0.4 returning Request timed out with 100% loss" loading="lazy"><figcaption>Connected to the VPN, but every ping to the spoke VM timed out.</figcaption></figure>
 
-<span class="cmt">:: 2. Routes the client added (expect 12.0.0.0, plus 10.0.0.0 once transit is on)</span>
-route print | findstr /r "12\.0\.0\.0 10\.0\.0\.0"
+<h3>Step 1: check the client's routes</h3>
+<p>A timeout over a VPN usually means the laptop doesn't send that traffic into the tunnel at all. Check which Azure ranges the VPN client installed:</p>
+<pre><code>route print | findstr "10.0.0.0 12.0.0.0"
 
-<span class="cmt">:: 3. Reach a VM by its private IP, with no public IP involved</span>
-ping 10.0.0.4
-ssh nsunke@10.0.0.4</code></pre>
-<p class="verify"><code>ipconfig</code> shows a <em>PPP adapter VNET-HUB</em> with a <code>192.168.1.x</code> address, and on the portal the gateway's <strong>Point-to-site configuration → Allocated IP addresses</strong> lists it. Pinging or SSHing to <code>10.0.0.4</code> in SP1 only works after gateway transit is enabled (fix 2). Once it works, the VM can drop its public IP and its internet-facing SSH rule.</p>
-<p>NSGs still apply. Traffic from the P2S address pool arrives through the gateway and is normally matched by the <code>VirtualNetwork</code> service tag, so <code>nsg1</code>'s default <em>AllowVnetInBound</em> rule lets VPN clients in. To restrict them, add rules with the pool as the source.</p>
+<span class="cmt">         12.0.0.0      255.255.0.0         On-link       192.168.1.2     43</span></code></pre>
+<p>Only the hub's <code>12.0.0.0/16</code> was there, reached through the laptop's VPN address <code>192.168.1.2</code>. There was <strong>no route for SP1's <code>10.0.0.0/16</code></strong>, so pings to <code>10.0.0.4</code> went out through the normal internet connection and disappeared.</p>
+
+<h3>Step 2: understand why</h3>
+<p>The gateway only advertises VNets it is allowed to carry traffic for. VNET-SP1 is peered to the hub, but the two <strong>gateway transit</strong> settings were off (section 4). So the gateway told clients about the hub only, and SP1 had no route back to the VPN address pool either.</p>
+
+<h3>Step 3: enable gateway transit on both sides of the peering</h3>
+<p><strong>Hub side:</strong> VNET-HUB → <strong>Peerings → SP1-HUB</strong> → tick <em>Allow gateway or route server in 'VNET-HUB' to forward traffic to 'VNET-SP1'</em> → <strong>Save</strong>. Leave <em>Enable 'VNET-HUB' to use 'VNET-SP1's' remote gateway</em> unticked, because SP1 has no gateway.</p>
+<figure class="shot"><img src="images/step33.png" alt="SP1-HUB peering settings with Allow gateway or route server in VNET-HUB to forward traffic to VNET-SP1 ticked" loading="lazy"><figcaption>Hub side: gateway transit allowed for VNET-SP1.</figcaption></figure>
+<p><strong>Spoke side:</strong> VNET-SP1 → <strong>Peerings</strong> → the link to the hub (<code>hub-sp1</code>) → tick <em>Enable 'VNET-SP1' to use 'VNET-HUB's' remote gateway or route server</em> → <strong>Save</strong>. Wait for the peering state to show <strong>Connected</strong> again. Repeat both sides for VNET-SP2 if you want VPN access there too.</p>
+<p>The same in Cloud Shell:</p>
+<pre><code>az network vnet peering update -g Network-RG --vnet-name VNET-HUB -n SP1-HUB \
+  --set allowGatewayTransit=true
+
+<span class="cmt"># Find the spoke-side peering name, then enable remote gateway use</span>
+az network vnet peering list -g Network-RG --vnet-name VNET-SP1 --query "[].name" -o tsv
+az network vnet peering update -g Network-RG --vnet-name VNET-SP1 -n hub-sp1 \
+  --set useRemoteGateways=true</code></pre>
+
+<h3>Step 4: reinstall the VPN client</h3>
+<p>The Windows client gets its route list when it's installed, so a client installed earlier never learns about SP1. Disconnect, download the VPN configuration package again, run the new <code>WindowsAmd64\VpnClientSetupAmd64.exe</code>, reconnect, and click <strong>Continue</strong> on the CMROUTE prompt.</p>
+
+<h3>Step 5: test again</h3>
+<pre><code>route print | findstr "10.0.0.0 12.0.0.0"   <span class="cmt">:: now shows both 12.0.0.0 and 10.0.0.0, on-link via 192.168.1.x</span>
+ping 10.0.0.4                                <span class="cmt">:: Reply from 10.0.0.4</span>
+ssh nsunke@10.0.0.4                          <span class="cmt">:: SSH over the VPN, no public IP needed</span></code></pre>
+<p class="verify">The ping gets replies and SSH to <code>10.0.0.4</code> works. In the portal, vpn-gateway → Point-to-site configuration → <strong>Allocated IP addresses</strong> lists the laptop's VPN address. Since the VM is now reachable privately, you can remove its public IP and the internet-facing <code>ssh</code> rule from the <a href="../azure-network-security-groups-nsg/azure-network-security-groups-nsg.html">NSG post</a>.</p>
+
+<h3>If it still times out</h3>
+<div class="tbl"><table>
+  <thead><tr><th>Check</th><th>How</th><th>What to look for</th></tr></thead>
+  <tbody>
+    <tr><td>Client route</td><td><code>route print</code></td><td>A line for the spoke's range. If it's missing, transit isn't on or the client wasn't reinstalled.</td></tr>
+    <tr><td>VM route back</td><td>VM → Networking → NIC → <strong>Effective routes</strong></td><td>The P2S pool (<code>192.168.1.0/24</code>) with next hop <em>Virtual network gateway</em>. If it's missing, <em>useRemoteGateways</em> on the spoke peering didn't save.</td></tr>
+    <tr><td>Address overlap</td><td><code>ipconfig</code></td><td>Your Wi-Fi or Ethernet adapter must not be in the P2S pool's range (see fix 1).</td></tr>
+    <tr><td>VM running</td><td>Portal → VM overview</td><td>Status <em>Running</em>, not <em>Stopped (deallocated)</em>.</td></tr>
+    <tr><td>NSG / OS firewall</td><td>NIC → <strong>Effective security rules</strong>; <code>sudo ufw status</code></td><td>The default <em>AllowVnetInBound</em> covers VPN clients; check that no custom Deny rule blocks them. Ubuntu answers ping by default.</td></tr>
+  </tbody>
+</table></div>
+<p>NSGs still apply to VPN traffic. Traffic from the P2S address pool arrives through the gateway and is normally matched by the <code>VirtualNetwork</code> service tag, so <code>nsg1</code>'s default <em>AllowVnetInBound</em> rule lets VPN clients in. To restrict them, add rules with the pool as the source.</p>
 
 <!-- 7 -->
-<h2 id="fixes">7. Three things to fix</h2>
+<h2 id="fixes">7. Two more things to fix</h2>
+<p>Gateway transit was the fix that got the ping working (section 6). Two other choices in this lab work, but are worth correcting before you reuse the design.</p>
 <div class="lab">
   <h3>Fix 1: change the address pool if it clashes with your LAN</h3>
   <p><code>192.168.1.0/24</code> is the default LAN range on many home routers. If <code>ipconfig</code> shows your Wi-Fi or Ethernet adapter on <code>192.168.1.x</code>, the VPN and local routes will conflict. Change the pool to an unused range, such as <code>172.16.201.0/24</code>, save, then download and install the client package again.</p>
 </div>
 <div class="lab">
-  <h3>Fix 2: enable gateway transit so clients reach the spokes</h3>
-  <p>Edit each peering:</p>
-  <ul>
-    <li>VNET-HUB → Peerings → <code>SP1-HUB</code> → tick <em>Allow gateway or route server in 'VNET-HUB' to forward traffic to 'VNET-SP1'</em>.</li>
-    <li>VNET-SP1 → Peerings → <code>hub-sp1</code> → tick <em>Enable 'VNET-SP1' to use 'VNET-HUB's' remote gateway or route server</em>.</li>
-    <li>Repeat for SP2. Then <strong>download and reinstall the VPN client package</strong> so it includes the spoke ranges.</li>
-  </ul>
-<pre><code>az network vnet peering update -g Network-RG --vnet-name VNET-HUB -n SP1-HUB \
-  --set allowGatewayTransit=true
-az network vnet peering update -g Network-RG --vnet-name VNET-SP1 -n hub-sp1 \
-  --set useRemoteGateways=true</code></pre>
-  <p>A spoke can only use a remote gateway if it has no gateway of its own.</p>
-</div>
-<div class="lab">
-  <h3>Fix 3: use a private range for the hub</h3>
+  <h3>Fix 2: use a private range for the hub</h3>
   <p><code>12.0.0.0/16</code> isn't in the RFC 1918 private ranges; it's real internet address space owned by another company. Azure allows it, but resources in the hub and VPN clients can no longer reach those public addresses. In a real design, use something like <code>10.100.0.0/16</code> for the hub. A subnet in use can't be renumbered, so changing it means rebuilding the hub's subnets.</p>
 </div>
 
@@ -553,7 +576,7 @@ az group delete -n Network-RG --yes --no-wait</code></pre>
   <li>A VPN gateway lives in a subnet named exactly <strong>GatewaySubnet</strong> (/27 or larger, no NSG). <strong>AZ</strong> SKUs are zone-redundant, and creation takes 20–45 minutes.</li>
   <li><strong>Point-to-site</strong> connects single computers. Choose a non-overlapping <strong>address pool</strong>, a tunnel type (OpenVPN, IKEv2, SSTP) and authentication (certificate, Entra ID, RADIUS).</li>
   <li>With certificate auth, the gateway holds the <strong>root's public key</strong>; each client holds a <strong>child certificate with its private key</strong>.</li>
-  <li>Spokes use the hub's gateway only with <strong>gateway transit</strong>: <em>allowGatewayTransit</em> on the hub side, <em>useRemoteGateways</em> on the spoke side. Re-download the client afterwards.</li>
+  <li>Spokes use the hub's gateway only with <strong>gateway transit</strong>: <em>allowGatewayTransit</em> on the hub side, <em>useRemoteGateways</em> on the spoke side. Without it, the client gets no route to the spoke and pings time out. Check with <code>route print</code>, and reinstall the client after changing peerings.</li>
   <li>Delete the gateway when you're done; it's billed hourly.</li>
 </ul>
 <p><strong>Next in the series:</strong> switching P2S to Microsoft Entra ID authentication with MFA, and adding Azure Firewall to route spoke-to-spoke traffic.</p>
@@ -580,6 +603,9 @@ const QS=[
  {q:"VPN clients can reach VNET-HUB but not VNET-SP1, which is peered to the hub. What's missing?",
   o:["An NSG on GatewaySubnet","Gateway transit on the peerings","A second VPN gateway in SP1","A public IP on the VM"],a:1,
   w:"Enable 'allow gateway transit' on the hub side and 'use remote gateways' on the spoke side, then re-download the client package."},
+ {q:"You're connected over P2S, but 'route print' shows only the hub's range and pings to a spoke VM time out. After enabling gateway transit on both peering sides, what else must you do?",
+  o:["Restart the VM","Download and reinstall the VPN client package","Add an NSG to GatewaySubnet","Recreate the gateway"],a:1,
+  w:"The Windows client gets its route list when it's installed, so reinstall it to pick up the spoke's range."},
  {q:"VNET-SP1 and VNET-SP2 are both peered to the hub. Can SP1 reach SP2?",
   o:["Yes, through the hub automatically","No, peering isn't transitive; you need a hub firewall/NVA with routes, or a direct peering","Only over the VPN","Only if both use gateway transit"],a:1,
   w:"Peering only connects the two VNets in each pair. Spoke-to-spoke traffic needs a router in the hub or its own peering."},

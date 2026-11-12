@@ -16,8 +16,8 @@ This lab builds a small hub-and-spoke network: `VNET-HUB` with a VPN
 gateway, peered to `VNET-SP1` and `VNET-SP2`. It then adds point-to-site
 (P2S) VPN with certificate authentication so a Windows laptop can join
 the network privately. Every step is a screenshot from the real build,
-including the errors along the way and the three settings worth fixing
-afterwards.
+including the errors along the way: the first ping to a spoke VM timed
+out, and section 6 shows how to diagnose and fix it.
 
 <div class="meta">
 
@@ -30,8 +30,8 @@ for the gateway)
 
 [1. What we're building](#design) [2. VPN gateway basics](#gateway) [3.
 Point-to-site and certificates](#p2s) [4. Peering and gateway
-transit](#transit) [5. Lab, phase by phase](#lab) [6. Verify the
-tunnel](#verify) [7. Three things to fix](#fixes) [8. CLI
+transit](#transit) [5. Lab, phase by phase](#lab) [6. Reach the spoke:
+troubleshooting](#verify) [7. Two more things to fix](#fixes) [8. CLI
 reference](#cli) [9. Cost and clean-up](#cost) [10. Quiz](#quiz) [11.
 Key takeaways](#takeaways)
 
@@ -47,7 +47,7 @@ keeps security rules in one place.
 <figure>
 <div class="diagram">
 <img
-src="data:image/svg+xml;base64,PHN2ZyB2aWV3Ym94PSIwIDAgNzIwIDM2MCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9ImYxdCI+CiAgPHRpdGxlIGlkPSJmMXQiPkxhYiB0b3BvbG9neTogYSBXaW5kb3dzIGxhcHRvcCBjb25uZWN0cyBvdmVyIHBvaW50LXRvLXNpdGUgVlBOIHRvIHZwbi1nYXRld2F5IGluIEdhdGV3YXlTdWJuZXQgb2YgVk5FVC1IVUIgMTIuMC4wLjAvMTYuIFZORVQtSFVCIGlzIHBlZXJlZCB3aXRoIFZORVQtU1AxIDEwLjAuMC4wLzE2LCB3aGljaCBob3N0cyB2bmV0MXNydjAxIGF0IDEwLjAuMC40LCBhbmQgd2l0aCBWTkVULVNQMi48L3RpdGxlPgogIDxkZWZzPjxtYXJrZXIgaWQ9ImExIiB2aWV3Ym94PSIwIDAgMTAgMTAiIHJlZng9IjkiIHJlZnk9IjUiIG1hcmtlcndpZHRoPSI3IiBtYXJrZXJoZWlnaHQ9IjciIG9yaWVudD0iYXV0byI+PHBhdGggZD0iTTAsMCBMMTAsNSBMMCwxMCB6IiBzdHlsZT0iZmlsbDp2YXIoLS1jLXZwbikiPjwvcGF0aD48L21hcmtlcj48L2RlZnM+CiAgPHJlY3QgeD0iMjAiIHk9IjIwIiB3aWR0aD0iMTYwIiBoZWlnaHQ9IjgwIiByeD0iMTAiIGNsYXNzPSJzdi1ib3giIHN0eWxlPSJzdHJva2U6dmFyKC0tbXV0ZWQpIj48L3JlY3Q+CiAgPHRleHQgeD0iMTAwIiB5PSI0OCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgY2xhc3M9InN2LXQiIHN0eWxlPSJmb250LXNpemU6MTRweCI+V2luZG93cyBsYXB0b3A8L3RleHQ+CiAgPHRleHQgeD0iMTAwIiB5PSI2NiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgY2xhc3M9InN2LXMiPlAyU0NoaWxkQ2VydDwvdGV4dD4KICA8dGV4dCB4PSIxMDAiIHk9Ijg0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBjbGFzcz0ic3YtbSIgc3R5bGU9ImZvbnQtc2l6ZToxMXB4Ij5nZXRzIDE5Mi4xNjguMS54PC90ZXh0PgogIDxwYXRoIGQ9Ik0xODIgNjAgSDI3OCIgc3R5bGU9InN0cm9rZTp2YXIoLS1jLXZwbik7c3Ryb2tlLXdpZHRoOjM7ZmlsbDpub25lO3N0cm9rZS1kYXNoYXJyYXk6OCA1IiBtYXJrZXItZW5kPSJ1cmwoI2ExKSI+PC9wYXRoPgogIDx0ZXh0IHg9IjIzMCIgeT0iNTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGNsYXNzPSJzdi1zIiBzdHlsZT0iZmlsbDp2YXIoLS1jLXZwbikiPlAyUyB0dW5uZWw8L3RleHQ+CiAgPHRleHQgeD0iMjMwIiB5PSI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgY2xhc3M9InN2LXMiIHN0eWxlPSJmaWxsOnZhcigtLWMtdnBuKSI+b3ZlciBpbnRlcm5ldDwvdGV4dD4KICA8cmVjdCB4PSIyODAiIHk9IjIwIiB3aWR0aD0iNDIwIiBoZWlnaHQ9IjE0MCIgcng9IjEyIiBzdHlsZT0iZmlsbDpub25lO3N0cm9rZTp2YXIoLS1jLWh1Yik7c3Ryb2tlLXdpZHRoOjIuNSI+PC9yZWN0PgogIDx0ZXh0IHg9IjI5NiIgeT0iNDQiIGNsYXNzPSJzdi10IiBzdHlsZT0iZmlsbDp2YXIoLS1jLWh1YikiPlZORVQtSFVCPC90ZXh0PgogIDx0ZXh0IHg9IjI5NiIgeT0iNjIiIGNsYXNzPSJzdi1tIiBzdHlsZT0iZm9udC1zaXplOjExcHgiPjEyLjAuMC4wLzE2PC90ZXh0PgogIDxyZWN0IHg9IjMwMCIgeT0iNzYiIHdpZHRoPSIxOTAiIGhlaWdodD0iNzAiIHJ4PSI4IiBjbGFzcz0ic3YtYm94IiBzdHlsZT0ic3Ryb2tlOnZhcigtLWMtZ3cpO3N0cm9rZS13aWR0aDoyIj48L3JlY3Q+CiAgPHRleHQgeD0iMzk1IiB5PSI5OCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgY2xhc3M9InN2LXQiIHN0eWxlPSJmb250LXNpemU6MTNweCI+R2F0ZXdheVN1Ym5ldDwvdGV4dD4KICA8dGV4dCB4PSIzOTUiIHk9IjExNCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgY2xhc3M9InN2LW0iIHN0eWxlPSJmb250LXNpemU6MTFweCI+MTIuMC4xLjAvMjQ8L3RleHQ+CiAgPHRleHQgeD0iMzk1IiB5PSIxMzIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGNsYXNzPSJzdi1zIj52cG4tZ2F0ZXdheSAoVnBuR3cxQVopPC90ZXh0PgogIDxyZWN0IHg9IjUxMCIgeT0iNzYiIHdpZHRoPSIxNzAiIGhlaWdodD0iNzAiIHJ4PSI4IiBjbGFzcz0ic3YtYm94IiBzdHlsZT0ic3Ryb2tlOnZhcigtLWxpbmUpIj48L3JlY3Q+CiAgPHRleHQgeD0iNTk1IiB5PSIxMDIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGNsYXNzPSJzdi10IiBzdHlsZT0iZm9udC1zaXplOjEzcHgiPlNVQk5FVDE8L3RleHQ+CiAgPHRleHQgeD0iNTk1IiB5PSIxMjAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGNsYXNzPSJzdi1tIiBzdHlsZT0iZm9udC1zaXplOjExcHgiPjEyLjAuMC4wLzI0IMK3IG5zZzE8L3RleHQ+CiAgPHJlY3QgeD0iODAiIHk9IjIzMCIgd2lkdGg9IjI3MCIgaGVpZ2h0PSIxMTAiIHJ4PSIxMiIgc3R5bGU9ImZpbGw6bm9uZTtzdHJva2U6dmFyKC0tYy1zcCk7c3Ryb2tlLXdpZHRoOjIuNSI+PC9yZWN0PgogIDx0ZXh0IHg9Ijk2IiB5PSIyNTQiIGNsYXNzPSJzdi10IiBzdHlsZT0iZmlsbDp2YXIoLS1jLXNwKSI+Vk5FVC1TUDE8L3RleHQ+CiAgPHRleHQgeD0iOTYiIHk9IjI3MiIgY2xhc3M9InN2LW0iIHN0eWxlPSJmb250LXNpemU6MTFweCI+MTAuMC4wLjAvMTYgwrcgU1VCTkVUMSAxMC4wLjAuMC8yNDwvdGV4dD4KICA8cmVjdCB4PSI5NiIgeT0iMjg0IiB3aWR0aD0iMTUwIiBoZWlnaHQ9IjQwIiByeD0iNiIgY2xhc3M9InN2LWJveCIgc3R5bGU9InN0cm9rZTp2YXIoLS1tdXRlZCkiPjwvcmVjdD4KICA8dGV4dCB4PSIxNzEiIHk9IjMwOSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgY2xhc3M9InN2LW0iPnZuZXQxc3J2MDEgLjQ8L3RleHQ+CiAgPHJlY3QgeD0iNDIwIiB5PSIyMzAiIHdpZHRoPSIyNzAiIGhlaWdodD0iMTEwIiByeD0iMTIiIHN0eWxlPSJmaWxsOm5vbmU7c3Ryb2tlOnZhcigtLWMtc3ApO3N0cm9rZS13aWR0aDoyLjUiPjwvcmVjdD4KICA8dGV4dCB4PSI0MzYiIHk9IjI1NCIgY2xhc3M9InN2LXQiIHN0eWxlPSJmaWxsOnZhcigtLWMtc3ApIj5WTkVULVNQMjwvdGV4dD4KICA8dGV4dCB4PSI0MzYiIHk9IjI3MiIgY2xhc3M9InN2LXMiPnNlY29uZCBzcG9rZTwvdGV4dD4KICA8cGF0aCBkPSJNNDAwIDE2MiBMMjUwIDIyOCIgc3R5bGU9InN0cm9rZTp2YXIoLS1hY2NlbnQpO3N0cm9rZS13aWR0aDoyLjU7ZmlsbDpub25lIj48L3BhdGg+CiAgPHBhdGggZD0iTTU2MCAxNjIgTDU2MCAyMjgiIHN0eWxlPSJzdHJva2U6dmFyKC0tYWNjZW50KTtzdHJva2Utd2lkdGg6Mi41O2ZpbGw6bm9uZSI+PC9wYXRoPgogIDx0ZXh0IHg9IjMwMCIgeT0iMTk2IiBjbGFzcz0ic3YtcyIgc3R5bGU9ImZpbGw6dmFyKC0tYWNjZW50KSI+U1AxLUhVQiBwZWVyaW5nPC90ZXh0PgogIDx0ZXh0IHg9IjU3MCIgeT0iMjAwIiBjbGFzcz0ic3YtcyIgc3R5bGU9ImZpbGw6dmFyKC0tYWNjZW50KSI+U1AyLUhVQiBwZWVyaW5nPC90ZXh0PgogIDxwYXRoIGQ9Ik0zNTIgMzAwIEg0MTgiIHN0eWxlPSJzdHJva2U6dmFyKC0tYy1iYWQpO3N0cm9rZS13aWR0aDoxLjU7ZmlsbDpub25lO3N0cm9rZS1kYXNoYXJyYXk6NSA1Ij48L3BhdGg+CiAgPHRleHQgeD0iMzg1IiB5PSIyOTIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGNsYXNzPSJzdi1zIiBzdHlsZT0iZmlsbDp2YXIoLS1jLWJhZCkiPm5vIHBhdGg8L3RleHQ+Cjwvc3ZnPg==" />
+src="data:image/svg+xml;base64,PHN2ZyB2aWV3Ym94PSIwIDAgNzIwIDM2MCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9ImYxdCI+CiAgPHRpdGxlIGlkPSJmMXQiPkxhYiB0b3BvbG9neTogYSBXaW5kb3dzIGxhcHRvcCBjb25uZWN0cyBvdmVyIHBvaW50LXRvLXNpdGUgVlBOIHRvIHZwbi1nYXRld2F5IGluIEdhdGV3YXlTdWJuZXQgb2YgVk5FVC1IVUIgMTIuMC4wLjAvMTYuIFZORVQtSFVCIGlzIHBlZXJlZCB3aXRoIFZORVQtU1AxIDEwLjAuMC4wLzE2LCB3aGljaCBob3N0cyB2bmV0MXNydjAxIGF0IDEwLjAuMC40LCBhbmQgd2l0aCBWTkVULVNQMi48L3RpdGxlPgogIDxkZWZzPjxtYXJrZXIgaWQ9ImExIiB2aWV3Ym94PSIwIDAgMTAgMTAiIHJlZng9IjkiIHJlZnk9IjUiIG1hcmtlcndpZHRoPSI3IiBtYXJrZXJoZWlnaHQ9IjciIG9yaWVudD0iYXV0byI+PHBhdGggZD0iTTAsMCBMMTAsNSBMMCwxMCB6IiBzdHlsZT0iZmlsbDp2YXIoLS1jLXZwbikiPjwvcGF0aD48L21hcmtlcj48L2RlZnM+CiAgPHJlY3QgeD0iMjAiIHk9IjIwIiB3aWR0aD0iMTYwIiBoZWlnaHQ9IjgwIiByeD0iMTAiIGNsYXNzPSJzdi1ib3giIHN0eWxlPSJzdHJva2U6dmFyKC0tbXV0ZWQpIj48L3JlY3Q+CiAgPHRleHQgeD0iMTAwIiB5PSI0OCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgY2xhc3M9InN2LXQiIHN0eWxlPSJmb250LXNpemU6MTRweCI+V2luZG93cyBsYXB0b3A8L3RleHQ+CiAgPHRleHQgeD0iMTAwIiB5PSI2NiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgY2xhc3M9InN2LXMiPlAyU0NoaWxkQ2VydDwvdGV4dD4KICA8dGV4dCB4PSIxMDAiIHk9Ijg0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBjbGFzcz0ic3YtbSIgc3R5bGU9ImZvbnQtc2l6ZToxMXB4Ij5nZXRzIDE5Mi4xNjguMS54PC90ZXh0PgogIDxwYXRoIGQ9Ik0xODIgNjAgSDI3OCIgc3R5bGU9InN0cm9rZTp2YXIoLS1jLXZwbik7c3Ryb2tlLXdpZHRoOjM7ZmlsbDpub25lO3N0cm9rZS1kYXNoYXJyYXk6OCA1IiBtYXJrZXItZW5kPSJ1cmwoI2ExKSI+PC9wYXRoPgogIDx0ZXh0IHg9IjIzMCIgeT0iNTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGNsYXNzPSJzdi1zIiBzdHlsZT0iZmlsbDp2YXIoLS1jLXZwbikiPlAyUyB0dW5uZWw8L3RleHQ+CiAgPHRleHQgeD0iMjMwIiB5PSI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgY2xhc3M9InN2LXMiIHN0eWxlPSJmaWxsOnZhcigtLWMtdnBuKSI+b3ZlciBpbnRlcm5ldDwvdGV4dD4KICA8cmVjdCB4PSIyODAiIHk9IjIwIiB3aWR0aD0iNDIwIiBoZWlnaHQ9IjE0MCIgcng9IjEyIiBzdHlsZT0iZmlsbDpub25lO3N0cm9rZTp2YXIoLS1jLWh1Yik7c3Ryb2tlLXdpZHRoOjIuNSI+PC9yZWN0PgogIDx0ZXh0IHg9IjI5NiIgeT0iNDQiIGNsYXNzPSJzdi10IiBzdHlsZT0iZmlsbDp2YXIoLS1jLWh1YikiPlZORVQtSFVCPC90ZXh0PgogIDx0ZXh0IHg9IjI5NiIgeT0iNjIiIGNsYXNzPSJzdi1tIiBzdHlsZT0iZm9udC1zaXplOjExcHgiPjEyLjAuMC4wLzE2PC90ZXh0PgogIDxyZWN0IHg9IjMwMCIgeT0iNzYiIHdpZHRoPSIxOTAiIGhlaWdodD0iNzAiIHJ4PSI4IiBjbGFzcz0ic3YtYm94IiBzdHlsZT0ic3Ryb2tlOnZhcigtLWMtZ3cpO3N0cm9rZS13aWR0aDoyIj48L3JlY3Q+CiAgPHRleHQgeD0iMzk1IiB5PSI5OCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgY2xhc3M9InN2LXQiIHN0eWxlPSJmb250LXNpemU6MTNweCI+R2F0ZXdheVN1Ym5ldDwvdGV4dD4KICA8dGV4dCB4PSIzOTUiIHk9IjExNCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgY2xhc3M9InN2LW0iIHN0eWxlPSJmb250LXNpemU6MTFweCI+MTIuMC4xLjAvMjQ8L3RleHQ+CiAgPHRleHQgeD0iMzk1IiB5PSIxMzIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGNsYXNzPSJzdi1zIj52cG4tZ2F0ZXdheSAoVnBuR3cxQVopPC90ZXh0PgogIDxyZWN0IHg9IjUxMCIgeT0iNzYiIHdpZHRoPSIxNzAiIGhlaWdodD0iNzAiIHJ4PSI4IiBjbGFzcz0ic3YtYm94IiBzdHlsZT0ic3Ryb2tlOnZhcigtLWxpbmUpIj48L3JlY3Q+CiAgPHRleHQgeD0iNTk1IiB5PSIxMDIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGNsYXNzPSJzdi10IiBzdHlsZT0iZm9udC1zaXplOjEzcHgiPlNVQk5FVDE8L3RleHQ+CiAgPHRleHQgeD0iNTk1IiB5PSIxMjAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGNsYXNzPSJzdi1tIiBzdHlsZT0iZm9udC1zaXplOjExcHgiPjEyLjAuMC4wLzI0IMK3IG5zZzE8L3RleHQ+CiAgPHJlY3QgeD0iODAiIHk9IjIzMCIgd2lkdGg9IjI3MCIgaGVpZ2h0PSIxMTAiIHJ4PSIxMiIgc3R5bGU9ImZpbGw6bm9uZTtzdHJva2U6dmFyKC0tYy1zcCk7c3Ryb2tlLXdpZHRoOjIuNSI+PC9yZWN0PgogIDx0ZXh0IHg9Ijk2IiB5PSIyNTQiIGNsYXNzPSJzdi10IiBzdHlsZT0iZmlsbDp2YXIoLS1jLXNwKSI+Vk5FVC1TUDE8L3RleHQ+CiAgPHRleHQgeD0iOTYiIHk9IjI3MiIgY2xhc3M9InN2LW0iIHN0eWxlPSJmb250LXNpemU6MTFweCI+MTAuMC4wLjAvMTYgwrcgU1VCTkVUMSAxMC4wLjAuMC8yNDwvdGV4dD4KICA8cmVjdCB4PSI5NiIgeT0iMjg0IiB3aWR0aD0iMTUwIiBoZWlnaHQ9IjQwIiByeD0iNiIgY2xhc3M9InN2LWJveCIgc3R5bGU9InN0cm9rZTp2YXIoLS1tdXRlZCkiPjwvcmVjdD4KICA8dGV4dCB4PSIxNzEiIHk9IjMwOSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgY2xhc3M9InN2LW0iPnZuZXQxc3J2MDEgLjQ8L3RleHQ+CiAgPHJlY3QgeD0iNDIwIiB5PSIyMzAiIHdpZHRoPSIyNzAiIGhlaWdodD0iMTEwIiByeD0iMTIiIHN0eWxlPSJmaWxsOm5vbmU7c3Ryb2tlOnZhcigtLWMtc3ApO3N0cm9rZS13aWR0aDoyLjUiPjwvcmVjdD4KICA8dGV4dCB4PSI0MzYiIHk9IjI1NCIgY2xhc3M9InN2LXQiIHN0eWxlPSJmaWxsOnZhcigtLWMtc3ApIj5WTkVULVNQMjwvdGV4dD4KICA8dGV4dCB4PSI0MzYiIHk9IjI3MiIgY2xhc3M9InN2LXMiPnNlY29uZCBzcG9rZTwvdGV4dD4KICA8cGF0aCBkPSJNNDAwIDE2MiBMMjUwIDIyOCIgc3R5bGU9InN0cm9rZTp2YXIoLS1hY2NlbnQpO3N0cm9rZS13aWR0aDoyLjU7ZmlsbDpub25lIj48L3BhdGg+CiAgPHBhdGggZD0iTTU2MCAxNjIgTDU2MCAyMjgiIHN0eWxlPSJzdHJva2U6dmFyKC0tYWNjZW50KTtzdHJva2Utd2lkdGg6Mi41O2ZpbGw6bm9uZSI+PC9wYXRoPgogIDx0ZXh0IHg9IjE5MCIgeT0iMTk2IiBjbGFzcz0ic3YtcyIgc3R5bGU9ImZpbGw6dmFyKC0tYWNjZW50KSI+U1AxLUhVQiBwZWVyaW5nPC90ZXh0PgogIDx0ZXh0IHg9IjU3MCIgeT0iMjAwIiBjbGFzcz0ic3YtcyIgc3R5bGU9ImZpbGw6dmFyKC0tYWNjZW50KSI+U1AyLUhVQiBwZWVyaW5nPC90ZXh0PgogIDxwYXRoIGQ9Ik0zNTIgMzAwIEg0MTgiIHN0eWxlPSJzdHJva2U6dmFyKC0tYy1iYWQpO3N0cm9rZS13aWR0aDoxLjU7ZmlsbDpub25lO3N0cm9rZS1kYXNoYXJyYXk6NSA1Ij48L3BhdGg+CiAgPHRleHQgeD0iMzg1IiB5PSIyOTIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGNsYXNzPSJzdi1zIiBzdHlsZT0iZmlsbDp2YXIoLS1jLWJhZCkiPm5vIHBhdGg8L3RleHQ+Cjwvc3ZnPg==" />
 </div>
 <figcaption>Figure 1. The lab network. All three VNets are in
 Network-RG, West US 3.</figcaption>
@@ -103,11 +103,11 @@ define it:
 
 <div class="tbl">
 
-| Setting            | Options                                                                                                                                                                           | Lab choice                   |
-|--------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------|
-| **Address pool**   | A private range that doesn't overlap any VNet *or* the client's own network. Each connected client gets one address from it.                                                      | `192.168.1.0/24` (see fix 1) |
-| **Tunnel type**    | **OpenVPN** (TLS on 443, works through most firewalls; needs the Azure VPN Client or an OpenVPN client), **IKEv2** (native in Windows and macOS), **SSTP** (Windows only, legacy) | IKEv2 and OpenVPN            |
-| **Authentication** | **Azure certificate**, **Microsoft Entra ID** (OpenVPN only; supports MFA and Conditional Access), **RADIUS**                                                                     | Azure certificate            |
+| Setting            | Options                                                                                                                                                                           | Lab choice                              |
+|--------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------|
+| **Address pool**   | A private range that doesn't overlap any VNet *or* the client's own network. Each connected client gets one address from it.                                                      | `192.168.1.0/24` (see section 7, fix 1) |
+| **Tunnel type**    | **OpenVPN** (TLS on 443, works through most firewalls; needs the Azure VPN Client or an OpenVPN client), **IKEv2** (native in Windows and macOS), **SSTP** (Windows only, legacy) | IKEv2 and OpenVPN                       |
+| **Authentication** | **Azure certificate**, **Microsoft Entra ID** (OpenVPN only; supports MFA and Conditional Access), **RADIUS**                                                                     | Azure certificate                       |
 
 </div>
 
@@ -140,7 +140,7 @@ checkboxes on the peering:
 <figure>
 <div class="diagram">
 <img
-src="data:image/svg+xml;base64,PHN2ZyB2aWV3Ym94PSIwIDAgNzIwIDIwMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9ImYzdCI+CiAgPHRpdGxlIGlkPSJmM3QiPldpdGhvdXQgZ2F0ZXdheSB0cmFuc2l0LCBQMlMgY2xpZW50cyByZWFjaCBvbmx5IFZORVQtSFVCLiBXaXRoIGdhdGV3YXkgdHJhbnNpdCBlbmFibGVkIG9uIGJvdGggc2lkZXMsIHRoZSBnYXRld2F5IGFkdmVydGlzZXMgVk5FVC1TUDEmIzM5O3MgcmFuZ2UgdG8gY2xpZW50cyBhbmQgU1AxIHJvdXRlcyByZXR1cm4gdHJhZmZpYyBiYWNrIHRocm91Z2ggdGhlIGdhdGV3YXkuPC90aXRsZT4KICA8dGV4dCB4PSIyMCIgeT0iMjgiIGNsYXNzPSJzdi10IiBzdHlsZT0iZm9udC1zaXplOjE0cHgiPldpdGhvdXQgdHJhbnNpdCAoYXMgYnVpbHQpPC90ZXh0PgogIDxnIGNsYXNzPSJzdi1tIiBzdHlsZT0iZm9udC1zaXplOjEycHgiPgogICAgPHJlY3QgeD0iMjAiIHk9IjQwIiB3aWR0aD0iMTEwIiBoZWlnaHQ9IjQwIiByeD0iNiIgY2xhc3M9InN2LWJveCIgc3R5bGU9InN0cm9rZTp2YXIoLS1tdXRlZCkiPjwvcmVjdD48dGV4dCB4PSI3NSIgeT0iNjUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkxhcHRvcDwvdGV4dD4KICAgIDxyZWN0IHg9IjE4MCIgeT0iNDAiIHdpZHRoPSIxMzAiIGhlaWdodD0iNDAiIHJ4PSI2IiBjbGFzcz0ic3YtYm94IiBzdHlsZT0ic3Ryb2tlOnZhcigtLWMtaHViKSI+PC9yZWN0Pjx0ZXh0IHg9IjI0NSIgeT0iNjUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPlZORVQtSFVCIOKckzwvdGV4dD4KICAgIDxyZWN0IHg9IjM2MCIgeT0iNDAiIHdpZHRoPSIxMzAiIGhlaWdodD0iNDAiIHJ4PSI2IiBjbGFzcz0ic3YtYm94IiBzdHlsZT0ic3Ryb2tlOnZhcigtLWMtc3ApIj48L3JlY3Q+PHRleHQgeD0iNDI1IiB5PSI2NSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+Vk5FVC1TUDEg4pyVPC90ZXh0PgogIDwvZz4KICA8cGF0aCBkPSJNMTMyIDYwIEgxNzgiIHN0eWxlPSJzdHJva2U6dmFyKC0tYy12cG4pO3N0cm9rZS13aWR0aDoyO2ZpbGw6bm9uZSI+PC9wYXRoPgogIDxwYXRoIGQ9Ik0zMTIgNjAgSDM1OCIgc3R5bGU9InN0cm9rZTp2YXIoLS1jLWJhZCk7c3Ryb2tlLXdpZHRoOjI7ZmlsbDpub25lO3N0cm9rZS1kYXNoYXJyYXk6NSA0Ij48L3BhdGg+CiAgPHRleHQgeD0iNTEwIiB5PSI1NiIgY2xhc3M9InN2LXMiPmdhdGV3YXkgZG9lc24mIzM5O3QgYWR2ZXJ0aXNlIDEwLjAuMC4wLzE2OzwvdGV4dD4KICA8dGV4dCB4PSI1MTAiIHk9IjcyIiBjbGFzcz0ic3YtcyI+U1AxIGhhcyBubyByb3V0ZSBiYWNrIHRvIDE5Mi4xNjguMS4wLzI0PC90ZXh0PgogIDx0ZXh0IHg9IjIwIiB5PSIxMjgiIGNsYXNzPSJzdi10IiBzdHlsZT0iZm9udC1zaXplOjE0cHgiPldpdGggdHJhbnNpdCAoZml4IDIpPC90ZXh0PgogIDxnIGNsYXNzPSJzdi1tIiBzdHlsZT0iZm9udC1zaXplOjEycHgiPgogICAgPHJlY3QgeD0iMjAiIHk9IjE0MCIgd2lkdGg9IjExMCIgaGVpZ2h0PSI0MCIgcng9IjYiIGNsYXNzPSJzdi1ib3giIHN0eWxlPSJzdHJva2U6dmFyKC0tbXV0ZWQpIj48L3JlY3Q+PHRleHQgeD0iNzUiIHk9IjE2NSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+TGFwdG9wPC90ZXh0PgogICAgPHJlY3QgeD0iMTgwIiB5PSIxNDAiIHdpZHRoPSIxMzAiIGhlaWdodD0iNDAiIHJ4PSI2IiBjbGFzcz0ic3YtYm94IiBzdHlsZT0ic3Ryb2tlOnZhcigtLWMtaHViKSI+PC9yZWN0Pjx0ZXh0IHg9IjI0NSIgeT0iMTY1IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5WTkVULUhVQiDinJM8L3RleHQ+CiAgICA8cmVjdCB4PSIzNjAiIHk9IjE0MCIgd2lkdGg9IjEzMCIgaGVpZ2h0PSI0MCIgcng9IjYiIGNsYXNzPSJzdi1ib3giIHN0eWxlPSJzdHJva2U6dmFyKC0tYy1zcCkiPjwvcmVjdD48dGV4dCB4PSI0MjUiIHk9IjE2NSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+Vk5FVC1TUDEg4pyTPC90ZXh0PgogIDwvZz4KICA8cGF0aCBkPSJNMTMyIDE2MCBIMTc4IiBzdHlsZT0ic3Ryb2tlOnZhcigtLWMtdnBuKTtzdHJva2Utd2lkdGg6MjtmaWxsOm5vbmUiPjwvcGF0aD4KICA8cGF0aCBkPSJNMzEyIDE2MCBIMzU4IiBzdHlsZT0ic3Ryb2tlOnZhcigtLWdvb2QpO3N0cm9rZS13aWR0aDoyO2ZpbGw6bm9uZSI+PC9wYXRoPgogIDx0ZXh0IHg9IjUxMCIgeT0iMTU2IiBjbGFzcz0ic3YtcyI+aHViOiBhbGxvd0dhdGV3YXlUcmFuc2l0PC90ZXh0PgogIDx0ZXh0IHg9IjUxMCIgeT0iMTcyIiBjbGFzcz0ic3YtcyI+c3Bva2U6IHVzZVJlbW90ZUdhdGV3YXlzLCB0aGVuIHJlLWRvd25sb2FkPC90ZXh0PgogIDx0ZXh0IHg9IjUxMCIgeT0iMTg4IiBjbGFzcz0ic3YtcyI+dGhlIFZQTiBjbGllbnQgcGFja2FnZTwvdGV4dD4KPC9zdmc+" />
+src="data:image/svg+xml;base64,PHN2ZyB2aWV3Ym94PSIwIDAgODAwIDIwMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9ImYzdCI+CiAgPHRpdGxlIGlkPSJmM3QiPldpdGhvdXQgZ2F0ZXdheSB0cmFuc2l0LCBQMlMgY2xpZW50cyByZWFjaCBvbmx5IFZORVQtSFVCLiBXaXRoIGdhdGV3YXkgdHJhbnNpdCBlbmFibGVkIG9uIGJvdGggc2lkZXMsIHRoZSBnYXRld2F5IGFkdmVydGlzZXMgVk5FVC1TUDEmIzM5O3MgcmFuZ2UgdG8gY2xpZW50cyBhbmQgU1AxIHJvdXRlcyByZXR1cm4gdHJhZmZpYyBiYWNrIHRocm91Z2ggdGhlIGdhdGV3YXkuPC90aXRsZT4KICA8dGV4dCB4PSIyMCIgeT0iMjgiIGNsYXNzPSJzdi10IiBzdHlsZT0iZm9udC1zaXplOjE0cHgiPldpdGhvdXQgdHJhbnNpdCAoZmlyc3QgYXR0ZW1wdCk8L3RleHQ+CiAgPGcgY2xhc3M9InN2LW0iIHN0eWxlPSJmb250LXNpemU6MTJweCI+CiAgICA8cmVjdCB4PSIyMCIgeT0iNDAiIHdpZHRoPSIxMTAiIGhlaWdodD0iNDAiIHJ4PSI2IiBjbGFzcz0ic3YtYm94IiBzdHlsZT0ic3Ryb2tlOnZhcigtLW11dGVkKSI+PC9yZWN0Pjx0ZXh0IHg9Ijc1IiB5PSI2NSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+TGFwdG9wPC90ZXh0PgogICAgPHJlY3QgeD0iMTgwIiB5PSI0MCIgd2lkdGg9IjEzMCIgaGVpZ2h0PSI0MCIgcng9IjYiIGNsYXNzPSJzdi1ib3giIHN0eWxlPSJzdHJva2U6dmFyKC0tYy1odWIpIj48L3JlY3Q+PHRleHQgeD0iMjQ1IiB5PSI2NSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+Vk5FVC1IVUIg4pyTPC90ZXh0PgogICAgPHJlY3QgeD0iMzYwIiB5PSI0MCIgd2lkdGg9IjEzMCIgaGVpZ2h0PSI0MCIgcng9IjYiIGNsYXNzPSJzdi1ib3giIHN0eWxlPSJzdHJva2U6dmFyKC0tYy1zcCkiPjwvcmVjdD48dGV4dCB4PSI0MjUiIHk9IjY1IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5WTkVULVNQMSDinJU8L3RleHQ+CiAgPC9nPgogIDxwYXRoIGQ9Ik0xMzIgNjAgSDE3OCIgc3R5bGU9InN0cm9rZTp2YXIoLS1jLXZwbik7c3Ryb2tlLXdpZHRoOjI7ZmlsbDpub25lIj48L3BhdGg+CiAgPHBhdGggZD0iTTMxMiA2MCBIMzU4IiBzdHlsZT0ic3Ryb2tlOnZhcigtLWMtYmFkKTtzdHJva2Utd2lkdGg6MjtmaWxsOm5vbmU7c3Ryb2tlLWRhc2hhcnJheTo1IDQiPjwvcGF0aD4KICA8dGV4dCB4PSI1MTAiIHk9IjU2IiBjbGFzcz0ic3YtcyI+Z2F0ZXdheSBkb2VzbiYjMzk7dCBhZHZlcnRpc2UgMTAuMC4wLjAvMTY7PC90ZXh0PgogIDx0ZXh0IHg9IjUxMCIgeT0iNzIiIGNsYXNzPSJzdi1zIj5TUDEgaGFzIG5vIHJvdXRlIGJhY2sgdG8gMTkyLjE2OC4xLjAvMjQ8L3RleHQ+CiAgPHRleHQgeD0iMjAiIHk9IjEyOCIgY2xhc3M9InN2LXQiIHN0eWxlPSJmb250LXNpemU6MTRweCI+V2l0aCB0cmFuc2l0IChzZWN0aW9uIDYpPC90ZXh0PgogIDxnIGNsYXNzPSJzdi1tIiBzdHlsZT0iZm9udC1zaXplOjEycHgiPgogICAgPHJlY3QgeD0iMjAiIHk9IjE0MCIgd2lkdGg9IjExMCIgaGVpZ2h0PSI0MCIgcng9IjYiIGNsYXNzPSJzdi1ib3giIHN0eWxlPSJzdHJva2U6dmFyKC0tbXV0ZWQpIj48L3JlY3Q+PHRleHQgeD0iNzUiIHk9IjE2NSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+TGFwdG9wPC90ZXh0PgogICAgPHJlY3QgeD0iMTgwIiB5PSIxNDAiIHdpZHRoPSIxMzAiIGhlaWdodD0iNDAiIHJ4PSI2IiBjbGFzcz0ic3YtYm94IiBzdHlsZT0ic3Ryb2tlOnZhcigtLWMtaHViKSI+PC9yZWN0Pjx0ZXh0IHg9IjI0NSIgeT0iMTY1IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5WTkVULUhVQiDinJM8L3RleHQ+CiAgICA8cmVjdCB4PSIzNjAiIHk9IjE0MCIgd2lkdGg9IjEzMCIgaGVpZ2h0PSI0MCIgcng9IjYiIGNsYXNzPSJzdi1ib3giIHN0eWxlPSJzdHJva2U6dmFyKC0tYy1zcCkiPjwvcmVjdD48dGV4dCB4PSI0MjUiIHk9IjE2NSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+Vk5FVC1TUDEg4pyTPC90ZXh0PgogIDwvZz4KICA8cGF0aCBkPSJNMTMyIDE2MCBIMTc4IiBzdHlsZT0ic3Ryb2tlOnZhcigtLWMtdnBuKTtzdHJva2Utd2lkdGg6MjtmaWxsOm5vbmUiPjwvcGF0aD4KICA8cGF0aCBkPSJNMzEyIDE2MCBIMzU4IiBzdHlsZT0ic3Ryb2tlOnZhcigtLWdvb2QpO3N0cm9rZS13aWR0aDoyO2ZpbGw6bm9uZSI+PC9wYXRoPgogIDx0ZXh0IHg9IjUxMCIgeT0iMTU2IiBjbGFzcz0ic3YtcyI+aHViOiBhbGxvd0dhdGV3YXlUcmFuc2l0PC90ZXh0PgogIDx0ZXh0IHg9IjUxMCIgeT0iMTcyIiBjbGFzcz0ic3YtcyI+c3Bva2U6IHVzZVJlbW90ZUdhdGV3YXlzLCB0aGVuIHJlLWRvd25sb2FkPC90ZXh0PgogIDx0ZXh0IHg9IjUxMCIgeT0iMTg4IiBjbGFzcz0ic3YtcyI+dGhlIFZQTiBjbGllbnQgcGFja2FnZTwvdGV4dD4KPC9zdmc+" />
 </div>
 <figcaption>Figure 3. Gateway transit is what lets spokes share the
 hub's VPN gateway.</figcaption>
@@ -169,8 +169,8 @@ Phase 1 · The three VNets
 
 ### Create the hub and the second spoke
 
-Create `VNET-HUB` (`12.0.0.0/16`, see fix 3) and `VNET-SP2` in
-`Network-RG`, West US 3, the same way as VNET-SP1 in the VNet post.
+Create `VNET-HUB` (`12.0.0.0/16`, see section 7, fix 2) and `VNET-SP2`
+in `Network-RG`, West US 3, the same way as VNET-SP1 in the VNet post.
 Peering also works across regions, but keeping everything in one region
 keeps the lab simple.
 
@@ -275,7 +275,9 @@ the "remote" link (from SP1's side) and the "local" link (from the hub's
 side). The lab names were `hub-sp1` for the remote link and `SP1-HUB`
 for the local one. *Allow access* and *Allow forwarded traffic* are
 ticked on both sides. The two gateway checkboxes were left unticked
-here, and section 7 fixes that.
+here. That's why the first ping to the spoke VM failed, and section 6
+walks through the fix. If you're building this fresh, tick them now as
+described there.
 
 <div class="pair">
 
@@ -576,30 +578,116 @@ alt="VNET-HUB VPN status Connected" />
 
 </div>
 
-## 6. Verify the tunnel
+## 6. Reach the spoke: troubleshooting the first ping
 
-    :: 1. Your VPN address, from the P2S pool
-    ipconfig | findstr /i "VNET-HUB 192.168.1"
+With the VPN connected, the real test is reaching a VM by its private
+IP. The VM is `vnet1srv01` at `10.0.0.4` in **VNET-SP1**. The first
+attempt failed:
 
-    :: 2. Routes the client added (expect 12.0.0.0, plus 10.0.0.0 once transit is on)
-    route print | findstr /r "12\.0\.0\.0 10\.0\.0\.0"
+<figure class="shot">
+<img src="images/step32.png" loading="lazy"
+alt="ping 10.0.0.4 returning Request timed out with 100% loss" />
+<figcaption>Connected to the VPN, but every ping to the spoke VM timed
+out.</figcaption>
+</figure>
 
-    :: 3. Reach a VM by its private IP, with no public IP involved
-    ping 10.0.0.4
-    ssh nsunke@10.0.0.4
+### Step 1: check the client's routes
 
-`ipconfig` shows a *PPP adapter VNET-HUB* with a `192.168.1.x` address,
-and on the portal the gateway's **Point-to-site configuration →
-Allocated IP addresses** lists it. Pinging or SSHing to `10.0.0.4` in
-SP1 only works after gateway transit is enabled (fix 2). Once it works,
-the VM can drop its public IP and its internet-facing SSH rule.
+A timeout over a VPN usually means the laptop doesn't send that traffic
+into the tunnel at all. Check which Azure ranges the VPN client
+installed:
 
-NSGs still apply. Traffic from the P2S address pool arrives through the
-gateway and is normally matched by the `VirtualNetwork` service tag, so
-`nsg1`'s default *AllowVnetInBound* rule lets VPN clients in. To
-restrict them, add rules with the pool as the source.
+    route print | findstr "10.0.0.0 12.0.0.0"
 
-## 7. Three things to fix
+             12.0.0.0      255.255.0.0         On-link       192.168.1.2     43
+
+Only the hub's `12.0.0.0/16` was there, reached through the laptop's VPN
+address `192.168.1.2`. There was **no route for SP1's `10.0.0.0/16`**,
+so pings to `10.0.0.4` went out through the normal internet connection
+and disappeared.
+
+### Step 2: understand why
+
+The gateway only advertises VNets it is allowed to carry traffic for.
+VNET-SP1 is peered to the hub, but the two **gateway transit** settings
+were off (section 4). So the gateway told clients about the hub only,
+and SP1 had no route back to the VPN address pool either.
+
+### Step 3: enable gateway transit on both sides of the peering
+
+**Hub side:** VNET-HUB → **Peerings → SP1-HUB** → tick *Allow gateway or
+route server in 'VNET-HUB' to forward traffic to 'VNET-SP1'* → **Save**.
+Leave *Enable 'VNET-HUB' to use 'VNET-SP1's' remote gateway* unticked,
+because SP1 has no gateway.
+
+<figure class="shot">
+<img src="images/step33.png" loading="lazy"
+alt="SP1-HUB peering settings with Allow gateway or route server in VNET-HUB to forward traffic to VNET-SP1 ticked" />
+<figcaption>Hub side: gateway transit allowed for VNET-SP1.</figcaption>
+</figure>
+
+**Spoke side:** VNET-SP1 → **Peerings** → the link to the hub
+(`hub-sp1`) → tick *Enable 'VNET-SP1' to use 'VNET-HUB's' remote gateway
+or route server* → **Save**. Wait for the peering state to show
+**Connected** again. Repeat both sides for VNET-SP2 if you want VPN
+access there too.
+
+The same in Cloud Shell:
+
+    az network vnet peering update -g Network-RG --vnet-name VNET-HUB -n SP1-HUB \
+      --set allowGatewayTransit=true
+
+    # Find the spoke-side peering name, then enable remote gateway use
+    az network vnet peering list -g Network-RG --vnet-name VNET-SP1 --query "[].name" -o tsv
+    az network vnet peering update -g Network-RG --vnet-name VNET-SP1 -n hub-sp1 \
+      --set useRemoteGateways=true
+
+### Step 4: reinstall the VPN client
+
+The Windows client gets its route list when it's installed, so a client
+installed earlier never learns about SP1. Disconnect, download the VPN
+configuration package again, run the new
+`WindowsAmd64\VpnClientSetupAmd64.exe`, reconnect, and click
+**Continue** on the CMROUTE prompt.
+
+### Step 5: test again
+
+    route print | findstr "10.0.0.0 12.0.0.0"   :: now shows both 12.0.0.0 and 10.0.0.0, on-link via 192.168.1.x
+    ping 10.0.0.4                                :: Reply from 10.0.0.4
+    ssh nsunke@10.0.0.4                          :: SSH over the VPN, no public IP needed
+
+The ping gets replies and SSH to `10.0.0.4` works. In the portal,
+vpn-gateway → Point-to-site configuration → **Allocated IP addresses**
+lists the laptop's VPN address. Since the VM is now reachable privately,
+you can remove its public IP and the internet-facing `ssh` rule from the
+[NSG
+post](../azure-network-security-groups-nsg/azure-network-security-groups-nsg.html).
+
+### If it still times out
+
+<div class="tbl">
+
+| Check             | How                                                   | What to look for                                                                                                                                |
+|-------------------|-------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
+| Client route      | `route print`                                         | A line for the spoke's range. If it's missing, transit isn't on or the client wasn't reinstalled.                                               |
+| VM route back     | VM → Networking → NIC → **Effective routes**          | The P2S pool (`192.168.1.0/24`) with next hop *Virtual network gateway*. If it's missing, *useRemoteGateways* on the spoke peering didn't save. |
+| Address overlap   | `ipconfig`                                            | Your Wi-Fi or Ethernet adapter must not be in the P2S pool's range (see fix 1).                                                                 |
+| VM running        | Portal → VM overview                                  | Status *Running*, not *Stopped (deallocated)*.                                                                                                  |
+| NSG / OS firewall | NIC → **Effective security rules**; `sudo ufw status` | The default *AllowVnetInBound* covers VPN clients; check that no custom Deny rule blocks them. Ubuntu answers ping by default.                  |
+
+</div>
+
+NSGs still apply to VPN traffic. Traffic from the P2S address pool
+arrives through the gateway and is normally matched by the
+`VirtualNetwork` service tag, so `nsg1`'s default *AllowVnetInBound*
+rule lets VPN clients in. To restrict them, add rules with the pool as
+the source.
+
+## 7. Two more things to fix
+
+Gateway transit was the fix that got the ping working (section 6). Two
+other choices in this lab work, but are worth correcting before you
+reuse the design.
 
 <div class="lab">
 
@@ -615,31 +703,7 @@ package again.
 
 <div class="lab">
 
-### Fix 2: enable gateway transit so clients reach the spokes
-
-Edit each peering:
-
-- VNET-HUB → Peerings → `SP1-HUB` → tick *Allow gateway or route server
-  in 'VNET-HUB' to forward traffic to 'VNET-SP1'*.
-- VNET-SP1 → Peerings → `hub-sp1` → tick *Enable 'VNET-SP1' to use
-  'VNET-HUB's' remote gateway or route server*.
-- Repeat for SP2. Then **download and reinstall the VPN client package**
-  so it includes the spoke ranges.
-
-<!-- -->
-
-    az network vnet peering update -g Network-RG --vnet-name VNET-HUB -n SP1-HUB \
-      --set allowGatewayTransit=true
-    az network vnet peering update -g Network-RG --vnet-name VNET-SP1 -n hub-sp1 \
-      --set useRemoteGateways=true
-
-A spoke can only use a remote gateway if it has no gateway of its own.
-
-</div>
-
-<div class="lab">
-
-### Fix 3: use a private range for the hub
+### Fix 2: use a private range for the hub
 
 `12.0.0.0/16` isn't in the RFC 1918 private ranges; it's real internet
 address space owned by another company. Azure allows it, but resources
@@ -730,7 +794,9 @@ Reset quiz
   each client holds a **child certificate with its private key**.
 - Spokes use the hub's gateway only with **gateway transit**:
   *allowGatewayTransit* on the hub side, *useRemoteGateways* on the
-  spoke side. Re-download the client afterwards.
+  spoke side. Without it, the client gets no route to the spoke and
+  pings time out. Check with `route print`, and reinstall the client
+  after changing peerings.
 - Delete the gateway when you're done; it's billed hourly.
 
 **Next in the series:** switching P2S to Microsoft Entra ID
