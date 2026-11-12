@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Network Security Groups</title>
+<meta name="description" content="Why SSH to an Azure VM timed out and how a network security group fixed it: NSG rules, default rules, priority, subnet vs NIC, service tags, ASGs and troubleshooting, with a 12-step lab.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: single reading column (~70ch) with full-width figures; hierarchy levels carry a fixed colour each, used in diagrams, headings and lab tags. */
+:root{
+  --bg:#f6f8fb; --surface:#ffffff; --fg:#17202e; --muted:#566275; --line:#dbe2ec;
+  --accent:#1d5fd1; --accent-soft:#e4edfc; --code-bg:#eef2f8;
+  --l-tenant:#5b3fc4; --l-mg:#1d5fd1; --l-sub:#c98a05; --l-rg:#0f8a7a; --l-res:#c2410c;
+  --good:#16794a; --bad:#b42318;
+  --f-display:"Space Grotesk",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f141c; --surface:#161d28; --fg:#e6ebf2; --muted:#9aa6b8; --line:#2a3443;
+  --accent:#7aa7ff; --accent-soft:#1b2a45; --code-bg:#1b2330;
+  --l-tenant:#a493f5; --l-mg:#7aa7ff; --l-sub:#f0bd4a; --l-rg:#3fc6b2; --l-res:#fb8a55;
+  --good:#4cc38a; --bad:#ff7a6e; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f141c; --surface:#161d28; --fg:#e6ebf2; --muted:#9aa6b8; --line:#2a3443;
+  --accent:#7aa7ff; --accent-soft:#1b2a45; --code-bg:#1b2330;
+  --l-tenant:#a493f5; --l-mg:#7aa7ff; --l-sub:#f0bd4a; --l-rg:#3fc6b2; --l-res:#fb8a55;
+  --good:#4cc38a; --bad:#ff7a6e; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:17px;line-height:1.7;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:760px;margin:0 auto;padding-block:48px 80px}
+h1,h2,h3{font-family:var(--f-display);line-height:1.2;text-wrap:balance;margin:0}
+h1{font-size:clamp(2rem,5vw,2.9rem);font-weight:700;letter-spacing:-.02em}
+h2{font-size:1.7rem;font-weight:600;margin-top:64px;margin-bottom:12px;letter-spacing:-.01em}
+h3{font-size:1.2rem;font-weight:600;margin-top:32px;margin-bottom:8px}
+p{margin:0 0 16px}
+a{color:var(--accent)}
+.eyebrow{font-family:var(--f-mono);font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lede{font-size:1.15rem;color:var(--muted);margin-top:16px}
+.meta{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:20px;font-size:.88rem;color:var(--muted)}
+code{font-family:var(--f-mono);font-size:.86em;background:var(--code-bg);padding:.1em .35em;border-radius:4px}
+pre{font-family:var(--f-mono);font-size:.84rem;line-height:1.6;background:var(--code-bg);border:1px solid var(--line);
+  border-radius:8px;padding:16px 18px;overflow-x:auto;margin:0 0 20px}
+pre code{background:none;padding:0;font-size:inherit}
+.cmt{color:var(--muted)}
+ul,ol{padding-left:1.3em;margin:0 0 16px}
+li{margin-bottom:6px}
+strong{font-weight:600}
+
+/* level tag */
+.lvl{display:inline-flex;align-items:center;gap:8px}
+.lvl::before{content:"";width:12px;height:12px;border-radius:3px;background:var(--c);flex:none}
+h2.lvl::before{width:16px;height:16px;border-radius:4px}
+.t{--c:var(--l-tenant)} .m{--c:var(--l-mg)} .s{--c:var(--l-sub)} .r{--c:var(--l-rg)} .x{--c:var(--l-res)}
+
+.toc{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding-block:18px;margin-top:36px;
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px 24px;font-size:.93rem}
+.toc a{color:var(--fg);text-decoration:none}
+.toc a:hover{color:var(--accent);text-decoration:underline}
+
+figure{margin:28px 0}
+figcaption{font-size:.86rem;color:var(--muted);margin-top:10px}
+.diagram{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;overflow-x:auto}
+.diagram svg{display:block;width:100%;height:auto;min-width:520px}
+.shot img{display:block;width:100%;border:1px solid var(--line);border-radius:8px;background:#fff}
+
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:20px 0}
+.fact{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;font-size:.92rem;line-height:1.55}
+.fact b{display:block;font-family:var(--f-display);font-size:1.25rem;font-weight:600;color:var(--c,var(--accent));margin-bottom:2px}
+
+.note{border-left:3px solid var(--accent);background:var(--accent-soft);padding:12px 16px;border-radius:0 8px 8px 0;margin:20px 0;font-size:.95rem}
+.note p:last-child{margin:0}
+
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+.tbl{overflow-x:auto;margin:20px 0}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--f-display);font-weight:600;font-size:.88rem;color:var(--muted)}
+
+/* lab steps */
+.step{margin-top:40px}
+.step-h{display:flex;align-items:baseline;gap:12px}
+.step-n{font-family:var(--f-mono);font-size:.8rem;color:var(--muted);flex:none}
+.step h3{margin:0}
+
+/* quiz */
+.quiz{display:grid;gap:18px;margin-top:20px}
+.q{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 18px 14px}
+.q p.qt{font-weight:600;margin-bottom:12px}
+.opts{display:grid;gap:8px}
+.opts button{font:inherit;font-size:.95rem;text-align:left;color:var(--fg);background:var(--bg);border:1px solid var(--line);
+  border-radius:7px;padding:9px 12px;cursor:pointer}
+.opts button:hover:not(:disabled){border-color:var(--accent)}
+.opts button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.opts button.ok{border-color:var(--good);color:var(--good);font-weight:600}
+.opts button.no{border-color:var(--bad);color:var(--bad)}
+.opts button:disabled{cursor:default}
+.why{font-size:.9rem;color:var(--muted);margin:10px 0 0}
+.score{font-family:var(--f-display);font-weight:600;margin-top:6px}
+.reset{font:inherit;font-size:.9rem;background:none;border:1px solid var(--line);color:var(--fg);border-radius:7px;padding:7px 14px;cursor:pointer}
+
+footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);font-size:.88rem;color:var(--muted)}
+
+/* svg tokens */
+.sv-box{fill:var(--surface);stroke-width:2}
+.sv-t{fill:var(--fg);font-family:var(--f-display);font-weight:600;font-size:15px}
+.sv-s{fill:var(--muted);font-family:var(--f-body);font-size:12px}
+.sv-m{fill:var(--fg);font-family:var(--f-mono);font-size:12px}
+.sv-line{stroke:var(--muted);stroke-width:1.5;fill:none}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+</style>
+<style>
+/* Back to the blog index; uses this page's own accent so it fits either theme. */
+.back-home{display:inline-block;margin:0 0 18px;font-size:14px;font-weight:600;
+  color:var(--accent);text-decoration:none}
+.back-home:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+<style>
+:root{--c-in:#1d5fd1;--c-out:#0f8a7a;--c-deny:#b42318;--c-allow:#16794a;--c-pip:#c98a05;--warn:#9a5b00;--warn-soft:#fff4e0}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--c-in:#7aa7ff;--c-out:#3fc6b2;--c-deny:#ff7a6e;--c-allow:#4cc38a;--c-pip:#f0bd4a;--warn:#f0b35a;--warn-soft:#2e2414}}
+:root[data-theme="dark"]{--c-in:#7aa7ff;--c-out:#3fc6b2;--c-deny:#ff7a6e;--c-allow:#4cc38a;--c-pip:#f0bd4a;--warn:#f0b35a;--warn-soft:#2e2414}
+.cost{border-left:3px solid var(--warn);background:var(--warn-soft);padding:12px 16px;border-radius:0 8px 8px 0;margin:20px 0;font-size:.95rem}
+.cost p:last-child{margin:0}
+.lab{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px 22px 6px;margin:28px 0}
+.lab>h3{margin-top:0}
+.verify{font-size:.95rem}
+.verify::before{content:"Check: ";font-weight:600;color:var(--good)}
+.allow{color:var(--c-allow);font-weight:600}
+.deny{color:var(--c-deny);font-weight:600}
+</style>
+
+<div class="wrap">
+<a class="back-home" href="../index.html">&#8592;&nbsp;All articles</a>
+<header>
+  <div class="eyebrow">Azure fundamentals · AZ-900 · Hands-on lab</div>
+  <h1 style="margin-top:10px">Azure Network Security Groups (NSG): Why SSH Timed Out and How One Rule Fixed It</h1>
+  <p class="lede">I deployed an Ubuntu VM with a public IP into <code>SUBNET1</code>, tried to SSH in, and the connection timed out. This post explains why, then walks through creating an NSG, attaching it to the subnet and adding an SSH rule. Along the way it covers how NSG rules are evaluated, the default rules, service tags, application security groups and how to troubleshoot.</p>
+  <div class="meta"><span>Sunke Nithin</span><span>November 2026</span><span>~15 min read + 15 min lab</span></div>
+</header>
+
+<nav class="toc" aria-label="Contents">
+  <a href="#problem">1. The problem: SSH timed out</a>
+  <a href="#what">2. What is an NSG?</a>
+  <a href="#rule">3. Anatomy of a rule</a>
+  <a href="#defaults">4. The six default rules</a>
+  <a href="#order">5. How rules are evaluated</a>
+  <a href="#where">6. Subnet NSG or NIC NSG?</a>
+  <a href="#tags">7. Service tags and ASGs</a>
+  <a href="#lab">8. Lab: fix SSH with an NSG</a>
+  <a href="#cli">9. The same lab with Azure CLI</a>
+  <a href="#harden">10. Lock it down properly</a>
+  <a href="#troubleshoot">11. Troubleshooting toolkit</a>
+  <a href="#quiz">12. Quiz</a>
+  <a href="#takeaways">13. Key takeaways</a>
+</nav>
+
+<!-- 1 -->
+<h2 id="problem">1. The problem: SSH timed out</h2>
+<p>The setup was simple: VM <code>vnet1srv01</code> (Ubuntu 26.04 LTS) in <code>VNET-SP1 / SUBNET1</code> with private IP <code>10.0.0.4</code> and a public IP. The VM's <strong>Network settings</strong> page showed <em>Network security group: –</em> and <em>Effective security rules: 0</em>. With no NSG anywhere, you might expect everything to be open. Instead, SSH to the public IP on port 22 failed with <em>"connection timed out"</em>.</p>
+<p>The reason: the VM's public IP uses the <strong>Standard SKU</strong>, and Standard public IPs are <strong>secure by default</strong>. Inbound traffic is blocked unless a network security group explicitly allows it. With no NSG there was nothing to allow port 22, so packets were silently dropped. A <em>timeout</em> (rather than "connection refused") is the typical sign of traffic being dropped by a filter before it reaches the VM.</p>
+
+<figure>
+<div class="diagram">
+<svg viewBox="0 0 720 230" role="img" aria-labelledby="f1t">
+  <title id="f1t">Before: SSH from the laptop to the Standard public IP is dropped because no NSG allows it. After: nsg1 on SUBNET1 allows TCP 22, so SSH reaches the VM.</title>
+  <defs>
+    <marker id="ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--c-allow)"/></marker>
+  </defs>
+  <text x="20" y="30" class="sv-t" style="font-size:14px">Before</text>
+  <rect x="20" y="44" width="110" height="44" rx="8" class="sv-box" style="stroke:var(--muted)"/><text x="75" y="71" text-anchor="middle" class="sv-t" style="font-size:13px">My laptop</text>
+  <path d="M132 66 H270" style="stroke:var(--c-deny);stroke-width:2;fill:none;stroke-dasharray:6 4"/>
+  <text x="200" y="58" text-anchor="middle" class="sv-m" style="font-size:11px">ssh :22</text>
+  <rect x="272" y="44" width="150" height="44" rx="8" class="sv-box" style="stroke:var(--c-pip)"/>
+  <text x="347" y="64" text-anchor="middle" class="sv-t" style="font-size:13px">Standard public IP</text>
+  <text x="347" y="80" text-anchor="middle" class="sv-s">closed by default</text>
+  <text x="440" y="71" class="sv-t" style="fill:var(--c-deny);font-size:22px">✕</text>
+  <text x="470" y="64" class="sv-s">no NSG → no allow rule</text>
+  <text x="470" y="80" class="sv-s">→ dropped → "timed out"</text>
+
+  <text x="20" y="140" class="sv-t" style="font-size:14px">After</text>
+  <rect x="20" y="154" width="110" height="44" rx="8" class="sv-box" style="stroke:var(--muted)"/><text x="75" y="181" text-anchor="middle" class="sv-t" style="font-size:13px">My laptop</text>
+  <path d="M132 176 H198" style="stroke:var(--c-allow);stroke-width:2;fill:none" marker-end="url(#ok)"/>
+  <rect x="200" y="154" width="130" height="44" rx="8" class="sv-box" style="stroke:var(--c-pip)"/>
+  <text x="265" y="181" text-anchor="middle" class="sv-t" style="font-size:13px">Public IP</text>
+  <path d="M332 176 H368" style="stroke:var(--c-allow);stroke-width:2;fill:none" marker-end="url(#ok)"/>
+  <rect x="370" y="146" width="170" height="60" rx="8" class="sv-box" style="stroke:var(--c-in);stroke-width:2"/>
+  <text x="455" y="170" text-anchor="middle" class="sv-t" style="font-size:13px">nsg1 on SUBNET1</text>
+  <text x="455" y="190" text-anchor="middle" class="sv-m" style="font-size:11px">100 ssh Allow TCP 22</text>
+  <path d="M542 176 H578" style="stroke:var(--c-allow);stroke-width:2;fill:none" marker-end="url(#ok)"/>
+  <rect x="580" y="154" width="120" height="44" rx="8" class="sv-box" style="stroke:var(--muted)"/>
+  <text x="640" y="174" text-anchor="middle" class="sv-t" style="font-size:13px">vnet1srv01</text>
+  <text x="640" y="190" text-anchor="middle" class="sv-m" style="font-size:11px">10.0.0.4</text>
+</svg>
+</div>
+<figcaption>Figure 1. A Standard public IP needs an NSG that allows the traffic. Adding nsg1 with one rule opened SSH.</figcaption>
+</figure>
+
+<div class="note"><p><strong>Two things that are easy to mix up.</strong> The <em>private subnet</em> setting on SUBNET1 (from the <a href="../azure-vnet-private-subnet-lab/azure-vnet-private-subnet-lab.html">VNet post</a>) controls <em>outbound</em> internet access for VMs <em>without</em> a public IP. It has nothing to do with this problem. Inbound SSH was blocked by the Standard public IP's secure-by-default behaviour, and an NSG is what opens it.</p></div>
+
+<!-- 2 -->
+<h2 id="what">2. What is an NSG?</h2>
+<p>A <strong>network security group (NSG)</strong> is Azure's built-in, distributed firewall for traffic in and out of a virtual network. It is a list of <strong>allow and deny rules</strong> that Azure enforces at the network interface of each VM, so there is no appliance to size, patch or pay for. NSGs are free.</p>
+<ul>
+  <li>An NSG is a regional resource in a resource group (here <code>nsg1</code> in <code>Network-RG</code>, West US 3). It can only be attached to subnets and NICs in the same region.</li>
+  <li>You attach it to a <strong>subnet</strong>, a <strong>network interface (NIC)</strong>, or both. One NSG can be reused on many subnets and NICs.</li>
+  <li>NSGs are <strong>stateful</strong>: if an inbound rule allows a connection in, the reply traffic is allowed back out automatically, and vice versa. You never write a rule for return traffic.</li>
+  <li>They filter at layers 3 and 4 (IP addresses, ports, protocols). For URL filtering, TLS inspection or threat intelligence you need Azure Firewall or a third-party appliance.</li>
+</ul>
+<div class="note"><p><strong>Coming from OCI?</strong> An Azure NSG combines what OCI splits into security lists (attached to a subnet) and network security groups (attached to VNICs). Like OCI rules, Azure rules are stateful by default; unlike OCI, Azure rules have a <strong>priority</strong> and can explicitly <strong>deny</strong>.</p></div>
+
+<!-- 3 -->
+<h2 id="rule">3. Anatomy of a rule</h2>
+<p>This is the rule from the lab, with every field explained:</p>
+<div class="tbl"><table>
+  <thead><tr><th>Field</th><th>Lab value</th><th>What it means</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Priority</strong></td><td><code>100</code></td><td>100 to 4096. Lower numbers are checked first. Must be unique per direction within the NSG.</td></tr>
+    <tr><td><strong>Name</strong></td><td><code>ssh</code></td><td>Unique within the NSG. Name rules by purpose, for example <code>allow-ssh-from-home</code>.</td></tr>
+    <tr><td><strong>Source</strong></td><td>Any</td><td>Any, an IP or CIDR range, "My IP address", a <strong>service tag</strong> or an <strong>application security group</strong>.</td></tr>
+    <tr><td><strong>Source port ranges</strong></td><td><code>*</code></td><td>Almost always <code>*</code>: clients pick a random source port.</td></tr>
+    <tr><td><strong>Destination</strong></td><td>Any</td><td>Any, IP/CIDR, service tag or ASG. "Any" here means any address the NSG protects.</td></tr>
+    <tr><td><strong>Service / destination port</strong></td><td>Custom, <code>22</code></td><td>A single port, a range (<code>8000-8100</code>) or a list (<code>80,443</code>). Presets like SSH, RDP, HTTPS fill this in.</td></tr>
+    <tr><td><strong>Protocol</strong></td><td>Any</td><td>TCP, UDP, ICMPv4, ICMPv6 or Any. SSH only needs <strong>TCP</strong>, so TCP would be tighter.</td></tr>
+    <tr><td><strong>Action</strong></td><td>Allow</td><td>Allow or Deny.</td></tr>
+  </tbody>
+</table></div>
+<p>The portal showed a <strong>warning triangle</strong> next to the <code>ssh</code> rule. That's Azure flagging that port 22 is open to the whole internet. Bots scan every Azure public IP for SSH and RDP within minutes, so section 10 tightens this rule.</p>
+
+<!-- 4 -->
+<h2 id="defaults">4. The six default rules</h2>
+<p>A new NSG isn't empty. It has six default rules at priorities 65000 and above. You can't delete them, but you can override them with your own rules at lower numbers. This is exactly what <code>nsg1</code> showed straight after creation:</p>
+<div class="tbl"><table>
+  <thead><tr><th>Dir.</th><th>Priority</th><th>Name</th><th>Source → Destination</th><th>Action</th></tr></thead>
+  <tbody>
+    <tr><td>In</td><td>65000</td><td>AllowVnetInBound</td><td>VirtualNetwork → VirtualNetwork</td><td class="allow">Allow</td></tr>
+    <tr><td>In</td><td>65001</td><td>AllowAzureLoadBalancerInBound</td><td>AzureLoadBalancer → Any</td><td class="allow">Allow</td></tr>
+    <tr><td>In</td><td>65500</td><td>DenyAllInBound</td><td>Any → Any</td><td class="deny">Deny</td></tr>
+    <tr><td>Out</td><td>65000</td><td>AllowVnetOutBound</td><td>VirtualNetwork → VirtualNetwork</td><td class="allow">Allow</td></tr>
+    <tr><td>Out</td><td>65001</td><td>AllowInternetOutBound</td><td>Any → Internet</td><td class="allow">Allow</td></tr>
+    <tr><td>Out</td><td>65500</td><td>DenyAllOutBound</td><td>Any → Any</td><td class="deny">Deny</td></tr>
+  </tbody>
+</table></div>
+<p>In plain words: <strong>inside the VNet, everything can talk to everything</strong>; Azure load balancer health probes are allowed in; <strong>nothing from the internet gets in</strong>; and <strong>outbound to the internet is allowed</strong>. The <code>VirtualNetwork</code> tag covers the VNet's address space plus peered VNets and connected on-premises ranges.</p>
+<p>So attaching <code>nsg1</code> with only the defaults would still have blocked SSH, because <em>DenyAllInBound</em> would catch it. The custom rule at priority 100 is what let it through.</p>
+
+<!-- 5 -->
+<h2 id="order">5. How rules are evaluated</h2>
+<p>For each new connection, Azure checks the rules for that direction <strong>in priority order, lowest number first</strong>. The <strong>first rule that matches</strong> decides the result and evaluation stops. Rules with higher numbers are never looked at.</p>
+
+<figure>
+<div class="diagram">
+<svg viewBox="0 0 720 270" role="img" aria-labelledby="f2t">
+  <title id="f2t">An inbound SSH packet is checked against rules in priority order. Rule 100 ssh matches first and allows it; the later rules are never evaluated.</title>
+  <defs><marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--muted)"/></marker></defs>
+  <rect x="20" y="20" width="200" height="60" rx="8" class="sv-box" style="stroke:var(--c-in)"/>
+  <text x="120" y="44" text-anchor="middle" class="sv-t" style="font-size:13px">Inbound packet</text>
+  <text x="120" y="64" text-anchor="middle" class="sv-m" style="font-size:11px">internet → 10.0.0.4 TCP 22</text>
+  <path d="M222 50 H268" class="sv-line" marker-end="url(#a2)"/>
+  <g class="sv-m" style="font-size:12px">
+    <rect x="270" y="20" width="430" height="44" rx="6" style="fill:var(--c-allow);opacity:.18"/>
+    <text x="284" y="47">100</text><text x="340" y="47">ssh · Any → Any · 22</text><text x="586" y="47" class="allow">Allow ✓ match</text>
+    <rect x="270" y="74" width="430" height="40" rx="6" class="sv-box" style="stroke:var(--line);opacity:.55"/>
+    <text x="284" y="99" style="opacity:.55">65000</text><text x="340" y="99" style="opacity:.55">AllowVnetInBound</text><text x="610" y="99" style="opacity:.55">not checked</text>
+    <rect x="270" y="122" width="430" height="40" rx="6" class="sv-box" style="stroke:var(--line);opacity:.55"/>
+    <text x="284" y="147" style="opacity:.55">65001</text><text x="340" y="147" style="opacity:.55">AllowAzureLoadBalancerInBound</text><text x="610" y="147" style="opacity:.55">not checked</text>
+    <rect x="270" y="170" width="430" height="40" rx="6" class="sv-box" style="stroke:var(--line);opacity:.55"/>
+    <text x="284" y="195" style="opacity:.55">65500</text><text x="340" y="195" style="opacity:.55">DenyAllInBound</text><text x="610" y="195" style="opacity:.55">not checked</text>
+  </g>
+  <text x="270" y="240" class="sv-s">A packet to port 3389 would skip rule 100 (no match), skip 65000 and 65001,</text>
+  <text x="270" y="256" class="sv-s">and be denied by 65500.</text>
+</svg>
+</div>
+<figcaption>Figure 2. First match wins. Leave gaps between priorities (100, 110, 120…) so you can insert rules later.</figcaption>
+</figure>
+<p>A common mistake is a broad Deny at a low number above a narrow Allow at a higher number. For example, <em>Deny Any at 100</em> and <em>Allow 443 at 200</em> blocks HTTPS, because rule 100 matches first.</p>
+
+<!-- 6 -->
+<h2 id="where">6. Subnet NSG or NIC NSG?</h2>
+<p>You can attach NSGs at two levels, and when both exist, traffic must be allowed by <strong>both</strong>:</p>
+
+<figure>
+<div class="diagram">
+<svg viewBox="0 0 720 200" role="img" aria-labelledby="f3t">
+  <title id="f3t">Inbound traffic passes the subnet NSG first, then the NIC NSG. Outbound traffic passes the NIC NSG first, then the subnet NSG.</title>
+  <defs><marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--c-in)"/></marker>
+  <marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--c-out)"/></marker></defs>
+  <text x="40" y="96" text-anchor="middle" class="sv-t" style="font-size:13px">Internet</text>
+  <rect x="160" y="30" width="190" height="130" rx="10" class="sv-box" style="stroke:var(--c-in);stroke-width:2"/>
+  <text x="255" y="56" text-anchor="middle" class="sv-t" style="font-size:13px">Subnet NSG</text>
+  <text x="255" y="74" text-anchor="middle" class="sv-s">nsg1 on SUBNET1</text>
+  <rect x="390" y="30" width="170" height="130" rx="10" class="sv-box" style="stroke:var(--muted)"/>
+  <text x="475" y="56" text-anchor="middle" class="sv-t" style="font-size:13px">NIC NSG</text>
+  <text x="475" y="74" text-anchor="middle" class="sv-s">(none in this lab)</text>
+  <rect x="600" y="70" width="100" height="50" rx="8" class="sv-box" style="stroke:var(--muted)"/>
+  <text x="650" y="100" text-anchor="middle" class="sv-t" style="font-size:13px">VM</text>
+  <path d="M70 100 H598" style="stroke:var(--c-in);stroke-width:2;fill:none" marker-end="url(#a3)"/>
+  <text x="74" y="92" class="sv-s" style="fill:var(--c-in)">inbound</text>
+  <path d="M598 138 H70" style="stroke:var(--c-out);stroke-width:2;fill:none" marker-end="url(#a4)"/>
+  <text x="74" y="156" class="sv-s" style="fill:var(--c-out)">outbound</text>
+  <text x="160" y="190" class="sv-s">Both must allow the traffic. No NSG at a level means that level doesn't filter.</text>
+</svg>
+</div>
+<figcaption>Figure 3. Inbound traffic meets the subnet NSG first; outbound traffic meets the NIC NSG first.</figcaption>
+</figure>
+<ul>
+  <li><strong>Prefer subnet-level NSGs.</strong> One NSG protects every VM in the subnet, which is easier to audit. That's what the lab does: <code>nsg1</code> on <code>SUBNET1</code>.</li>
+  <li><strong>Use NIC-level NSGs sparingly</strong>, for a VM that needs an exception. Having both levels on every VM is the most common reason "I allowed it but it still doesn't work".</li>
+  <li>When you create a VM in the portal with "Basic" NIC security, Azure quietly creates a NIC NSG for it. If you manage security at the subnet, remove that NIC NSG or keep it in sync.</li>
+</ul>
+
+<!-- 7 -->
+<h2 id="tags">7. Service tags and application security groups</h2>
+<p><strong>Service tags</strong> are Microsoft-maintained names for groups of IP ranges, so you never hard-code Azure addresses. Useful ones:</p>
+<div class="tbl"><table>
+  <thead><tr><th>Tag</th><th>Covers</th></tr></thead>
+  <tbody>
+    <tr><td><code>VirtualNetwork</code></td><td>Your VNet, peered VNets and connected on-premises ranges</td></tr>
+    <tr><td><code>Internet</code></td><td>Public IP space outside Azure's VNets</td></tr>
+    <tr><td><code>AzureLoadBalancer</code></td><td>The source of load balancer health probes (168.63.129.16)</td></tr>
+    <tr><td><code>Storage</code>, <code>Sql</code>, <code>AzureMonitor</code></td><td>Azure service endpoints; regional variants like <code>Storage.WestUS3</code> exist</td></tr>
+    <tr><td><code>AzureCloud</code></td><td>All Azure public IP ranges</td></tr>
+  </tbody>
+</table></div>
+<p><strong>Application security groups (ASGs)</strong> let you write rules by <em>role</em> instead of by IP. Put the web servers' NICs in <code>asg-web</code> and the database NICs in <code>asg-db</code>, then write one rule: <em>allow asg-web → asg-db on 1521</em>. When you add a new web server, you only add its NIC to <code>asg-web</code>; the rule doesn't change.</p>
+
+<figure>
+<div class="diagram">
+<svg viewBox="0 0 720 170" role="img" aria-labelledby="f4t">
+  <title id="f4t">Application security groups: web VMs in asg-web may reach database VMs in asg-db on port 1521; nothing else may.</title>
+  <defs><marker id="a5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--c-allow)"/></marker></defs>
+  <rect x="20" y="20" width="240" height="120" rx="12" style="fill:none;stroke:var(--c-in);stroke-width:2;stroke-dasharray:6 4"/>
+  <text x="36" y="44" class="sv-t" style="fill:var(--c-in);font-size:13px">asg-web</text>
+  <rect x="40" y="60" width="90" height="40" rx="6" class="sv-box" style="stroke:var(--muted)"/><text x="85" y="85" text-anchor="middle" class="sv-m">web01</text>
+  <rect x="150" y="60" width="90" height="40" rx="6" class="sv-box" style="stroke:var(--muted)"/><text x="195" y="85" text-anchor="middle" class="sv-m">web02</text>
+  <rect x="460" y="20" width="240" height="120" rx="12" style="fill:none;stroke:var(--c-out);stroke-width:2;stroke-dasharray:6 4"/>
+  <text x="476" y="44" class="sv-t" style="fill:var(--c-out);font-size:13px">asg-db</text>
+  <rect x="535" y="60" width="90" height="40" rx="6" class="sv-box" style="stroke:var(--muted)"/><text x="580" y="85" text-anchor="middle" class="sv-m">oradb01</text>
+  <path d="M262 80 H458" style="stroke:var(--c-allow);stroke-width:2.5;fill:none" marker-end="url(#a5)"/>
+  <text x="360" y="70" text-anchor="middle" class="sv-m" style="font-size:11px">Allow TCP 1521</text>
+  <text x="360" y="160" text-anchor="middle" class="sv-s">One rule: source asg-web, destination asg-db, port 1521. New web VMs just join asg-web.</text>
+</svg>
+</div>
+<figcaption>Figure 4. ASGs group NICs by role, so rules survive scaling and IP changes.</figcaption>
+</figure>
+
+<!-- 8 LAB -->
+<h2 id="lab">8. Lab: fix SSH with an NSG</h2>
+<p><strong>Starting point:</strong> <code>VNET-SP1</code> with private subnet <code>SUBNET1</code> (from the VNet post), and an Ubuntu VM <code>vnet1srv01</code> in that subnet with a Standard public IP and no NSG. <strong>Goal:</strong> create <code>nsg1</code>, attach it to SUBNET1, allow SSH, and log in. NSGs are free.</p>
+
+<div class="step">
+  <div class="step-h"><span class="step-n">STEP 1</span><h3>Check the subnet: no NSG</h3></div>
+  <p>Open VNET-SP1 → <strong>Subnets</strong> → <strong>SUBNET1</strong>. The address prefix is now greyed out with <em>"cannot be updated because the subnet is in use"</em>, since the VM's NIC lives here. Private subnet is enabled, and <strong>Network security group</strong> is <em>None</em>.</p>
+  <figure class="shot"><img src="images/step1.png" alt="Edit subnet panel for SUBNET1 showing prefix locked because the subnet is in use and network security group set to None" loading="lazy"><figcaption>A subnet in use can't change its range, and it has no NSG yet.</figcaption></figure>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="step-n">STEP 2</span><h3>Check the VM's network settings</h3></div>
+  <p>Open the VM → <strong>Networking → Network settings</strong>. It sits in <code>VNET-SP1 / SUBNET1</code> with private IP <code>10.0.0.4</code> (the first usable address, as the VNet post predicted) and a public IP. <strong>Network security group</strong> shows <em>–</em>, <strong>Effective security rules</strong> shows <em>0</em>, and the page says <em>No port rules to display</em>.</p>
+  <figure class="shot"><img src="images/step2.png" alt="VM network settings showing VNET-SP1/SUBNET1, private IP 10.0.0.4, no network security group and zero effective security rules" loading="lazy"><figcaption>No NSG on the subnet or the NIC.</figcaption></figure>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="step-n">STEP 3</span><h3>Try SSH: it times out</h3></div>
+  <p>Connect with your SSH client (Termius here) to <code>&lt;public-ip&gt;:22</code>. Address resolution works, then <em>"Connection failed: connection timed out"</em>. The Standard public IP drops inbound traffic that no NSG allows (section 1).</p>
+  <figure class="shot"><img src="images/step3.png" alt="SSH client log ending with connection timed out on port 22" loading="lazy"><figcaption>A timeout means the packets were dropped, not refused.</figcaption></figure>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="step-n">STEP 4</span><h3>Create the NSG</h3></div>
+  <p>Search <strong>Network security groups</strong> → <strong>+ Create</strong>. Choose <code>Network-RG</code>, name it <code>nsg1</code>, and pick <strong>West US 3</strong>, which must match the VNet's region. Then <strong>Review + create → Create</strong>.</p>
+  <figure class="shot"><img src="images/step4.png" alt="Create network security group form with name nsg1 in Network-RG, West US 3" loading="lazy"><figcaption>Only a name and a region are required.</figcaption></figure>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="step-n">STEP 5</span><h3>Look at the default rules</h3></div>
+  <p>Open <code>nsg1</code>. <strong>Custom security rules: 0 inbound, 0 outbound</strong> and <strong>Associated with: 0 subnets, 0 network interfaces</strong>. Below are the six default rules from section 4. An NSG that isn't associated with anything does nothing.</p>
+  <figure class="shot"><img src="images/step5.png" alt="nsg1 overview with six default rules and no associations" loading="lazy"><figcaption>Three inbound and three outbound defaults.</figcaption></figure>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="step-n">STEP 6</span><h3>Associate the NSG with SUBNET1</h3></div>
+  <p>In <code>nsg1</code> go to <strong>Settings → Subnets</strong> → <strong>+ Associate</strong>. Choose virtual network <code>VNET-SP1 (Network-RG)</code> and subnet <code>SUBNET1</code>, then click <strong>OK</strong>. You can do the same from the subnet's edit panel in step 1.</p>
+  <figure class="shot"><img src="images/step6.png" alt="Associate subnet panel with VNET-SP1 and SUBNET1 selected" loading="lazy"><figcaption>One NSG can be associated with many subnets.</figcaption></figure>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="step-n">STEP 7</span><h3>Confirm the association</h3></div>
+  <p>The Subnets list now shows <code>SUBNET1 · 10.0.0.0/24 · VNET-SP1</code>.</p>
+  <figure class="shot"><img src="images/step7.png" alt="nsg1 Subnets list showing SUBNET1 10.0.0.0/24 in VNET-SP1" loading="lazy"><figcaption>nsg1 now protects every NIC in SUBNET1.</figcaption></figure>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="step-n">STEP 8</span><h3>See the NSG from the VM's side</h3></div>
+  <p>Back on the VM's <strong>Network settings</strong>, a new panel reads <em>Network security group nsg1 (attached to subnet: SUBNET1) · Impacts 1 subnets, 0 network interfaces</em>, with the three inbound default rules. SSH would still fail now, because <em>DenyAllInBound</em> (65500) catches port 22.</p>
+  <figure class="shot"><img src="images/step8.png" alt="VM network settings now showing nsg1 attached to SUBNET1 with three default inbound rules" loading="lazy"><figcaption>The defaults alone still deny internet traffic.</figcaption></figure>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="step-n">STEP 9</span><h3>Start a new inbound rule</h3></div>
+  <p>Click <strong>Create port rule → Inbound port rule</strong>. Creating it from the VM page adds it to whichever NSG applies, here the subnet's <code>nsg1</code>.</p>
+  <figure class="shot"><img src="images/step9.png" alt="Create port rule menu with Inbound port rule and Outbound port rule options" loading="lazy"><figcaption>Rules can be added from the VM or from the NSG itself.</figcaption></figure>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="step-n">STEP 10</span><h3>Allow SSH on port 22</h3></div>
+  <p>Fill in <strong>Source</strong> Any, <strong>Source port ranges</strong> <code>*</code>, <strong>Destination</strong> Any, <strong>Service</strong> Custom, <strong>Destination port ranges</strong> <code>22</code>, <strong>Protocol</strong> Any, <strong>Action</strong> Allow, <strong>Priority</strong> <code>100</code>, <strong>Name</strong> <code>ssh</code>, then <strong>Add</strong>. Section 10 shows how to tighten Source and Protocol, which you should do for anything beyond a short lab.</p>
+  <figure class="shot"><img src="images/step10.png" alt="Add inbound security rule form allowing destination port 22 with priority 100 named ssh" loading="lazy"><figcaption>One rule at priority 100 sits above all the defaults.</figcaption></figure>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="step-n">STEP 11</span><h3>Check the rule list</h3></div>
+  <p>Inbound port rules now show four entries, with <code>100 ssh 22 Any Any Any Allow</code> on top. Note the <strong>warning triangle</strong>: Azure flags any rule that opens a management port such as 22 or 3389 to the whole internet.</p>
+  <figure class="shot"><img src="images/step11.png" alt="Inbound rules with ssh at priority 100 above the three default rules, with a warning icon" loading="lazy"><figcaption>The custom rule is evaluated first.</figcaption></figure>
+</div>
+
+<div class="step">
+  <div class="step-h"><span class="step-n">STEP 12</span><h3>SSH again: it works</h3></div>
+  <p>Retry the connection. The Ubuntu 26.04.1 LTS welcome banner appears. <code>hostname -f</code> returns <code>vnet1srv01.&lt;unique-id&gt;.phxx.internal.cloudapp.net</code>, the VM's name in Azure's internal DNS (provided by 168.63.129.16), which other VMs in the VNet can resolve.</p>
+  <figure class="shot"><img src="images/step12.png" alt="Successful SSH session showing Ubuntu 26.04.1 LTS banner and hostname -f output" loading="lazy"><figcaption>One allow rule was all it took.</figcaption></figure>
+</div>
+
+<!-- 9 CLI -->
+<h2 id="cli">9. The same lab with Azure CLI</h2>
+<pre><code>RG=Network-RG
+
+<span class="cmt"># 1. Create the NSG</span>
+az network nsg create -g $RG -n nsg1 -l westus3
+
+<span class="cmt"># 2. Associate it with SUBNET1</span>
+az network vnet subnet update -g $RG --vnet-name VNET-SP1 -n SUBNET1 \
+  --network-security-group nsg1
+
+<span class="cmt"># 3. Allow SSH, but only from your own public IP and only over TCP</span>
+MYIP=$(curl -s https://ifconfig.me)
+az network nsg rule create -g $RG --nsg-name nsg1 -n allow-ssh-from-home \
+  --priority 100 --direction Inbound --access Allow \
+  --protocol Tcp --source-address-prefixes $MYIP/32 \
+  --source-port-ranges '*' --destination-port-ranges 22
+
+<span class="cmt"># 4. List the rules, including the defaults</span>
+az network nsg rule list -g $RG --nsg-name nsg1 --include-default \
+  --query "[].{prio:priority, name:name, dir:direction, port:destinationPortRange, src:sourceAddressPrefix, access:access}" -o table
+
+<span class="cmt"># 5. Effective rules on the VM's NIC (the VM must be running)</span>
+NIC=$(az vm show -g $RG -n vnet1srv01 --query "networkProfile.networkInterfaces[0].id" -o tsv)
+az network nic list-effective-nsg --ids $NIC -o table</code></pre>
+<p>If you run this in Cloud Shell, <code>ifconfig.me</code> returns Cloud Shell's IP, not your laptop's. Run step 3 from your own terminal, or look up your IP in a browser and paste it in.</p>
+
+<!-- 10 -->
+<h2 id="harden">10. Lock it down properly</h2>
+<p>The lab rule opens SSH to the entire internet. That's fine for a few minutes of testing, but do one of these before you leave the VM running:</p>
+<div class="lab">
+  <h3>Option A: restrict the source to your IP (quick)</h3>
+  <p>Edit the <code>ssh</code> rule: set <strong>Source</strong> to <em>My IP address</em> (the portal fills it in) and <strong>Protocol</strong> to <em>TCP</em>. The warning triangle disappears. If your home IP changes, update the rule.</p>
+<pre><code>az network nsg rule update -g Network-RG --nsg-name nsg1 -n ssh \
+  --source-address-prefixes &lt;your-ip&gt;/32 --protocol Tcp</code></pre>
+</div>
+<div class="lab">
+  <h3>Option B: no public SSH at all (best)</h3>
+  <ul>
+    <li><strong>Azure Bastion</strong> gives browser-based SSH and RDP through the portal, so the VM needs no public IP and no inbound 22 rule. It's paid, and the Developer SKU is the cheapest way to try it.</li>
+    <li><strong>Just-in-time VM access</strong> (Microsoft Defender for Servers) adds a temporary allow rule for your IP when you request access and removes it afterwards.</li>
+    <li><strong>Site-to-site VPN or a mesh VPN</strong> such as Tailscale lets you SSH to the private IP <code>10.0.0.4</code> directly.</li>
+  </ul>
+</div>
+<p>When you're done with the lab, either delete the <code>ssh</code> rule or stop (deallocate) the VM so it isn't sitting on the internet with port 22 open.</p>
+
+<!-- 11 -->
+<h2 id="troubleshoot">11. Troubleshooting toolkit</h2>
+<div class="tbl"><table>
+  <thead><tr><th>Tool</th><th>Where</th><th>What it tells you</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Effective security rules</strong></td><td>VM → Network settings, or NIC → Effective security rules</td><td>The combined result of subnet and NIC NSGs for that NIC</td></tr>
+    <tr><td><strong>IP flow verify</strong></td><td>Network Watcher</td><td>Whether a given packet (IP, port, protocol, direction) is allowed or denied, and by <em>which rule</em></td></tr>
+    <tr><td><strong>Connection troubleshoot</strong></td><td>VM → Troubleshoot, or Network Watcher</td><td>Tests an actual connection end to end and reports where it fails</td></tr>
+    <tr><td><strong>VNet flow logs</strong></td><td>Network Watcher</td><td>Logs every allowed and denied flow to a storage account. Microsoft is retiring the older NSG flow logs in favour of VNet flow logs, so use those for new setups.</td></tr>
+  </tbody>
+</table></div>
+<p><strong>Quick checklist when a port won't open:</strong></p>
+<ol>
+  <li>Is there an NSG on the subnet <em>and</em> on the NIC? Both must allow it.</li>
+  <li>Does a lower-numbered Deny rule match first?</li>
+  <li>Is the protocol right (TCP vs UDP)?</li>
+  <li>Is the service actually listening inside the VM (<code>sudo ss -tlnp</code>) and is the OS firewall (<code>ufw</code>, <code>firewalld</code>, Windows Firewall) open?</li>
+  <li>Timeout usually means a filter dropped it; "connection refused" usually means it reached the VM and nothing was listening.</li>
+</ol>
+
+<!-- 12 quiz -->
+<h2 id="quiz">12. Quiz: test yourself</h2>
+<p>Pick an answer to see whether it's right and why.</p>
+<div class="quiz" id="quiz"></div>
+<p class="score" id="score" aria-live="polite"></p>
+<button class="reset" id="reset" type="button">Reset quiz</button>
+
+<!-- 13 -->
+<h2 id="takeaways">13. Key takeaways</h2>
+<ul>
+  <li>A <strong>Standard public IP is closed by default</strong>; with no NSG allowing it, inbound traffic is dropped and SSH times out.</li>
+  <li>An <strong>NSG</strong> is a free, stateful layer 3–4 firewall attached to subnets and/or NICs in the same region.</li>
+  <li>Rules are checked <strong>lowest priority number first</strong>, and the <strong>first match wins</strong>.</li>
+  <li>The <strong>defaults</strong> allow traffic inside the VNet and outbound to the internet, and deny inbound from the internet.</li>
+  <li>With NSGs on both subnet and NIC, traffic must pass <strong>both</strong>. Prefer subnet-level NSGs.</li>
+  <li>Use <strong>service tags</strong> and <strong>ASGs</strong> instead of hard-coded IPs, and never leave SSH or RDP open to Any; use your IP, Bastion or JIT.</li>
+</ul>
+<p><strong>Next in the series:</strong> Azure Bastion, so we can remove the public IP and the SSH rule altogether.</p>
+
+<footer>
+  Written by Sunke Nithin while learning Azure for AZ-900. Lab performed on an Azure free account; the subscription ID, directory name and public IP in the screenshots are blurred.
+</footer>
+</div>
+
+<script>
+const QS=[
+ {q:"A VM has a Standard public IP and no NSG on its subnet or NIC. What happens to inbound SSH?",
+  o:["It's allowed, because no NSG means no filtering","It's blocked, because Standard public IPs are closed unless an NSG allows the traffic","It's allowed only from inside Azure","It's redirected to Azure Bastion"],a:1,
+  w:"Standard SKU public IPs are secure by default: inbound traffic needs an NSG rule that allows it."},
+ {q:"An NSG has 'Deny Any at 100' and 'Allow TCP 443 at 200'. Is HTTPS allowed?",
+  o:["Yes, Allow always wins","No, rule 100 matches first and denies it","Yes, more specific rules win","Only from VirtualNetwork"],a:1,
+  w:"Rules are evaluated from the lowest number and the first match wins, so the Deny at 100 applies."},
+ {q:"Which default inbound rule blocks traffic from the internet?",
+  o:["AllowVnetInBound (65000)","AllowAzureLoadBalancerInBound (65001)","DenyAllInBound (65500)","DenyInternetInBound (4096)"],a:2,
+  w:"DenyAllInBound at 65500 catches anything not allowed by a higher-priority (lower-numbered) rule."},
+ {q:"An inbound rule allows TCP 22 in. Do you need an outbound rule for the SSH replies?",
+  o:["Yes, an outbound TCP 22 rule","Yes, an outbound rule for ephemeral ports","No, NSGs are stateful and allow return traffic automatically","Only if the VM runs Windows"],a:2,
+  w:"NSGs track connections, so replies to an allowed connection are let through automatically."},
+ {q:"A subnet NSG allows port 80, but a NIC NSG on the VM doesn't. Does HTTP reach the VM?",
+  o:["Yes, the subnet NSG wins","Yes, the NIC NSG is ignored","No, traffic must be allowed by both","Only from the same VNet"],a:2,
+  w:"When NSGs exist at both levels, inbound traffic must pass the subnet NSG and then the NIC NSG."},
+ {q:"You want web VMs to reach database VMs on port 1521 without listing IP addresses. What should you use?",
+  o:["Service tags","Application security groups","Route tables","Private endpoints"],a:1,
+  w:"ASGs group NICs by role, so one rule (asg-web → asg-db on 1521) covers every current and future VM in each group."},
+ {q:"Which Network Watcher tool tells you exactly which NSG rule allowed or denied a specific packet?",
+  o:["IP flow verify","Connection monitor","Packet capture","Topology"],a:0,
+  w:"IP flow verify checks a 5-tuple against the effective rules and reports the rule that decided it."},
+ {q:"Why is 'Source: Any, Port: 22' a bad rule to leave in place?",
+  o:["It costs extra","It blocks outbound traffic","It exposes SSH to the whole internet, where bots scan constantly","It disables the default rules"],a:2,
+  w:"Restrict the source to your own IP, or use Bastion or just-in-time access so no public SSH is needed."}
+];
+const box=document.getElementById('quiz'),score=document.getElementById('score');
+let answered=0,right=0;
+function render(){
+  box.innerHTML='';answered=0;right=0;score.textContent='';
+  QS.forEach((it,i)=>{
+    const d=document.createElement('div');d.className='q';
+    d.innerHTML=`<p class="qt">${i+1}. ${it.q}</p><div class="opts"></div><p class="why" hidden></p>`;
+    const opts=d.querySelector('.opts'),why=d.querySelector('.why');
+    it.o.forEach((t,j)=>{
+      const b=document.createElement('button');b.type='button';b.id=`q${i}o${j}`;b.textContent=t;
+      b.addEventListener('click',()=>{
+        opts.querySelectorAll('button').forEach((x,k)=>{x.disabled=true;if(k===it.a)x.classList.add('ok')});
+        if(j!==it.a)b.classList.add('no');else right++;
+        answered++;
+        why.textContent=(j===it.a?'Correct. ':'Not quite. ')+it.w;why.hidden=false;
+        if(answered===QS.length)score.textContent=`You scored ${right} out of ${QS.length}.`;
+      });
+      opts.appendChild(b);
+    });
+    box.appendChild(d);
+  });
+}
+document.getElementById('reset').addEventListener('click',render);
+render();
+</script>
+</body>
+</html>
