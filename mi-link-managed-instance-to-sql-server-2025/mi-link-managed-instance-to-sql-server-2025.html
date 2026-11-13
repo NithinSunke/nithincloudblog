@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Migrating Azure SQL Managed Instance to SQL Server 2025 on an Azure VM with MI Link</title>
+<meta name="description" content="Hands-on lab: reverse-migrate a database from Azure SQL Managed Instance (SQL Server 2025 update policy) to SQL Server 2025 on an Azure VM using the Managed Instance link, including networking, TDE, validation and sign-in issues and their fixes.">
+<style>
+  :root{
+    --bg:#f7f8fa; --card:#ffffff; --ink:#1d2330; --muted:#5b6474; --line:#e3e7ee;
+    --accent:#0f6cbd; --accent-soft:#e6f0fa; --ok:#1a7f37; --warn:#9a6700; --bad:#c62828;
+    --code-bg:#0f172a; --code-ink:#e2e8f0;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0e1117; --card:#161b22; --ink:#e6edf3; --muted:#9aa4b2; --line:#2a313c;
+      --accent:#58a6ff; --accent-soft:#13233a; --code-bg:#0b0f16; --code-ink:#dbe4ee; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 "Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif}
+  header.hero{background:linear-gradient(135deg,#0f6cbd,#2b3a67);color:#fff;padding:48px 16px 40px}
+  .wrap{max-width:900px;margin:0 auto;padding:0 16px}
+  .hero h1{margin:0 0 12px;font-size:clamp(1.6rem,3.5vw,2.3rem);line-height:1.25}
+  .hero p{margin:0;opacity:.9}
+  .meta{margin-top:14px;font-size:.9rem;opacity:.85}
+  .tags span{display:inline-block;background:rgba(255,255,255,.15);border-radius:999px;padding:2px 10px;margin:6px 6px 0 0;font-size:.8rem}
+  main .wrap{padding-top:28px;padding-bottom:60px}
+  nav.toc{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 20px;margin-bottom:28px}
+  nav.toc h2{margin:0 0 8px;font-size:1rem}
+  nav.toc ol{margin:0;padding-left:20px}
+  nav.toc a{color:var(--accent);text-decoration:none}
+  section{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:22px 24px;margin-bottom:22px}
+  h2{font-size:1.4rem;margin:0 0 12px}
+  h3{font-size:1.1rem;margin:22px 0 8px}
+  p{margin:10px 0}
+  .callout{border-left:4px solid var(--accent);background:var(--accent-soft);padding:12px 14px;border-radius:6px;margin:14px 0}
+  .callout.warn{border-color:var(--warn);background:rgba(154,103,0,.10)}
+  .callout.bad{border-color:var(--bad);background:rgba(198,40,40,.08)}
+  .callout.ok{border-color:var(--ok);background:rgba(26,127,55,.08)}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:.92rem;display:block;overflow-x:auto}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:var(--accent-soft)}
+  pre{position:relative;background:var(--code-bg);color:var(--code-ink);padding:14px 16px;border-radius:8px;overflow-x:auto;font-size:.85rem;line-height:1.5}
+  code{font-family:Consolas,"Cascadia Code",Menlo,monospace}
+  p code,li code,td code{background:var(--accent-soft);padding:1px 5px;border-radius:4px;font-size:.88em}
+  .copy{position:absolute;top:8px;right:8px;background:#334155;color:#fff;border:0;border-radius:5px;padding:3px 9px;font-size:.75rem;cursor:pointer}
+  .copy:hover{background:#475569}
+  ol.steps>li{margin-bottom:8px}
+  figure{margin:16px 0}
+  figure svg{width:100%;height:auto;display:block}
+  figcaption{font-size:.85rem;color:var(--muted);text-align:center;margin-top:6px}
+  .issue{border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin:14px 0}
+  .issue h3{margin-top:4px}
+  .label{display:inline-block;font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:4px;margin-right:6px}
+  .l-sym{background:rgba(198,40,40,.12);color:var(--bad)}
+  .l-cause{background:rgba(154,103,0,.14);color:var(--warn)}
+  .l-fix{background:rgba(26,127,55,.12);color:var(--ok)}
+  footer{text-align:center;color:var(--muted);font-size:.85rem;padding:24px 16px 40px}
+  a{color:var(--accent)}
+
+/* Back to the blog index; uses this page's own accent so it fits either theme. */
+.back-home{display:inline-block;margin:0 0 14px;font-size:14px;font-weight:600;
+  color:var(--accent);text-decoration:none}
+.back-home:hover{text-decoration:underline}
+/* The hero is dark in both themes, so the accent would not read against it. */
+.hero .back-home{color:#fff;opacity:.85}
+.hero .back-home:hover{opacity:1}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <a class="back-home" href="../index.html">&#8592;&nbsp;All articles</a>
+    <h1>Migrating Azure SQL Managed Instance to SQL Server 2025 on an Azure VM with MI Link</h1>
+    <p>A hands-on reverse migration (PaaS → IaaS) using the Managed Instance link, including the five issues I hit in the lab and exactly how I fixed them.</p>
+    <div class="meta">By Nithin Sunke · November 2026</div>
+    <div class="tags"><span>Azure SQL Managed Instance</span><span>SQL Server 2025</span><span>MI Link</span><span>Migration</span><span>Lab</span></div>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+
+<nav class="toc">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#why">Why reverse-migrate with MI link?</a></li>
+    <li><a href="#arch">Architecture</a></li>
+    <li><a href="#prereq">Prerequisites</a></li>
+    <li><a href="#network">Step 1 – Networking</a></li>
+    <li><a href="#mi">Step 2 – Create the source Managed Instance</a></li>
+    <li><a href="#tde">Step 3 – Handle TDE on the source database</a></li>
+    <li><a href="#vm">Step 4 – Create and prepare the SQL Server 2025 VM</a></li>
+    <li><a href="#conn">Step 5 – Test connectivity</a></li>
+    <li><a href="#link">Step 6 – Create the MI link</a></li>
+    <li><a href="#failover">Step 7 – Monitor and fail over to the VM</a></li>
+    <li><a href="#post">Step 8 – Post-migration tasks</a></li>
+    <li><a href="#issues">Issues I hit and how I fixed them</a></li>
+    <li><a href="#cleanup">Cleanup and references</a></li>
+  </ol>
+</nav>
+
+<section id="why">
+  <h2>Why reverse-migrate with MI link?</h2>
+  <p>Most MI link articles cover moving SQL Server <em>into</em> Azure SQL Managed Instance. The link also works the other way: with SQL Server 2025 and a managed instance on the <strong>SQL Server 2025 update policy</strong>, the managed instance can be the <em>initial primary</em> and SQL Server the secondary. After a planned failover, the database is read/write on SQL Server with near-zero downtime.</p>
+  <p>Typical reasons: moving back to IaaS for feature needs, cost, regulatory copies, or keeping an exit path from PaaS.</p>
+  <div class="callout warn"><strong>The one rule that matters:</strong> the managed instance must use the <strong>SQL Server 2025 update policy</strong>. Linking or failing over from MI to SQL Server 2025 is not supported with a mismatched policy, and moving an instance to a newer policy permanently upgrades its internal database format. Set it when you create the MI.</div>
+</section>
+
+<section id="arch">
+  <h2>Architecture</h2>
+  <p>Both servers sit in one VNet on separate subnets. The link is a distributed availability group between the MI and SQL Server, replicating over the database mirroring endpoint on TCP 5022 in both directions.</p>
+  <figure>
+    <svg viewBox="0 0 860 470" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Architecture: VNet with MI subnet and VM subnet linked over TCP 5022">
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0f6cbd"/></marker>
+        <marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1a7f37"/></marker>
+      </defs>
+      <rect x="10" y="10" width="840" height="450" rx="14" fill="none" stroke="#8a96a8" stroke-dasharray="6 5"/>
+      <text x="28" y="38" font-size="15" font-weight="600" fill="#5b6474">Resource group rg-milink-lab · Region (single)</text>
+      <rect x="30" y="55" width="800" height="330" rx="12" fill="#e6f0fa" fill-opacity=".55" stroke="#0f6cbd"/>
+      <text x="48" y="80" font-size="14" font-weight="600" fill="#0f6cbd">VNet vnet-milink · 10.50.0.0/16</text>
+
+      <rect x="50" y="95" width="330" height="270" rx="10" fill="#ffffff" stroke="#6b7a90"/>
+      <text x="66" y="118" font-size="13" font-weight="600" fill="#1d2330">snet-sqlmi · 10.50.1.0/24</text>
+      <text x="66" y="136" font-size="11" fill="#5b6474">Delegated: Microsoft.Sql/managedInstances</text>
+      <rect x="80" y="155" width="270" height="110" rx="10" fill="#dbeafe" stroke="#0f6cbd"/>
+      <text x="215" y="185" text-anchor="middle" font-size="14" font-weight="700" fill="#0f2b4d">Azure SQL Managed Instance</text>
+      <text x="215" y="205" text-anchor="middle" font-size="12" fill="#0f2b4d">sqlmi-src-01 · General Purpose 4 vCore</text>
+      <text x="215" y="223" text-anchor="middle" font-size="12" fill="#0f2b4d">Update policy: SQL Server 2025</text>
+      <text x="215" y="245" text-anchor="middle" font-size="12" font-weight="600" fill="#0f6cbd">Initial PRIMARY (NovaBank)</text>
+      <rect x="80" y="282" width="270" height="62" rx="8" fill="#fff7e6" stroke="#9a6700"/>
+      <text x="215" y="304" text-anchor="middle" font-size="12" font-weight="600" fill="#5c3d00">NSG nsg-sqlmi + route table</text>
+      <text x="215" y="322" text-anchor="middle" font-size="11" fill="#5c3d00">In: 5022, 1433, 11000-11999 · Out: 5022</text>
+      <text x="215" y="337" text-anchor="middle" font-size="11" fill="#5c3d00">source port always *</text>
+
+      <rect x="480" y="95" width="330" height="270" rx="10" fill="#ffffff" stroke="#6b7a90"/>
+      <text x="496" y="118" font-size="13" font-weight="600" fill="#1d2330">snet-sqlvm · 10.50.2.0/24</text>
+      <text x="496" y="136" font-size="11" fill="#5b6474">VM private IP 10.50.2.4 (static)</text>
+      <rect x="510" y="155" width="270" height="110" rx="10" fill="#dcfce7" stroke="#1a7f37"/>
+      <text x="645" y="185" text-anchor="middle" font-size="14" font-weight="700" fill="#0d3b1e">SQL Server 2025 on Azure VM</text>
+      <text x="645" y="205" text-anchor="middle" font-size="12" fill="#0d3b1e">vm-sql2025-tgt · Windows Server</text>
+      <text x="645" y="223" text-anchor="middle" font-size="12" fill="#0d3b1e">Always On AG enabled · DMK · TF 1800/9567</text>
+      <text x="645" y="245" text-anchor="middle" font-size="12" font-weight="600" fill="#1a7f37">SECONDARY → new PRIMARY</text>
+      <rect x="510" y="282" width="270" height="62" rx="8" fill="#fff7e6" stroke="#9a6700"/>
+      <text x="645" y="304" text-anchor="middle" font-size="12" font-weight="600" fill="#5c3d00">NSG nsg-sqlvm + Windows Firewall</text>
+      <text x="645" y="322" text-anchor="middle" font-size="11" fill="#5c3d00">In: 5022 from 10.50.1.0/24, 3389</text>
+      <text x="645" y="337" text-anchor="middle" font-size="11" fill="#5c3d00">Firewall rule profile: Any</text>
+
+      <line x1="352" y1="190" x2="508" y2="190" stroke="#0f6cbd" stroke-width="3" marker-end="url(#ar)"/>
+      <text x="430" y="180" text-anchor="middle" font-size="12" font-weight="600" fill="#0f6cbd">MI → VM : 5022</text>
+      <line x1="508" y1="230" x2="352" y2="230" stroke="#1a7f37" stroke-width="3" marker-end="url(#ag)"/>
+      <text x="430" y="250" text-anchor="middle" font-size="12" font-weight="600" fill="#1a7f37">VM → MI : 5022, 1433, 11000-11999</text>
+
+      <rect x="30" y="400" width="390" height="48" rx="10" fill="#f3f4f6" stroke="#8a96a8"/>
+      <text x="225" y="420" text-anchor="middle" font-size="12" font-weight="600" fill="#1d2330">Admin: SSMS 21+ on the VM</text>
+      <text x="225" y="437" text-anchor="middle" font-size="11" fill="#5b6474">Azure sign-in with an Entra ID (work) account</text>
+      <rect x="440" y="400" width="390" height="48" rx="10" fill="#f3f4f6" stroke="#8a96a8"/>
+      <text x="635" y="420" text-anchor="middle" font-size="12" font-weight="600" fill="#1d2330">Flow: seed → sync → planned failover</text>
+      <text x="635" y="437" text-anchor="middle" font-size="11" fill="#5b6474">App connection string moves MI → VM</text>
+    </svg>
+    <figcaption>Figure 1 – Lab architecture: MI as initial primary, SQL Server 2025 VM as secondary, linked over the mirroring endpoint.</figcaption>
+  </figure>
+
+  <table>
+    <tr><th>Component</th><th>Name in this lab</th><th>Key settings</th></tr>
+    <tr><td>Resource group</td><td>rg-milink-lab</td><td>All resources in one region</td></tr>
+    <tr><td>VNet</td><td>vnet-milink</td><td>10.50.0.0/16, two subnets, no peering</td></tr>
+    <tr><td>MI subnet</td><td>snet-sqlmi</td><td>10.50.1.0/24, delegated, NSG + route table</td></tr>
+    <tr><td>VM subnet</td><td>snet-sqlvm</td><td>10.50.2.0/24, NSG nsg-sqlvm</td></tr>
+    <tr><td>Managed instance</td><td>sqlmi-src-01</td><td>General Purpose, 4 vCores, update policy SQL Server 2025</td></tr>
+    <tr><td>SQL VM</td><td>vm-sql2025-tgt</td><td>SQL Server 2025, static IP 10.50.2.4, SSMS 21+</td></tr>
+    <tr><td>Database</td><td>NovaBank</td><td>~2.8 GB, one database per link</td></tr>
+  </table>
+</section>
+
+<section id="prereq">
+  <h2>Prerequisites</h2>
+  <ul>
+    <li>Azure subscription with Contributor on the resource group.</li>
+    <li><strong>An Entra ID work/school account</strong> for the SSMS Azure sign-in. Personal Microsoft accounts (outlook.com, outlook.in) are rejected – see <a href="#issue5">issue 5</a>.</li>
+    <li>sysadmin on the SQL Server VM and the MI admin login.</li>
+    <li>SSMS 21 or later on the VM (it contains the MI link wizards).</li>
+    <li>SQL Server 2025 patched to the latest cumulative update.</li>
+    <li>Azure CLI, or simply Azure Cloud Shell in the portal (the VM has no CLI by default – <a href="#issue3">issue 3</a>).</li>
+  </ul>
+</section>
+
+<section id="network">
+  <h2>Step 1 – Networking</h2>
+  <p>Run these in Azure Cloud Shell (Bash).</p>
+  <h3>1.1 Resource group, VNet and VM subnet</h3>
+<pre><code>az group create -n rg-milink-lab -l westus3
+az network vnet create -g rg-milink-lab -n vnet-milink \
+  --address-prefixes 10.50.0.0/16 \
+  --subnet-name snet-sqlvm --subnet-prefixes 10.50.2.0/24</code></pre>
+
+  <h3>1.2 MI subnet (delegated, with NSG and route table)</h3>
+<pre><code>az network nsg create -g rg-milink-lab -n nsg-sqlmi
+az network route-table create -g rg-milink-lab -n rt-sqlmi
+az network vnet subnet create -g rg-milink-lab --vnet-name vnet-milink \
+  -n snet-sqlmi --address-prefixes 10.50.1.0/24 \
+  --delegations Microsoft.Sql/managedInstances \
+  --network-security-group nsg-sqlmi --route-table rt-sqlmi</code></pre>
+
+  <h3>1.3 VM subnet NSG</h3>
+<pre><code>az network nsg create -g rg-milink-lab -n nsg-sqlvm
+az network vnet subnet update -g rg-milink-lab --vnet-name vnet-milink \
+  -n snet-sqlvm --network-security-group nsg-sqlvm</code></pre>
+
+  <h3>1.4 Link rules</h3>
+  <table>
+    <tr><th>NSG</th><th>Direction</th><th>Source</th><th>Destination</th><th>Dest. port</th><th>Purpose</th></tr>
+    <tr><td>nsg-sqlmi</td><td>Inbound</td><td>10.50.2.0/24</td><td>10.50.1.0/24</td><td>5022</td><td>VM → MI endpoint</td></tr>
+    <tr><td>nsg-sqlmi</td><td>Outbound</td><td>10.50.1.0/24</td><td>10.50.2.0/24</td><td>5022</td><td>MI → VM endpoint</td></tr>
+    <tr><td>nsg-sqlmi</td><td>Inbound</td><td>10.50.2.0/24</td><td>10.50.1.0/24</td><td>1433, 11000-11999</td><td>SSMS/apps → MI (redirect)</td></tr>
+    <tr><td>nsg-sqlvm</td><td>Inbound</td><td>10.50.1.0/24</td><td>10.50.2.0/24</td><td>5022</td><td>MI → VM endpoint</td></tr>
+    <tr><td>nsg-sqlvm</td><td>Inbound</td><td>Your public IP</td><td>10.50.2.0/24</td><td>3389</td><td>RDP (or use Bastion)</td></tr>
+  </table>
+  <div class="callout bad"><strong>Source port must be <code>*</code>.</strong> Only the destination port is fixed. The caller connects from a random high port, so a rule with source port 5022 never matches. This exact mistake broke my MI → VM connectivity (<a href="#issue2">issue 2</a>).</div>
+<pre><code>az network nsg rule create -g rg-milink-lab --nsg-name nsg-sqlmi -n allow-5022-in-from-vm \
+  --priority 300 --direction Inbound --access Allow --protocol Tcp \
+  --source-address-prefixes 10.50.2.0/24 --source-port-ranges '*' \
+  --destination-address-prefixes 10.50.1.0/24 --destination-port-ranges 5022
+
+az network nsg rule create -g rg-milink-lab --nsg-name nsg-sqlmi -n allow-5022-out-to-vm \
+  --priority 300 --direction Outbound --access Allow --protocol Tcp \
+  --source-address-prefixes 10.50.1.0/24 --source-port-ranges '*' \
+  --destination-address-prefixes 10.50.2.0/24 --destination-port-ranges 5022
+
+az network nsg rule create -g rg-milink-lab --nsg-name nsg-sqlmi -n allow-sql-in-from-vm \
+  --priority 310 --direction Inbound --access Allow --protocol Tcp \
+  --source-address-prefixes 10.50.2.0/24 --source-port-ranges '*' \
+  --destination-address-prefixes 10.50.1.0/24 --destination-port-ranges 1433 11000-11999
+
+az network nsg rule create -g rg-milink-lab --nsg-name nsg-sqlvm -n allow-5022-in-from-mi \
+  --priority 300 --direction Inbound --access Allow --protocol Tcp \
+  --source-address-prefixes 10.50.1.0/24 --source-port-ranges '*' \
+  --destination-port-ranges 5022
+
+az network nsg rule create -g rg-milink-lab --nsg-name nsg-sqlvm -n allow-rdp-myip \
+  --priority 320 --direction Inbound --access Allow --protocol Tcp \
+  --source-address-prefixes &lt;your-public-ip&gt;/32 --source-port-ranges '*' \
+  --destination-port-ranges 3389</code></pre>
+  <p>Leave the <code>Microsoft.Sql-managedInstances_UseOnly_*</code> rules that the MI deployment adds untouched. If the portal also attached an NSG to the VM's NIC, add the 5022 inbound rule there too.</p>
+</section>
+
+<section id="mi">
+  <h2>Step 2 – Create the source Managed Instance</h2>
+  <ol class="steps">
+    <li>Portal → <strong>Azure SQL</strong> → Create → <strong>SQL managed instances</strong> → Single instance.</li>
+    <li><strong>Basics</strong>: rg-milink-lab, name sqlmi-src-01, same region. General Purpose, 4 vCores, 64 GB. SQL authentication (e.g. <code>miadmin</code>).</li>
+    <li><strong>Networking</strong>: vnet-milink / snet-sqlmi, connection type Redirect, public endpoint disabled.</li>
+    <li><strong>Additional settings → Update policy → SQL Server 2025</strong>. Keep the default collation and match it on the VM.</li>
+    <li>Review + create. Provisioning takes roughly 30 minutes to a few hours.</li>
+  </ol>
+  <p>Once it's up, copy the host name (e.g. <code>sqlmi-src-01.xxxx.database.windows.net</code>), confirm the update policy on the Overview page, and create or restore your test database (NovaBank in my lab). MI databases are always in FULL recovery and backed up automatically, so no manual backup is needed when MI is the initial primary.</p>
+</section>
+
+<section id="tde">
+  <h2>Step 3 – Handle TDE on the source database</h2>
+  <p>MI encrypts every new database with TDE using a <strong>service-managed</strong> key. SQL Server can never access that Microsoft-held certificate, so the link wizard flags the database with <em>Service-managed TDE protector</em> and won't let you select it (<a href="#issue1">issue 1</a>).</p>
+  <h3>Option A – Decrypt (used in this lab)</h3>
+<pre><code>-- on the MI
+ALTER DATABASE [NovaBank] SET ENCRYPTION OFF;
+
+-- repeat until encryption_state = 1 (5 = decrypting)
+SELECT DB_NAME(database_id) AS db, encryption_state, percent_complete
+FROM sys.dm_database_encryption_keys
+WHERE database_id = DB_ID('NovaBank');
+
+-- then remove the key
+USE [NovaBank];
+DROP DATABASE ENCRYPTION KEY;
+
+SELECT name, is_encrypted FROM sys.databases WHERE name = 'NovaBank';  -- 0</code></pre>
+  <p>Wait 10–15 minutes for an automatic log backup to truncate log records written while TDE was on, then <strong>close and reopen</strong> the wizard. Its Refresh button didn't re-read the encryption state for me.</p>
+  <h3>Option B – Customer-managed key (production-style)</h3>
+  <p>Move the MI's TDE protector to a key in Azure Key Vault (grant the MI's managed identity <em>Key Vault Crypto Service Encryption User</em>). On the VM, install the SQL Server Connector for Azure Key Vault, enable the EKM provider, and open the same key with <code>CREATE ASYMMETRIC KEY … FROM PROVIDER … CREATION_DISPOSITION = OPEN_EXISTING</code> plus a login and credential mapped to it. The database stays encrypted end to end.</p>
+</section>
+
+<section id="vm">
+  <h2>Step 4 – Create and prepare the SQL Server 2025 VM</h2>
+  <h3>4.1 Deploy</h3>
+  <ol class="steps">
+    <li>Portal → Azure SQL → Create → <strong>SQL virtual machines</strong> → <em>SQL Server 2025 Developer (or Enterprise) on Windows Server</em>.</li>
+    <li>Name vm-sql2025-tgt, size Standard_D4s_v5, VNet vnet-milink / snet-sqlvm.</li>
+    <li>SQL connectivity <strong>Private</strong>, port 1433, SQL authentication on; separate data and log disks.</li>
+    <li>After deployment, set the NIC private IP to <strong>Static</strong> (10.50.2.4).</li>
+  </ol>
+  <h3>4.2 Enable Always On availability groups</h3>
+<pre><code>Install-Module SqlServer -Force -AllowClobber
+Enable-SqlAlwaysOn -ServerInstance "localhost" -Force   # restarts SQL Server</code></pre>
+  <h3>4.3 Trace flags 1800 and 9567</h3>
+  <p>1800 aligns log I/O with MI's 4 KB sector size; 9567 compresses automatic seeding. Apply now and persist as startup parameters (<code>-T1800</code>, <code>-T9567</code> in SQL Server Configuration Manager).</p>
+<pre><code>DBCC TRACEON (1800, -1);
+DBCC TRACEON (9567, -1);
+DBCC TRACESTATUS (-1);
+SELECT SERVERPROPERTY('IsHadrEnabled') AS hadr_enabled;   -- 1</code></pre>
+  <h3>4.4 Database master key (the validator fails without it)</h3>
+<pre><code>USE master;
+IF NOT EXISTS (SELECT 1 FROM sys.symmetric_keys WHERE name = '##MS_DatabaseMasterKey##')
+  CREATE MASTER KEY ENCRYPTION BY PASSWORD = '&lt;StrongPassword&gt;';</code></pre>
+  <h3>4.5 Certificate and mirroring endpoint (if the wizard asks for them)</h3>
+<pre><code>USE master;
+CREATE CERTIFICATE MILinkCert
+  WITH SUBJECT = 'MI link endpoint certificate', EXPIRY_DATE = '2030-12-31';
+GO
+CREATE ENDPOINT MILinkEndpoint
+  STATE = STARTED
+  AS TCP (LISTENER_PORT = 5022, LISTENER_IP = ALL)
+  FOR DATABASE_MIRRORING (
+      ROLE = ALL,
+      AUTHENTICATION = CERTIFICATE MILinkCert,
+      ENCRYPTION = REQUIRED ALGORITHM AES);</code></pre>
+  <h3>4.6 Windows Firewall</h3>
+<pre><code>New-NetFirewallRule -DisplayName "SQL MI link 5022" -Direction Inbound -Protocol TCP -LocalPort 5022 -Action Allow -Profile Any
+New-NetFirewallRule -DisplayName "SQL 1433" -Direction Inbound -Protocol TCP -LocalPort 1433 -Action Allow -Profile Any</code></pre>
+  <div class="callout">Use <code>-Profile Any</code>: Azure VM networks often show up as the Public profile, so a Domain/Private-only rule never applies.</div>
+</section>
+
+<section id="conn">
+  <h2>Step 5 – Test connectivity</h2>
+  <p>From the VM:</p>
+<pre><code>$mi = "sqlmi-src-01.xxxx.database.windows.net"
+Resolve-DnsName $mi
+Test-NetConnection $mi -Port 1433
+Test-NetConnection $mi -Port 5022</code></pre>
+  <p>Then in SSMS, run the MI link <strong>Network Checker</strong> (right-click the MI database → Azure SQL Managed Instance link → Test connection). It creates helper Agent jobs on both sides and tests each direction. Use the VM's <strong>private IP</strong> as the SQL Server address – MI can't resolve a bare VM host name.</p>
+  <div class="callout ok">Goal: both <em>SQL Server can reach SQL Managed Instance</em> and <em>SQL Managed Instance can reach SQL Server</em> show green.</div>
+  <p>If a direction fails, Network Watcher's IP flow verify names the blocking NSG rule:</p>
+<pre><code>az network watcher test-ip-flow -g rg-milink-lab --vm vm-sql2025-tgt \
+  --direction Inbound --protocol TCP \
+  --local 10.50.2.4:5022 --remote &lt;MI-private-IP&gt;:12345</code></pre>
+</section>
+
+<section id="link">
+  <h2>Step 6 – Create the MI link</h2>
+  <ol class="steps">
+    <li>On the VM, open SSMS and connect to the <strong>MI</strong> (the initial primary) and to the local SQL Server.</li>
+    <li>Under the MI, right-click <strong>NovaBank</strong> → <strong>Azure SQL Managed Instance link</strong> → <strong>New…</strong></li>
+    <li><strong>Specify Link Options / Requirements</strong>: fix anything flagged.</li>
+    <li><strong>Select Databases</strong>: NovaBank. It must not show the TDE warning (Step 3).</li>
+    <li><strong>Specify Secondary Replica</strong> → Add secondary replica → connect to the SQL Server VM.</li>
+    <li><strong>Login to Azure</strong>: sign in with your Entra ID work account.</li>
+    <li><strong>Validation</strong>: everything green; trace-flag rows may stay yellow if you skip them.</li>
+    <li><strong>Summary</strong> → optionally <em>Script</em> to save the generated T-SQL/PowerShell → <strong>Finish</strong>.</li>
+  </ol>
+  <p>The wizard builds the availability group and distributed AG, exchanges certificates and starts automatic seeding. When done, NovaBank appears on the VM as a read-only, synchronized secondary.</p>
+<pre><code>-- on MI
+INSERT NovaBank.dbo.Orders (Customer, Amount) VALUES ('LinkTest', 1);
+-- on VM (read-only secondary)
+SELECT TOP 5 * FROM NovaBank.dbo.Orders ORDER BY OrderId DESC;</code></pre>
+</section>
+
+<section id="failover">
+  <h2>Step 7 – Monitor and fail over to the VM</h2>
+  <h3>Monitor</h3>
+<pre><code>SELECT DB_NAME(database_id) AS db, is_primary_replica,
+       synchronization_state_desc, synchronization_health_desc,
+       last_hardened_lsn, last_commit_time
+FROM sys.dm_hadr_database_replica_states;</code></pre>
+  <h3>Cutover</h3>
+  <ol class="steps">
+    <li>Stop the application / writes on the MI.</li>
+    <li>Confirm both replicas report the same <code>last_hardened_lsn</code> and SYNCHRONIZED; compare row counts.</li>
+    <li>SSMS (connected to MI) → NovaBank → Azure SQL Managed Instance link → <strong>Failover…</strong></li>
+    <li>Sign in to Azure with the Entra ID account, choose <strong>Planned failover</strong>.</li>
+    <li>Tick <strong>Remove link after successful failover</strong> for a one-way migration, or keep the link to be able to fail back to MI.</li>
+    <li>Verify on the VM and repoint the application.</li>
+  </ol>
+<pre><code>SELECT name, state_desc, is_read_only, recovery_model_desc
+FROM sys.databases WHERE name = 'NovaBank';   -- ONLINE, is_read_only = 0</code></pre>
+</section>
+
+<section id="post">
+  <h2>Step 8 – Post-migration tasks</h2>
+  <ul>
+    <li>Recreate logins (match SIDs for SQL logins), Agent jobs, linked servers and credentials – the link only moves the database.</li>
+    <li>Fix orphaned users: <code>ALTER USER [x] WITH LOGIN = [x];</code></li>
+    <li>Configure backups on the VM and take a full backup immediately.</li>
+    <li>Optionally re-enable TDE on the VM with a local certificate (back up the certificate!).</li>
+    <li>Update statistics; consider <code>COMPATIBILITY_LEVEL = 170</code>.</li>
+    <li>Remove the link (if kept) and stop/delete the MI when no longer needed.</li>
+  </ul>
+</section>
+
+<section id="issues">
+  <h2>Issues I hit and how I fixed them</h2>
+  <p>These came up in order during the lab. Each one blocked progress until fixed.</p>
+
+  <div class="issue" id="issue1">
+    <h3>1. "Service-managed TDE protector" in Select Databases</h3>
+    <p><span class="label l-sym">Symptom</span>NovaBank (2872 MB) showed a warning icon and couldn't be selected. Decrypting alone didn't clear it.</p>
+    <p><span class="label l-cause">Cause</span>MI's default TDE uses a Microsoft-managed certificate that SQL Server can't obtain; the database encryption key was still present after decryption.</p>
+    <p><span class="label l-fix">Fix</span><code>SET ENCRYPTION OFF</code> → wait for <code>encryption_state = 1</code> → <code>DROP DATABASE ENCRYPTION KEY</code> → wait for a log backup → close and reopen the wizard.</p>
+  </div>
+
+  <div class="issue" id="issue2">
+    <h3>2. Network Checker: "SQL Managed Instance cannot reach SQL Server"</h3>
+    <p><span class="label l-sym">Symptom</span>SQL Server → MI on ports 5022 and 11002 succeeded; MI → SQL Server failed.</p>
+    <p><span class="label l-cause">Cause</span>The inbound rule on the VM NSG had <strong>SourcePortRanges = 5022</strong>. The MI connects from an ephemeral port, so the rule never matched and DenyAllInbound dropped the traffic. The MI-side NSG was fine.</p>
+    <p><span class="label l-fix">Fix</span></p>
+<pre><code>az network nsg rule update -g rg-milink-lab --nsg-name nsg-sqlvm -n mi-vm-endpoint --source-port-ranges '*'
+az network nsg rule update -g rg-milink-lab --nsg-name nsg-sqlvm -n vm-mi --source-port-ranges '*'</code></pre>
+  </div>
+
+  <div class="issue" id="issue3">
+    <h3>3. "az is not recognized" on the VM</h3>
+    <p><span class="label l-sym">Symptom</span>Running <code>az network nsg rule list</code> in PowerShell on the VM failed.</p>
+    <p><span class="label l-cause">Cause</span>Azure CLI isn't installed on marketplace SQL VMs.</p>
+    <p><span class="label l-fix">Fix</span>Use Azure Cloud Shell in the portal, or install it: <code>winget install -e --id Microsoft.AzureCLI</code>, reopen PowerShell, <code>az login</code>.</p>
+  </div>
+
+  <div class="issue" id="issue4">
+    <h3>4. Validation: "Database master key is not present on the SQL Server"</h3>
+    <p><span class="label l-sym">Symptom</span>First validation row red; certificate and endpoint checks skipped; trace flag 1800 and 9567 warnings.</p>
+    <p><span class="label l-cause">Cause</span>No database master key in <code>master</code> on the VM, so the endpoint certificate couldn't be created; trace flags not set.</p>
+    <p><span class="label l-fix">Fix</span><code>CREATE MASTER KEY</code> in master, <code>DBCC TRACEON (1800, -1)</code> and <code>(9567, -1)</code>, then <em>Re-run validation</em>. Create the certificate and endpoint (Step 4.5) if those rows turn red.</p>
+  </div>
+
+  <div class="issue" id="issue5">
+    <h3>5. Failover sign-in: AADSTS500200</h3>
+    <p><span class="label l-sym">Symptom</span>"User account '…@outlook.in' is a personal Microsoft account. Personal Microsoft accounts are not supported for this application."</p>
+    <p><span class="label l-cause">Cause</span>The SSMS Azure sign-in only accepts Entra ID work/school accounts.</p>
+    <p><span class="label l-fix">Fix</span>Entra ID → Users → New user (<code>sqladmin@&lt;tenant&gt;.onmicrosoft.com</code>) → assign <strong>Contributor</strong> on rg-milink-lab → sign in once in a private browser window to set the password → in the wizard choose <em>Use another account</em>. Remove the personal account from SSMS's Azure account settings if it keeps being picked.</p>
+  </div>
+</section>
+
+<section id="cleanup">
+  <h2>Cleanup and references</h2>
+<pre><code>az group delete -n rg-milink-lab --yes --no-wait</code></pre>
+  <p>Microsoft Learn references:</p>
+  <ul>
+    <li><a href="https://learn.microsoft.com/azure/azure-sql/managed-instance/managed-instance-link-feature-overview">Managed Instance link – feature overview</a></li>
+    <li><a href="https://learn.microsoft.com/azure/azure-sql/managed-instance/managed-instance-link-preparation">Prepare your environment for the link</a></li>
+    <li><a href="https://learn.microsoft.com/azure/azure-sql/managed-instance/managed-instance-link-configure-how-to-ssms">Configure the link with SSMS</a></li>
+    <li><a href="https://learn.microsoft.com/azure/azure-sql/managed-instance/managed-instance-link-disaster-recovery">Failover and disaster recovery with the link</a></li>
+    <li><a href="https://learn.microsoft.com/azure/azure-sql/managed-instance/managed-instance-link-migrate">Migrate with the link</a></li>
+    <li><a href="https://learn.microsoft.com/azure/azure-sql/managed-instance/update-policy">Update policy in Azure SQL Managed Instance</a></li>
+  </ul>
+</section>
+
+</div>
+</main>
+
+<footer>© 2026 Nithin Sunke · Nithin's Cloud Notebook</footer>
+
+<script>
+  document.querySelectorAll('pre').forEach(function(pre){
+    var b=document.createElement('button');
+    b.className='copy'; b.type='button'; b.textContent='Copy';
+    b.addEventListener('click',function(){
+      var t=pre.querySelector('code').innerText;
+      try{ navigator.clipboard.writeText(t).then(function(){b.textContent='Copied';setTimeout(function(){b.textContent='Copy'},1500)}); }
+      catch(e){ b.textContent='Select & copy'; }
+    });
+    pre.appendChild(b);
+  });
+</script>
+</body>
+</html>
