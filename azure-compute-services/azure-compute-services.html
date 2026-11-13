@@ -1,0 +1,960 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+/* Back to the blog index; uses this page's own accent so it fits either theme. */
+.back-home{display:inline-block;margin:0 0 18px;font-size:14px;font-weight:600;
+  color:var(--accent);text-decoration:none}
+.back-home:hover{text-decoration:underline}
+</style></head><body>
+<title>Azure Compute Services</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Azure Virtual Machines, VM Scale Sets, App Service, Functions and containers (ACI, Container Apps, AKS) explained with diagrams and a hands-on lab for each.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: single reading column (~70ch) with full-width figures; hierarchy levels carry a fixed colour each, used in diagrams, headings and lab tags. */
+:root{
+  --bg:#f6f8fb; --surface:#ffffff; --fg:#17202e; --muted:#566275; --line:#dbe2ec;
+  --accent:#1d5fd1; --accent-soft:#e4edfc; --code-bg:#eef2f8;
+  --l-tenant:#5b3fc4; --l-mg:#1d5fd1; --l-sub:#c98a05; --l-rg:#0f8a7a; --l-res:#c2410c;
+  --good:#16794a; --bad:#b42318;
+  --f-display:"Space Grotesk",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f141c; --surface:#161d28; --fg:#e6ebf2; --muted:#9aa6b8; --line:#2a3443;
+  --accent:#7aa7ff; --accent-soft:#1b2a45; --code-bg:#1b2330;
+  --l-tenant:#a493f5; --l-mg:#7aa7ff; --l-sub:#f0bd4a; --l-rg:#3fc6b2; --l-res:#fb8a55;
+  --good:#4cc38a; --bad:#ff7a6e; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f141c; --surface:#161d28; --fg:#e6ebf2; --muted:#9aa6b8; --line:#2a3443;
+  --accent:#7aa7ff; --accent-soft:#1b2a45; --code-bg:#1b2330;
+  --l-tenant:#a493f5; --l-mg:#7aa7ff; --l-sub:#f0bd4a; --l-rg:#3fc6b2; --l-res:#fb8a55;
+  --good:#4cc38a; --bad:#ff7a6e; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:17px;line-height:1.7;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:760px;margin:0 auto;padding-block:48px 80px}
+h1,h2,h3{font-family:var(--f-display);line-height:1.2;text-wrap:balance;margin:0}
+h1{font-size:clamp(2rem,5vw,2.9rem);font-weight:700;letter-spacing:-.02em}
+h2{font-size:1.7rem;font-weight:600;margin-top:64px;margin-bottom:12px;letter-spacing:-.01em}
+h3{font-size:1.2rem;font-weight:600;margin-top:32px;margin-bottom:8px}
+p{margin:0 0 16px}
+a{color:var(--accent)}
+.eyebrow{font-family:var(--f-mono);font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lede{font-size:1.15rem;color:var(--muted);margin-top:16px}
+.meta{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:20px;font-size:.88rem;color:var(--muted)}
+code{font-family:var(--f-mono);font-size:.86em;background:var(--code-bg);padding:.1em .35em;border-radius:4px}
+pre{font-family:var(--f-mono);font-size:.84rem;line-height:1.6;background:var(--code-bg);border:1px solid var(--line);
+  border-radius:8px;padding:16px 18px;overflow-x:auto;margin:0 0 20px}
+pre code{background:none;padding:0;font-size:inherit}
+.cmt{color:var(--muted)}
+ul,ol{padding-left:1.3em;margin:0 0 16px}
+li{margin-bottom:6px}
+strong{font-weight:600}
+
+/* level tag */
+.lvl{display:inline-flex;align-items:center;gap:8px}
+.lvl::before{content:"";width:12px;height:12px;border-radius:3px;background:var(--c);flex:none}
+h2.lvl::before{width:16px;height:16px;border-radius:4px}
+.t{--c:var(--l-tenant)} .m{--c:var(--l-mg)} .s{--c:var(--l-sub)} .r{--c:var(--l-rg)} .x{--c:var(--l-res)}
+
+.toc{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding-block:18px;margin-top:36px;
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px 24px;font-size:.93rem}
+.toc a{color:var(--fg);text-decoration:none}
+.toc a:hover{color:var(--accent);text-decoration:underline}
+
+figure{margin:28px 0}
+figcaption{font-size:.86rem;color:var(--muted);margin-top:10px}
+.diagram{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;overflow-x:auto}
+.diagram svg{display:block;width:100%;height:auto;min-width:520px}
+.shot img{display:block;width:100%;border:1px solid var(--line);border-radius:8px;background:#fff}
+
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:20px 0}
+.fact{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;font-size:.92rem;line-height:1.55}
+.fact b{display:block;font-family:var(--f-display);font-size:1.25rem;font-weight:600;color:var(--c,var(--accent));margin-bottom:2px}
+
+.note{border-left:3px solid var(--accent);background:var(--accent-soft);padding:12px 16px;border-radius:0 8px 8px 0;margin:20px 0;font-size:.95rem}
+.note p:last-child{margin:0}
+
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+.tbl{overflow-x:auto;margin:20px 0}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--f-display);font-weight:600;font-size:.88rem;color:var(--muted)}
+
+/* lab steps */
+.step{margin-top:40px}
+.step-h{display:flex;align-items:baseline;gap:12px}
+.step-n{font-family:var(--f-mono);font-size:.8rem;color:var(--muted);flex:none}
+.step h3{margin:0}
+
+/* quiz */
+.quiz{display:grid;gap:18px;margin-top:20px}
+.q{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 18px 14px}
+.q p.qt{font-weight:600;margin-bottom:12px}
+.opts{display:grid;gap:8px}
+.opts button{font:inherit;font-size:.95rem;text-align:left;color:var(--fg);background:var(--bg);border:1px solid var(--line);
+  border-radius:7px;padding:9px 12px;cursor:pointer}
+.opts button:hover:not(:disabled){border-color:var(--accent)}
+.opts button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.opts button.ok{border-color:var(--good);color:var(--good);font-weight:600}
+.opts button.no{border-color:var(--bad);color:var(--bad)}
+.opts button:disabled{cursor:default}
+.why{font-size:.9rem;color:var(--muted);margin:10px 0 0}
+.score{font-family:var(--f-display);font-weight:600;margin-top:6px}
+.reset{font:inherit;font-size:.9rem;background:none;border:1px solid var(--line);color:var(--fg);border-radius:7px;padding:7px 14px;cursor:pointer}
+
+footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);font-size:.88rem;color:var(--muted)}
+
+/* svg tokens */
+.sv-box{fill:var(--surface);stroke-width:2}
+.sv-t{fill:var(--fg);font-family:var(--f-display);font-weight:600;font-size:15px}
+.sv-s{fill:var(--muted);font-family:var(--f-body);font-size:12px}
+.sv-m{fill:var(--fg);font-family:var(--f-mono);font-size:12px}
+.sv-line{stroke:var(--muted);stroke-width:1.5;fill:none}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+</style>
+<style>
+/* Additions for the compute post: service colour per section, cost callouts, lab boxes */
+:root{--c-vm:#1d5fd1;--c-vmss:#5b3fc4;--c-app:#0f8a7a;--c-fn:#c98a05;--c-ctr:#c2410c;--warn:#9a5b00;--warn-soft:#fff4e0}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--c-vm:#7aa7ff;--c-vmss:#a493f5;--c-app:#3fc6b2;--c-fn:#f0bd4a;--c-ctr:#fb8a55;--warn:#f0b35a;--warn-soft:#2e2414}}
+:root[data-theme="dark"]{--c-vm:#7aa7ff;--c-vmss:#a493f5;--c-app:#3fc6b2;--c-fn:#f0bd4a;--c-ctr:#fb8a55;--warn:#f0b35a;--warn-soft:#2e2414}
+.cv{--c:var(--c-vm)} .cs{--c:var(--c-vmss)} .ca{--c:var(--c-app)} .cf{--c:var(--c-fn)} .cc{--c:var(--c-ctr)}
+.cost{border-left:3px solid var(--warn);background:var(--warn-soft);padding:12px 16px;border-radius:0 8px 8px 0;margin:20px 0;font-size:.95rem}
+.cost p:last-child{margin:0}
+.lab{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px 22px 6px;margin:28px 0}
+.lab>h3{margin-top:0}
+.lab .goal{font-size:.95rem;color:var(--muted)}
+.verify{font-size:.95rem}
+.verify::before{content:"Check: ";font-weight:600;color:var(--good)}
+.part{font-family:var(--f-mono);font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--c,var(--muted));margin-top:64px}
+.part+h2{margin-top:6px}
+</style>
+
+<div class="wrap">
+<a class="back-home" href="../index.html">&#8592;&nbsp;All articles</a>
+<header>
+  <div class="eyebrow">Azure fundamentals · AZ-900 · Hands-on labs</div>
+  <h1 style="margin-top:10px">Azure Compute Services: Virtual Machines, Scale Sets, App Service, Functions and Containers</h1>
+  <p class="lede">Azure gives you at least seven ways to run code. They differ in one main way: how much of the stack you manage yourself and how much Azure manages for you. This post explains each service, shows when to pick it, and gives you a lab for each one that you can run from Cloud Shell.</p>
+  <div class="meta"><span>Sunke Nithin</span><span>November 2026</span><span>~25 min read + ~2 hours of labs</span></div>
+</header>
+
+<nav class="toc" aria-label="Contents">
+  <a href="#spectrum">1. The compute spectrum</a>
+  <a href="#setup">2. Lab setup</a>
+  <a href="#vm">3. Virtual Machines + lab</a>
+  <a href="#vmss">4. VM Scale Sets + lab</a>
+  <a href="#app">5. App Service + lab</a>
+  <a href="#fn">6. Azure Functions + lab</a>
+  <a href="#ctr">7. Containers (ACI, Container Apps, AKS) + labs</a>
+  <a href="#choose">8. Which one should I use?</a>
+  <a href="#real">9. Real-world design</a>
+  <a href="#cleanup">10. Clean up</a>
+  <a href="#quiz">11. Quiz</a>
+  <a href="#takeaways">12. Key takeaways</a>
+</nav>
+
+<!-- 1 -->
+<h2 id="spectrum">1. The compute spectrum</h2>
+<p>Every compute service runs your code on servers in an Azure datacenter. What changes is <strong>who looks after what</strong>. With a virtual machine you patch the operating system, install the runtime and plan for scaling. With Azure Functions you upload a function and Azure does the rest. The services in between trade some control for less work.</p>
+
+<figure>
+<div class="diagram">
+<svg viewBox="0 0 800 330" role="img" aria-labelledby="sp-t">
+  <title id="sp-t">Compute spectrum from most control (Virtual Machines) to least management (Functions), showing which layers you manage.</title>
+  <defs><linearGradient id="g1" x1="0" x2="1"><stop offset="0" style="stop-color:var(--c-vm)"/><stop offset="1" style="stop-color:var(--c-fn)"/></linearGradient></defs>
+  <rect x="20" y="20" width="760" height="8" rx="4" style="fill:url(#g1)"/>
+  <text x="20" y="50" class="sv-s">More control · you manage more</text>
+  <text x="780" y="50" text-anchor="end" class="sv-s">Less to manage · Azure manages more</text>
+  <!-- columns -->
+  <g>
+    <text x="210" y="84" text-anchor="middle" class="sv-t" style="fill:var(--c-vm);font-size:13px">Virtual</text>
+    <text x="210" y="100" text-anchor="middle" class="sv-t" style="fill:var(--c-vm);font-size:13px">Machines</text>
+    <text x="300" y="84" text-anchor="middle" class="sv-t" style="fill:var(--c-vmss);font-size:13px">VM Scale</text>
+    <text x="300" y="100" text-anchor="middle" class="sv-t" style="fill:var(--c-vmss);font-size:13px">Sets</text>
+    <text x="390" y="92" text-anchor="middle" class="sv-t" style="fill:var(--c-ctr);font-size:13px">AKS</text>
+    <text x="480" y="84" text-anchor="middle" class="sv-t" style="fill:var(--c-ctr);font-size:13px">Container</text>
+    <text x="480" y="100" text-anchor="middle" class="sv-t" style="fill:var(--c-ctr);font-size:13px">Instances</text>
+    <text x="570" y="84" text-anchor="middle" class="sv-t" style="fill:var(--c-ctr);font-size:13px">Container</text>
+    <text x="570" y="100" text-anchor="middle" class="sv-t" style="fill:var(--c-ctr);font-size:13px">Apps</text>
+    <text x="660" y="84" text-anchor="middle" class="sv-t" style="fill:var(--c-app);font-size:13px">App</text>
+    <text x="660" y="100" text-anchor="middle" class="sv-t" style="fill:var(--c-app);font-size:13px">Service</text>
+    <text x="750" y="92" text-anchor="middle" class="sv-t" style="fill:var(--c-fn);font-size:13px">Functions</text>
+  </g>
+  <!-- rows: labels -->
+  <g class="sv-s">
+    <text x="20" y="140">Your code</text>
+    <text x="20" y="180">Runtime / container</text>
+    <text x="20" y="220">Scaling</text>
+    <text x="20" y="260">OS patching</text>
+  </g>
+  <!-- cells: you = filled, azure = outline. rows y: 128,168,208,248 -->
+  <g id="cells"></g>
+  <!-- legend -->
+  <rect x="20" y="298" width="14" height="14" rx="3" style="fill:var(--accent)"/><text x="40" y="310" class="sv-s">You manage</text>
+  <rect x="140" y="298" width="14" height="14" rx="3" style="fill:none;stroke:var(--muted);stroke-width:1.5"/><text x="160" y="310" class="sv-s">Azure manages</text>
+  <rect x="280" y="298" width="14" height="14" rx="3" style="fill:var(--accent);opacity:.4"/><text x="300" y="310" class="sv-s">Shared (you set rules, Azure runs them)</text>
+</svg>
+</div>
+<figcaption>Figure 1. Moving right, Azure takes over more layers. You always own your code and its data.</figcaption>
+</figure>
+
+<p>Three cloud service models map onto this picture:</p>
+<ul>
+  <li><strong>IaaS (Infrastructure as a Service)</strong>: Virtual Machines and Scale Sets. You get a server; everything from the OS up is yours.</li>
+  <li><strong>PaaS (Platform as a Service)</strong>: App Service, Container Apps, and AKS for the cluster control plane. You bring code or a container; Azure runs the platform.</li>
+  <li><strong>Serverless</strong>: Functions and Container Apps on the Consumption plan. No servers to size; you pay when code runs, and it can scale to zero.</li>
+</ul>
+
+<!-- 2 -->
+<h2 id="setup">2. Lab setup (do this once)</h2>
+<p>All labs run in <strong>Azure Cloud Shell</strong> (Bash), which already has the Azure CLI signed in. Open it from the <code>&gt;_</code> icon at the top of the portal. Each lab also lists the portal path if you'd rather click through.</p>
+<pre><code><span class="cmt"># Variables used by every lab. Change LOCATION to a region near you if you like.</span>
+RG=compute-lab-rg
+LOCATION=westus3
+SUFFIX=$RANDOM            <span class="cmt"># makes global names unique</span>
+
+az group create --name $RG --location $LOCATION --tags env=lab topic=compute</code></pre>
+<div class="cost"><p><strong>Cost on a free account.</strong> The Azure free account includes 750 hours a month of B1s, B2pts v2 and B2ats v2 VMs for 12 months, App Service Free tier apps, 1 million Functions requests, and a monthly Container Apps grant of 180,000 vCPU-seconds, 360,000 GiB-seconds and 2 million requests. Load balancers, public IPs, extra VMs in a scale set and AKS nodes are billed against your credit. Every lab ends with a cleanup step, and section 10 removes everything in one command.</p></div>
+<p>If a command says <code>az</code> doesn't know a <code>containerapp</code> command or a resource provider isn't registered, that's covered in the lab where it comes up.</p>
+
+<!-- 3 VM -->
+<div class="part cv">Part 1 · IaaS</div>
+<h2 id="vm" class="lvl cv">3. Azure Virtual Machines</h2>
+<p>An <strong>Azure Virtual Machine</strong> is a server running on Azure's hypervisor. You choose the operating system (Windows or Linux), the size (vCPUs and memory) and the disks, and you get full administrator access. It's the right choice when you need total control: lift-and-shift of an existing server, software that must be installed on the OS, an Oracle or SQL Server database you run yourself, or a custom network appliance.</p>
+<p>A VM is never a single resource. When you create one, Azure creates several resources that work together:</p>
+
+<figure>
+<div class="diagram">
+<svg viewBox="0 0 720 260" role="img" aria-labelledby="vm-t">
+  <title id="vm-t">Resources created with a VM: the VM, OS disk, data disk, network interface, public IP, network security group, and virtual network with subnet.</title>
+  <defs><marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--muted)"/></marker></defs>
+  <rect x="10" y="10" width="700" height="240" rx="12" style="fill:none;stroke:var(--line);stroke-width:2;stroke-dasharray:6 5"/>
+  <text x="26" y="34" class="sv-s">Resource group: compute-lab-rg</text>
+  <rect x="270" y="60" width="180" height="64" rx="10" class="sv-box" style="stroke:var(--c-vm)"/>
+  <text x="360" y="88" text-anchor="middle" class="sv-t">lab-vm</text>
+  <text x="360" y="108" text-anchor="middle" class="sv-s">Standard_B1s · Ubuntu 24.04</text>
+  <rect x="40" y="60" width="160" height="44" rx="8" class="sv-box" style="stroke:var(--muted)"/>
+  <text x="120" y="87" text-anchor="middle" class="sv-t" style="font-size:13px">OS disk (managed)</text>
+  <rect x="40" y="120" width="160" height="44" rx="8" class="sv-box" style="stroke:var(--muted)"/>
+  <text x="120" y="147" text-anchor="middle" class="sv-t" style="font-size:13px">Data disk (optional)</text>
+  <path d="M268 84 H202" class="sv-line" marker-end="url(#a1)"/>
+  <path d="M268 104 Q230 140 202 142" class="sv-line" marker-end="url(#a1)"/>
+  <rect x="270" y="170" width="180" height="44" rx="8" class="sv-box" style="stroke:var(--muted)"/>
+  <text x="360" y="197" text-anchor="middle" class="sv-t" style="font-size:13px">Network interface (NIC)</text>
+  <path d="M360 124 V168" class="sv-line" marker-end="url(#a1)"/>
+  <rect x="510" y="60" width="170" height="44" rx="8" class="sv-box" style="stroke:var(--muted)"/>
+  <text x="595" y="87" text-anchor="middle" class="sv-t" style="font-size:13px">Public IP</text>
+  <rect x="510" y="120" width="170" height="44" rx="8" class="sv-box" style="stroke:var(--muted)"/>
+  <text x="595" y="140" text-anchor="middle" class="sv-t" style="font-size:13px">NSG (firewall rules)</text>
+  <text x="595" y="156" text-anchor="middle" class="sv-s">allow 22, 80</text>
+  <rect x="510" y="180" width="170" height="44" rx="8" class="sv-box" style="stroke:var(--muted)"/>
+  <text x="595" y="200" text-anchor="middle" class="sv-t" style="font-size:13px">VNet / subnet</text>
+  <text x="595" y="216" text-anchor="middle" class="sv-s">private IP 10.0.0.4</text>
+  <path d="M452 190 H480 V84 H508" class="sv-line" marker-end="url(#a1)"/>
+  <path d="M480 142 H508" class="sv-line" marker-end="url(#a1)"/>
+  <path d="M480 202 H508" class="sv-line" marker-end="url(#a1)"/>
+</svg>
+</div>
+<figcaption>Figure 2. The VM, its disks and its networking are separate resources. Deleting the VM alone can leave the disks, NIC and public IP behind, still costing money.</figcaption>
+</figure>
+
+<h3>Key concepts</h3>
+<div class="tbl"><table>
+  <thead><tr><th>Concept</th><th>What to know</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Size families</strong></td><td><strong>B</strong> burstable (cheap, dev/test), <strong>D</strong> general purpose, <strong>E</strong> memory optimized (databases), <strong>F</strong> compute optimized, <strong>L</strong> storage optimized, <strong>M</strong> very large memory, <strong>N</strong> GPU. A name like <code>Standard_D4s_v5</code> means family D, 4 vCPUs, premium storage capable (<code>s</code>), version 5.</td></tr>
+    <tr><td><strong>Images</strong></td><td>Marketplace images (Ubuntu, RHEL, Oracle Linux, Windows Server, SQL Server on Windows) or your own custom image from an Azure Compute Gallery.</td></tr>
+    <tr><td><strong>Managed disks</strong></td><td>Standard HDD, Standard SSD, Premium SSD, Premium SSD v2 and Ultra Disk, in rising order of performance and price. Every VM has an OS disk; data disks are optional. Some sizes also have a temporary disk that is wiped when the VM moves.</td></tr>
+    <tr><td><strong>Availability</strong></td><td><strong>Availability sets</strong> spread VMs across fault and update domains in one datacenter. <strong>Availability zones</strong> spread them across physically separate datacenters in a region, which protects against a whole datacenter failing.</td></tr>
+    <tr><td><strong>Stopped vs deallocated</strong></td><td>Shutting down from inside the OS leaves the VM <em>Stopped</em> and you still pay for compute. <strong>Stop</strong> in the portal (or <code>az vm deallocate</code>) makes it <em>Stopped (deallocated)</em>: compute billing stops, and you only pay for disks and any static public IP.</td></tr>
+    <tr><td><strong>Extensions</strong></td><td>Small agents that run inside the VM after deployment, such as Custom Script, monitoring agents or Microsoft Entra login.</td></tr>
+  </tbody>
+</table></div>
+<div class="note"><p><strong>Coming from OCI?</strong> An Azure VM is like an OCI Compute instance, a VM size is a shape, a managed disk is a block volume, and an NSG works like an OCI network security group (Azure has no separate security list).</p></div>
+
+<div class="lab">
+  <h3>Lab 1: Create a Linux VM and serve a web page</h3>
+  <p class="goal">Goal: create an Ubuntu VM on the free B1s size, install nginx, open port 80, then deallocate it so it stops costing compute hours. Time: about 15 minutes.</p>
+  <p><strong>Portal path:</strong> Virtual machines → <strong>+ Create</strong> → Azure virtual machine → choose <code>compute-lab-rg</code>, image <em>Ubuntu Server 24.04 LTS</em>, size <em>Standard_B1s</em>, authentication <em>SSH public key</em>, inbound ports <em>HTTP (80), SSH (22)</em> → Review + create.</p>
+  <p><strong>CLI:</strong></p>
+<pre><code><span class="cmt"># 1. Create the VM (also creates the VNet, subnet, NSG, NIC, public IP and OS disk)</span>
+az vm create \
+  --resource-group $RG --name lab-vm \
+  --image Ubuntu2404 --size Standard_B1s \
+  --admin-username azureuser --generate-ssh-keys \
+  --public-ip-sku Standard
+
+<span class="cmt"># 2. See everything that was created</span>
+az resource list -g $RG -o table
+
+<span class="cmt"># 3. Install nginx without logging in, using Run Command</span>
+az vm run-command invoke -g $RG -n lab-vm \
+  --command-id RunShellScript \
+  --scripts "sudo apt-get update -y &amp;&amp; sudo apt-get install -y nginx &amp;&amp; echo '&lt;h1&gt;Hello from lab-vm&lt;/h1&gt;' | sudo tee /var/www/html/index.html"
+
+<span class="cmt"># 4. Open port 80 on the VM's NSG</span>
+az vm open-port -g $RG -n lab-vm --port 80
+
+<span class="cmt"># 5. Get the public IP and test</span>
+VMIP=$(az vm show -d -g $RG -n lab-vm --query publicIps -o tsv)
+curl http://$VMIP
+
+<span class="cmt"># 6. Optional: SSH in</span>
+ssh azureuser@$VMIP</code></pre>
+  <p class="verify"><code>curl</code> returns <code>&lt;h1&gt;Hello from lab-vm&lt;/h1&gt;</code>, and the same page opens in your browser at the public IP.</p>
+<pre><code><span class="cmt"># 7. Compare the two kinds of "stopped"</span>
+az vm deallocate -g $RG -n lab-vm
+az vm get-instance-view -g $RG -n lab-vm \
+  --query "instanceView.statuses[1].displayStatus" -o tsv   <span class="cmt"># VM deallocated</span>
+
+<span class="cmt"># Start it again later with: az vm start -g $RG -n lab-vm</span></code></pre>
+  <p><strong>Try next:</strong> attach a data disk with <code>az vm disk attach -g $RG --vm-name lab-vm --name lab-data --new --size-gb 8</code>, then SSH in and run <code>lsblk</code> to see it.</p>
+</div>
+
+<!-- 4 VMSS -->
+<h2 id="vmss" class="lvl cs">4. Virtual Machine Scale Sets</h2>
+<p>A <strong>Virtual Machine Scale Set (VMSS)</strong> manages a group of VMs as one unit. Instead of building ten web servers by hand, you describe one (image, size, startup script) and tell the scale set how many to run. It can then <strong>add or remove VMs automatically</strong> based on load or a schedule, spread them across availability zones, and sit behind a load balancer so users see one address.</p>
+
+<figure>
+<div class="diagram">
+<svg viewBox="0 0 720 280" role="img" aria-labelledby="ss-t">
+  <title id="ss-t">Users reach a load balancer, which distributes traffic to VM instances in a scale set. An autoscale rule adds instances when CPU is high and removes them when it's low.</title>
+  <defs><marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--muted)"/></marker></defs>
+  <text x="70" y="140" text-anchor="middle" class="sv-t">Users</text>
+  <path d="M110 135 H178" class="sv-line" marker-end="url(#a2)"/>
+  <rect x="180" y="105" width="140" height="60" rx="8" class="sv-box" style="stroke:var(--accent)"/>
+  <text x="250" y="132" text-anchor="middle" class="sv-t" style="font-size:14px">Load balancer</text>
+  <text x="250" y="150" text-anchor="middle" class="sv-s">one public IP, port 80</text>
+  <rect x="370" y="30" width="330" height="210" rx="12" style="fill:none;stroke:var(--c-vmss);stroke-width:2"/>
+  <text x="386" y="54" class="sv-t" style="fill:var(--c-vmss);font-size:14px">Scale set: lab-vmss</text>
+  <g>
+    <rect x="390" y="72" width="90" height="46" rx="6" class="sv-box" style="stroke:var(--c-vmss)"/><text x="435" y="100" text-anchor="middle" class="sv-m">VM 1</text>
+    <rect x="490" y="72" width="90" height="46" rx="6" class="sv-box" style="stroke:var(--c-vmss)"/><text x="535" y="100" text-anchor="middle" class="sv-m">VM 2</text>
+    <rect x="590" y="72" width="90" height="46" rx="6" class="sv-box" style="stroke:var(--c-vmss);stroke-dasharray:5 4"/><text x="635" y="100" text-anchor="middle" class="sv-m">VM 3</text>
+  </g>
+  <text x="635" y="134" text-anchor="middle" class="sv-s">added when busy</text>
+  <path d="M322 125 H388" class="sv-line" marker-end="url(#a2)"/>
+  <rect x="390" y="160" width="290" height="64" rx="8" style="fill:var(--accent-soft);stroke:none"/>
+  <text x="404" y="184" class="sv-t" style="font-size:13px">Autoscale rules</text>
+  <text x="404" y="202" class="sv-s">CPU &gt; 70% for 5 min → add 1 VM (max 3)</text>
+  <text x="404" y="218" class="sv-s">CPU &lt; 30% for 5 min → remove 1 VM (min 2)</text>
+</svg>
+</div>
+<figcaption>Figure 3. The scale set keeps the number of VMs between the minimum and maximum, and the load balancer always sends traffic to the healthy ones.</figcaption>
+</figure>
+
+<h3>Key concepts</h3>
+<ul>
+  <li><strong>Orchestration mode.</strong> <em>Flexible</em> lets you mix VM sizes and manage instances like normal VMs; it's the recommended mode for new workloads and the default when you create a scale set with the CLI or PowerShell. <em>Uniform</em> uses identical instances and is the older mode.</li>
+  <li><strong>Scaling.</strong> Manual (set a count), <strong>metric-based autoscale</strong> (CPU, memory, queue length) or <strong>schedule-based</strong> (for example, 6 VMs during office hours and 2 at night).</li>
+  <li><strong>Upgrade policy.</strong> Decides how instances pick up a model change: <em>Automatic</em>, <em>Rolling</em> (in batches) or <em>Manual</em>.</li>
+  <li><strong>Stateless design.</strong> Any instance can be removed at any time, so keep session data and files outside the VM, for example in Azure Storage or a database.</li>
+  <li>The scale set itself is free; you pay for the VMs, disks and networking it creates.</li>
+</ul>
+
+<div class="lab">
+  <h3>Lab 2: Build an autoscaling web tier</h3>
+  <p class="goal">Goal: create a two-instance scale set behind a load balancer, see traffic alternate between instances, add an autoscale rule and push CPU to trigger it. Time: about 25 minutes.</p>
+  <p>First, a cloud-init file that installs nginx and writes each instance's hostname into the page, so you can see which VM answered:</p>
+<pre><code>cat &gt; cloud-init.txt &lt;&lt;'EOF'
+#cloud-config
+package_upgrade: false
+packages:
+  - nginx
+runcmd:
+  - echo "&lt;h1&gt;Served by $(hostname)&lt;/h1&gt;" &gt; /var/www/html/index.html
+EOF</code></pre>
+<pre><code><span class="cmt"># 1. Create the scale set with 2 instances and a Standard load balancer</span>
+az vmss create \
+  --resource-group $RG --name lab-vmss \
+  --orchestration-mode Flexible \
+  --image Ubuntu2404 --vm-sku Standard_B1s \
+  --instance-count 2 \
+  --upgrade-policy-mode Automatic \
+  --admin-username azureuser --generate-ssh-keys \
+  --custom-data cloud-init.txt \
+  --lb-sku Standard
+
+<span class="cmt"># 2. Add a load-balancing rule for port 80</span>
+az network lb rule create -g $RG \
+  --lb-name lab-vmssLB --name http \
+  --backend-pool-name lab-vmssLBBEPool \
+  --frontend-ip-name loadBalancerFrontEnd \
+  --protocol tcp --frontend-port 80 --backend-port 80
+
+<span class="cmt"># 3. Allow port 80 through the scale set's NSG</span>
+NSG=$(az network nsg list -g $RG --query "[?contains(name,'vmss')].name | [0]" -o tsv)
+az network nsg rule create -g $RG --nsg-name $NSG \
+  --name allow-http --priority 1010 \
+  --destination-port-ranges 80 --access Allow --protocol Tcp
+
+<span class="cmt"># 4. Test through the load balancer a few times</span>
+LBIP=$(az network public-ip show -g $RG -n lab-vmssLBPublicIP --query ipAddress -o tsv)
+for i in 1 2 3 4 5 6; do curl -s http://$LBIP; echo; done</code></pre>
+  <p class="verify">The responses show two different hostnames, which means the load balancer is spreading requests across both instances.</p>
+  <p>If <code>az network nsg list</code> returns nothing, the scale set has no NSG of its own; the subnet's NSG name will show in <code>az network nsg list -g $RG -o table</code>.</p>
+<pre><code><span class="cmt"># 5. Add autoscale: keep 2–3 instances, scale on CPU</span>
+VMSSID=$(az vmss show -g $RG -n lab-vmss --query id -o tsv)
+az monitor autoscale create -g $RG --resource $VMSSID \
+  --name lab-autoscale --min-count 2 --max-count 3 --count 2
+az monitor autoscale rule create -g $RG --autoscale-name lab-autoscale \
+  --condition "Percentage CPU &gt; 70 avg 5m" --scale out 1
+az monitor autoscale rule create -g $RG --autoscale-name lab-autoscale \
+  --condition "Percentage CPU &lt; 30 avg 5m" --scale in 1
+
+<span class="cmt"># 6. Load the CPU on every instance for 10 minutes</span>
+az vmss run-command invoke -g $RG -n lab-vmss \
+  --command-id RunShellScript \
+  --scripts "nohup timeout 600 sh -c 'yes &gt; /dev/null' &gt;/dev/null 2&gt;&amp;1 &amp;"
+
+<span class="cmt"># 7. Watch the instance count (run every minute or two)</span>
+az vmss list-instances -g $RG -n lab-vmss --query "[].name" -o tsv</code></pre>
+  <p class="verify">After 5–10 minutes a third instance appears, and in the portal the scale set's <strong>Scaling → Run history</strong> shows the scale-out event. About 5–10 minutes after the load stops, it scales back in to 2.</p>
+  <p>If <code>az vmss run-command</code> isn't available in your CLI version, run the same command on each instance with <code>az vm run-command invoke -g $RG -n &lt;instance-name&gt; ...</code>, using the names from step 7.</p>
+  <div class="cost"><p>This lab runs 2–3 VMs plus a load balancer and public IP. Delete it when you're done: <code>az vmss delete -g $RG -n lab-vmss</code>, or wait for the full cleanup in section 10.</p></div>
+</div>
+
+<!-- 5 App Service -->
+<div class="part ca">Part 2 · PaaS</div>
+<h2 id="app" class="lvl ca">5. Azure App Service</h2>
+<p><strong>Azure App Service</strong> hosts web applications, REST APIs and mobile back ends without you managing any servers. You push code in .NET, Java, Node.js, Python or PHP (or a container image) and App Service runs it, patches the OS and runtime, and gives you HTTPS, custom domains, deployment slots, authentication and autoscale as built-in features.</p>
+
+<figure>
+<div class="diagram">
+<svg viewBox="0 0 720 250" role="img" aria-labelledby="as-t">
+  <title id="as-t">An App Service plan provides the compute; several web apps share it. A production app has a staging slot that can be swapped in.</title>
+  <rect x="10" y="10" width="700" height="230" rx="12" style="fill:none;stroke:var(--c-app);stroke-width:2"/>
+  <text x="28" y="36" class="sv-t" style="fill:var(--c-app)">App Service plan: lab-plan</text>
+  <text x="28" y="54" class="sv-s">region, OS, pricing tier, instance count = the compute you pay for</text>
+  <rect x="30" y="76" width="300" height="146" rx="10" class="sv-box" style="stroke:var(--c-app)"/>
+  <text x="46" y="100" class="sv-t" style="font-size:14px">Web app: shop-web</text>
+  <rect x="46" y="114" width="126" height="50" rx="6" class="sv-box" style="stroke:var(--muted)"/>
+  <text x="109" y="136" text-anchor="middle" class="sv-m">production</text>
+  <text x="109" y="153" text-anchor="middle" class="sv-s">v1.4</text>
+  <rect x="188" y="114" width="126" height="50" rx="6" class="sv-box" style="stroke:var(--muted);stroke-dasharray:5 4"/>
+  <text x="251" y="136" text-anchor="middle" class="sv-m">staging slot</text>
+  <text x="251" y="153" text-anchor="middle" class="sv-s">v1.5</text>
+  <path d="M174 182 H186 M186 182 l-6 -4 M186 182 l-6 4 M172 196 H160 M160 196 l6 -4 M160 196 l6 4" class="sv-line"/>
+  <text x="180" y="214" text-anchor="middle" class="sv-s">swap: zero-downtime release</text>
+  <rect x="360" y="76" width="160" height="62" rx="10" class="sv-box" style="stroke:var(--c-app)"/>
+  <text x="440" y="104" text-anchor="middle" class="sv-t" style="font-size:14px">Web app: shop-api</text>
+  <text x="440" y="124" text-anchor="middle" class="sv-s">REST API</text>
+  <rect x="540" y="76" width="150" height="62" rx="10" class="sv-box" style="stroke:var(--c-app)"/>
+  <text x="615" y="104" text-anchor="middle" class="sv-t" style="font-size:14px">Web app: admin</text>
+  <text x="615" y="124" text-anchor="middle" class="sv-s">internal site</text>
+  <rect x="360" y="160" width="330" height="62" rx="8" style="fill:var(--accent-soft);stroke:none"/>
+  <text x="376" y="184" class="sv-t" style="font-size:13px">Built in</text>
+  <text x="376" y="204" class="sv-s">HTTPS · custom domains · Entra sign-in · autoscale · logs</text>
+</svg>
+</div>
+<figcaption>Figure 4. The plan is the server farm; apps are what run on it. Several apps can share one plan and its cost.</figcaption>
+</figure>
+
+<h3>Key concepts</h3>
+<div class="tbl"><table>
+  <thead><tr><th>Tier</th><th>Good for</th><th>Notable features</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Free (F1)</strong></td><td>Learning and demos</td><td>Shared compute, daily CPU limit, no custom domain TLS, no scale-out</td></tr>
+    <tr><td><strong>Basic (B1–B3)</strong></td><td>Low-traffic apps, dev/test</td><td>Dedicated instances, custom domains with TLS, manual scale</td></tr>
+    <tr><td><strong>Standard (S1–S3)</strong></td><td>Production</td><td>Autoscale, deployment slots, daily backups</td></tr>
+    <tr><td><strong>Premium v3 (P0v3–P5mv3)</strong></td><td>Busy production apps</td><td>More slots, faster hardware, zone redundancy</td></tr>
+    <tr><td><strong>Isolated v2</strong></td><td>Strict compliance</td><td>Runs in an App Service Environment inside your own VNet</td></tr>
+  </tbody>
+</table></div>
+<ul>
+  <li><strong>Deployment slots</strong> are live copies of your app with their own URL. Deploy to <em>staging</em>, test it, then <strong>swap</strong> it into production with no downtime; swap back if something breaks.</li>
+  <li><strong>Deployment options:</strong> ZIP deploy, GitHub Actions, Azure DevOps, local Git, or a container image from a registry.</li>
+  <li>You pay for the <strong>plan</strong>, not per app. An empty Standard plan still costs money until you delete it.</li>
+</ul>
+
+<div class="lab">
+  <h3>Lab 3: Deploy a Python web app on the Free tier</h3>
+  <p class="goal">Goal: create a tiny Flask app, deploy it to App Service with one command, change an app setting and stream the logs. Time: about 15 minutes.</p>
+<pre><code><span class="cmt"># 1. Write a minimal Flask app</span>
+mkdir -p ~/lab-webapp &amp;&amp; cd ~/lab-webapp
+cat &gt; app.py &lt;&lt;'EOF'
+import os
+from flask import Flask
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    greeting = os.environ.get("GREETING", "Hello")
+    return f"&lt;h1&gt;{greeting} from Azure App Service&lt;/h1&gt;"
+EOF
+echo "flask" &gt; requirements.txt
+
+<span class="cmt"># 2. Create the plan and app, build and deploy in one step</span>
+WEBAPP=lab-web-$SUFFIX
+az webapp up --name $WEBAPP --resource-group $RG \
+  --location $LOCATION --runtime "PYTHON:3.12" \
+  --sku F1 --plan lab-plan
+
+<span class="cmt"># 3. Open it</span>
+URL=https://$(az webapp show -g $RG -n $WEBAPP --query defaultHostName -o tsv)
+curl $URL</code></pre>
+  <p class="verify">The page shows <code>Hello from Azure App Service</code>. In the portal, App Services → your app → <strong>Overview</strong> shows the plan <code>lab-plan</code> on the F1 tier.</p>
+<pre><code><span class="cmt"># 4. Change configuration without redeploying</span>
+az webapp config appsettings set -g $RG -n $WEBAPP --settings GREETING="Namaste"
+sleep 30; curl $URL      <span class="cmt"># app restarts and now says "Namaste from Azure App Service"</span>
+
+<span class="cmt"># 5. Stream the live logs (Ctrl+C to stop), then refresh the page in a browser</span>
+az webapp log config -g $RG -n $WEBAPP --docker-container-logging filesystem
+az webapp log tail -g $RG -n $WEBAPP
+
+<span class="cmt"># 6. Redeploy after a code change: edit app.py, then run from the same folder</span>
+az webapp up</code></pre>
+  <p><strong>Try next (paid):</strong> scale the plan to S1 with <code>az appservice plan update -g $RG -n lab-plan --sku S1</code>, create a slot with <code>az webapp deployment slot create -g $RG -n $WEBAPP --slot staging</code>, deploy a change there and use <code>az webapp deployment slot swap</code>. Scale back to F1 or delete the plan straight after.</p>
+</div>
+
+<!-- 6 Functions -->
+<div class="part cf">Part 3 · Serverless</div>
+<h2 id="fn" class="lvl cf">6. Azure Functions</h2>
+<p><strong>Azure Functions</strong> runs small pieces of code in response to events, with no servers to manage and, on the serverless plans, billing only while code runs. A function wakes up when a <strong>trigger</strong> fires, such as an HTTP request, a timer, a new file in Blob Storage or a message on a queue. It can read and write other services through <strong>bindings</strong> without writing connection code.</p>
+
+<figure>
+<div class="diagram">
+<svg viewBox="0 0 720 230" role="img" aria-labelledby="fn-t">
+  <title id="fn-t">A trigger such as an HTTP request, timer, blob upload or queue message starts a function, which uses input and output bindings to read and write other services.</title>
+  <defs><marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--muted)"/></marker></defs>
+  <text x="20" y="28" class="sv-s">Triggers (exactly one)</text>
+  <g class="sv-m">
+    <rect x="20" y="40" width="160" height="34" rx="6" class="sv-box" style="stroke:var(--c-fn)"/><text x="100" y="62" text-anchor="middle">HTTP request</text>
+    <rect x="20" y="82" width="160" height="34" rx="6" class="sv-box" style="stroke:var(--c-fn)"/><text x="100" y="104" text-anchor="middle">Timer (CRON)</text>
+    <rect x="20" y="124" width="160" height="34" rx="6" class="sv-box" style="stroke:var(--c-fn)"/><text x="100" y="146" text-anchor="middle">Blob uploaded</text>
+    <rect x="20" y="166" width="160" height="34" rx="6" class="sv-box" style="stroke:var(--c-fn)"/><text x="100" y="188" text-anchor="middle">Queue message</text>
+  </g>
+  <path d="M182 57 Q230 57 258 110" class="sv-line" marker-end="url(#a3)"/>
+  <path d="M182 99 H256" class="sv-line" marker-end="url(#a3)"/>
+  <path d="M182 141 H256" class="sv-line" marker-end="url(#a3)"/>
+  <path d="M182 183 Q230 183 258 132" class="sv-line" marker-end="url(#a3)"/>
+  <rect x="260" y="80" width="200" height="80" rx="12" class="sv-box" style="stroke:var(--c-fn);stroke-width:2.5"/>
+  <text x="360" y="112" text-anchor="middle" class="sv-t">Your function</text>
+  <text x="360" y="132" text-anchor="middle" class="sv-s">resize_image(blob)</text>
+  <text x="360" y="148" text-anchor="middle" class="sv-s">runs for seconds, then stops</text>
+  <text x="520" y="28" class="sv-s">Bindings (zero or more)</text>
+  <g class="sv-m">
+    <rect x="520" y="60" width="180" height="34" rx="6" class="sv-box" style="stroke:var(--muted)"/><text x="610" y="82" text-anchor="middle">out: Blob (thumbnail)</text>
+    <rect x="520" y="104" width="180" height="34" rx="6" class="sv-box" style="stroke:var(--muted)"/><text x="610" y="126" text-anchor="middle">out: Cosmos DB row</text>
+    <rect x="520" y="148" width="180" height="34" rx="6" class="sv-box" style="stroke:var(--muted)"/><text x="610" y="170" text-anchor="middle">in: Table lookup</text>
+  </g>
+  <path d="M462 104 Q490 80 518 77" class="sv-line" marker-end="url(#a3)"/>
+  <path d="M462 120 H518" class="sv-line" marker-end="url(#a3)"/>
+  <path d="M518 165 Q490 160 462 138" class="sv-line" marker-end="url(#a3)"/>
+</svg>
+</div>
+<figcaption>Figure 5. One trigger starts the function; bindings connect it to other services declaratively.</figcaption>
+</figure>
+
+<h3>Hosting plans</h3>
+<div class="tbl"><table>
+  <thead><tr><th>Plan</th><th>How it scales and bills</th><th>Use it when</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Flex Consumption</strong></td><td>Serverless, scales out fast (up to 1,000 instances) and to zero, pay per execution. Instance memory of 512 MB, 2 GB or 4 GB; optional always-ready instances; VNet integration. Linux only.</td><td>The default for new serverless apps</td></tr>
+    <tr><td><strong>Premium</strong></td><td>Pre-warmed instances so there's no cold start, bigger instances, VNet support, billed per instance.</td><td>Steady traffic, strict latency</td></tr>
+    <tr><td><strong>Dedicated (App Service plan)</strong></td><td>Runs on an App Service plan you already pay for.</td><td>You have spare App Service capacity</td></tr>
+    <tr><td><strong>Container Apps</strong></td><td>Functions packaged as a container inside a Container Apps environment.</td><td>Functions alongside other microservices, GPUs</td></tr>
+    <tr><td><strong>Consumption (legacy)</strong></td><td>The original pay-per-execution plan. Microsoft now calls it legacy and recommends Flex Consumption for new apps; hosting on <em>Linux</em> in this plan retires on 30 September 2028.</td><td>Existing Windows apps only</td></tr>
+  </tbody>
+</table></div>
+<ul>
+  <li><strong>Cold start:</strong> when an app has scaled to zero, the first request waits while an instance starts. Always-ready instances (Flex) or the Premium plan remove that delay at extra cost.</li>
+  <li><strong>Durable Functions</strong> adds stateful workflows (chaining, fan-out/fan-in, human approval) on top of normal functions.</li>
+  <li>Every function app needs a <strong>storage account</strong> for its internal state and deployment package.</li>
+</ul>
+
+<div class="lab">
+  <h3>Lab 4: An HTTP-triggered Python function on Flex Consumption</h3>
+  <p class="goal">Goal: create a function app on the Flex Consumption plan, write an HTTP function, publish it and call it. Time: about 20 minutes.</p>
+  <p>This lab uses the Azure Functions Core Tools (<code>func</code>). Run <code>func --version</code> in Cloud Shell to check they're there; on your own machine, install them from Microsoft's Functions documentation first.</p>
+<pre><code><span class="cmt"># 1. Check Flex Consumption is offered in your region</span>
+az functionapp list-flexconsumption-locations --query "sort_by(@,&amp;name)[].name" -o tsv | grep -x $LOCATION \
+  || echo "Pick another region from the list above"
+
+<span class="cmt"># 2. Storage account (lowercase letters and numbers only, 3–24 chars)</span>
+FNSTORE=labfnst$SUFFIX
+az storage account create -g $RG -n $FNSTORE -l $LOCATION \
+  --sku Standard_LRS --allow-blob-public-access false
+
+<span class="cmt"># 3. Function app on Flex Consumption (also creates Application Insights)</span>
+FNAPP=lab-fn-$SUFFIX
+az functionapp create -g $RG -n $FNAPP \
+  --storage-account $FNSTORE \
+  --flexconsumption-location $LOCATION \
+  --runtime python --runtime-version 3.11
+
+<span class="cmt"># 4. Create the project and an HTTP function locally</span>
+mkdir -p ~/lab-func &amp;&amp; cd ~/lab-func
+func init . --worker-runtime python
+func new --name hello --template "HTTP trigger" --authlevel anonymous
+
+<span class="cmt"># 5. Publish to Azure (dependencies are built remotely)</span>
+func azure functionapp publish $FNAPP
+
+<span class="cmt"># 6. Call it</span>
+FNHOST=$(az functionapp show -g $RG -n $FNAPP --query defaultHostName -o tsv)
+curl "https://$FNHOST/api/hello?name=Nithin"</code></pre>
+  <p class="verify">The response is <code>Hello, Nithin. This HTTP triggered function executed successfully.</code> In the portal, open the function app → <strong>Monitoring → Invocations</strong> or Application Insights → <strong>Live metrics</strong>, call the URL again, and watch the request arrive.</p>
+  <p><strong>Try next:</strong> add a timer function with <code>func new --name heartbeat --template "Timer trigger"</code>, set its schedule to <code>0 */5 * * * *</code> (every five minutes), publish again and watch the logs. Then open <code>function_app.py</code> to see how the trigger is declared as a Python decorator.</p>
+</div>
+
+<!-- 7 Containers -->
+<div class="part cc">Part 4 · Containers</div>
+<h2 id="ctr" class="lvl cc">7. Containers in Azure</h2>
+<p>A <strong>container</strong> packages an application with everything it needs (runtime, libraries, config) into one image that runs the same way on any host. Containers start in seconds and use far less overhead than VMs because they share the host's kernel. Azure has three main places to run them, plus a registry to store the images.</p>
+
+<figure>
+<div class="diagram">
+<svg viewBox="0 0 720 270" role="img" aria-labelledby="ct-t">
+  <title id="ct-t">Images are built and stored in Azure Container Registry, then run on Azure Container Instances, Azure Container Apps or Azure Kubernetes Service.</title>
+  <defs><marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--muted)"/></marker></defs>
+  <rect x="20" y="95" width="150" height="70" rx="10" class="sv-box" style="stroke:var(--muted)"/>
+  <text x="95" y="124" text-anchor="middle" class="sv-t" style="font-size:14px">Dockerfile</text>
+  <text x="95" y="144" text-anchor="middle" class="sv-s">your code + base image</text>
+  <path d="M172 130 H208" class="sv-line" marker-end="url(#a4)"/>
+  <text x="190" y="120" text-anchor="middle" class="sv-s">build</text>
+  <rect x="210" y="95" width="160" height="70" rx="10" class="sv-box" style="stroke:var(--c-ctr)"/>
+  <text x="290" y="124" text-anchor="middle" class="sv-t" style="font-size:14px">Container Registry</text>
+  <text x="290" y="144" text-anchor="middle" class="sv-s">ACR · stores images</text>
+  <path d="M372 120 Q400 50 438 48" class="sv-line" marker-end="url(#a4)"/>
+  <path d="M372 130 H438" class="sv-line" marker-end="url(#a4)"/>
+  <path d="M372 140 Q400 210 438 212" class="sv-line" marker-end="url(#a4)"/>
+  <text x="402" y="100" class="sv-s">pull</text>
+  <rect x="440" y="18" width="260" height="62" rx="10" class="sv-box" style="stroke:var(--c-ctr)"/>
+  <text x="456" y="42" class="sv-t" style="font-size:14px">Container Instances (ACI)</text>
+  <text x="456" y="62" class="sv-s">one container or group, no orchestrator</text>
+  <rect x="440" y="99" width="260" height="62" rx="10" class="sv-box" style="stroke:var(--c-ctr);stroke-width:2.5"/>
+  <text x="456" y="123" class="sv-t" style="font-size:14px">Container Apps</text>
+  <text x="456" y="143" class="sv-s">serverless microservices, scale to zero</text>
+  <rect x="440" y="180" width="260" height="62" rx="10" class="sv-box" style="stroke:var(--c-ctr)"/>
+  <text x="456" y="204" class="sv-t" style="font-size:14px">Kubernetes Service (AKS)</text>
+  <text x="456" y="224" class="sv-s">full Kubernetes, you manage node pools</text>
+  <text x="20" y="262" class="sv-s">Container Apps and AKS can also pull public images, for example from Docker Hub or mcr.microsoft.com.</text>
+</svg>
+</div>
+<figcaption>Figure 6. One image, three ways to run it. Moving down the list adds features, and with them more to manage.</figcaption>
+</figure>
+
+<div class="tbl"><table>
+  <thead><tr><th></th><th>Container Instances</th><th>Container Apps</th><th>AKS</th></tr></thead>
+  <tbody>
+    <tr><td><strong>What it is</strong></td><td>Run a container directly, billed per second</td><td>Serverless container platform built on Kubernetes, KEDA and Dapr, with the cluster hidden</td><td>Managed Kubernetes cluster; Azure runs the control plane, you run the nodes</td></tr>
+    <tr><td><strong>Scaling</strong></td><td>None built in; you start more instances</td><td>Automatic on HTTP, CPU, queue length or events; <strong>scale to zero</strong></td><td>Horizontal Pod Autoscaler and cluster autoscaler, configured by you</td></tr>
+    <tr><td><strong>Kubernetes API</strong></td><td>No</td><td>No</td><td>Yes, full <code>kubectl</code> access</td></tr>
+    <tr><td><strong>Good for</strong></td><td>Batch jobs, build agents, quick tests</td><td>APIs, web apps, background workers, event processing</td><td>Large platforms, custom operators, teams that need Kubernetes itself</td></tr>
+    <tr><td><strong>Cost model</strong></td><td>vCPU and memory per second</td><td>Consumption: per vCPU-second, GiB-second and request, with a monthly free grant</td><td>Control plane free on the Free tier (paid Standard tier adds an SLA); you pay for node VMs</td></tr>
+  </tbody>
+</table></div>
+<p><strong>Azure Container Registry (ACR)</strong> is a private Docker-compatible registry in your subscription. It comes in Basic, Standard and Premium tiers (Premium adds geo-replication and private endpoints), can build images in the cloud with <code>az acr build</code>, and connects to AKS, Container Apps and App Service through managed identity.</p>
+
+<div class="lab">
+  <h3>Lab 5a: Run a container in seconds with Container Instances</h3>
+  <p class="goal">Goal: run Microsoft's sample web container with a public DNS name, read its logs, then delete it. Time: about 10 minutes.</p>
+<pre><code><span class="cmt"># 1. Register the provider once per subscription (safe to re-run)</span>
+az provider register --namespace Microsoft.ContainerInstance --wait
+
+<span class="cmt"># 2. Create the container group</span>
+az container create -g $RG --name lab-aci \
+  --image mcr.microsoft.com/azuredocs/aci-helloworld \
+  --os-type Linux --cpu 1 --memory 1.5 \
+  --ports 80 --ip-address Public \
+  --dns-name-label lab-aci-$SUFFIX
+
+<span class="cmt"># 3. Get its address and test</span>
+ACIFQDN=$(az container show -g $RG -n lab-aci --query ipAddress.fqdn -o tsv)
+curl -s http://$ACIFQDN | head -20
+
+<span class="cmt"># 4. Logs and a shell inside the container</span>
+az container logs -g $RG -n lab-aci
+az container exec -g $RG -n lab-aci --exec-command "/bin/sh"   <span class="cmt"># type exit to leave</span>
+
+<span class="cmt"># 5. Delete (ACI bills per second while running)</span>
+az container delete -g $RG -n lab-aci --yes</code></pre>
+  <p class="verify">Opening <code>http://&lt;fqdn&gt;</code> in a browser shows the "Welcome to Azure Container Instances" page, and <code>az container logs</code> shows your request.</p>
+</div>
+
+<div class="lab">
+  <h3>Lab 5b: Deploy a scale-to-zero app with Container Apps</h3>
+  <p class="goal">Goal: deploy a container app with public HTTPS ingress, set scale rules from 0 to 5 replicas, and watch it scale. Time: about 20 minutes.</p>
+<pre><code><span class="cmt"># 1. CLI extension and providers (once)</span>
+az extension add --name containerapp --upgrade
+az provider register --namespace Microsoft.App --wait
+az provider register --namespace Microsoft.OperationalInsights --wait
+
+<span class="cmt"># 2. Create the environment and the app in one command</span>
+az containerapp up --name lab-ca \
+  --resource-group $RG --location $LOCATION \
+  --environment lab-ca-env \
+  --image mcr.microsoft.com/k8se/quickstart:latest \
+  --target-port 80 --ingress external
+
+<span class="cmt"># 3. Get the HTTPS URL</span>
+CAURL=https://$(az containerapp show -g $RG -n lab-ca --query properties.configuration.ingress.fqdn -o tsv)
+curl -s $CAURL | head -5
+
+<span class="cmt"># 4. Allow scale to zero, up to 5 replicas, 20 concurrent requests per replica</span>
+az containerapp update -g $RG -n lab-ca \
+  --min-replicas 0 --max-replicas 5 \
+  --scale-rule-name http-rule --scale-rule-type http \
+  --scale-rule-http-concurrency 20
+
+<span class="cmt"># 5. Generate load for about 60 seconds, then count replicas</span>
+for i in $(seq 1 3000); do curl -s -o /dev/null $CAURL &amp; done; wait
+az containerapp replica list -g $RG -n lab-ca --query "[].name" -o tsv</code></pre>
+  <p class="verify">Under load the replica list shows more than one replica. Leave it idle for a few minutes and run the replica command again: it drops to zero, and the next request to the URL starts a new replica.</p>
+  <p>Also look at <strong>Revisions and replicas</strong> in the portal. Each <code>update</code> created a new <strong>revision</strong>, and you can split traffic between revisions for blue-green or canary releases.</p>
+</div>
+
+<div class="lab">
+  <h3>Lab 5c (optional, paid): A one-node AKS cluster</h3>
+  <p class="goal">Goal: create the smallest practical AKS cluster, deploy nginx with <code>kubectl</code>, expose it with a load balancer and delete the cluster the same day. Time: about 25 minutes.</p>
+  <div class="cost"><p>The AKS control plane is free on the Free tier, but the node VM, its disk, the load balancer and the public IP are billed against your credit while the cluster exists. Don't leave it running overnight.</p></div>
+<pre><code><span class="cmt"># 1. Create a 1-node cluster on the Free tier</span>
+az aks create -g $RG -n lab-aks \
+  --tier free --node-count 1 --node-vm-size Standard_B2s \
+  --generate-ssh-keys
+
+<span class="cmt"># 2. Connect kubectl (already installed in Cloud Shell)</span>
+az aks get-credentials -g $RG -n lab-aks --overwrite-existing
+kubectl get nodes
+
+<span class="cmt"># 3. Deploy, scale and expose nginx</span>
+kubectl create deployment web --image=nginx --replicas=2
+kubectl expose deployment web --port=80 --type=LoadBalancer
+kubectl get pods -o wide
+kubectl get service web --watch      <span class="cmt"># wait for EXTERNAL-IP, then Ctrl+C</span>
+
+<span class="cmt"># 4. Test, then scale the deployment</span>
+curl http://&lt;EXTERNAL-IP&gt;
+kubectl scale deployment web --replicas=4 &amp;&amp; kubectl get pods
+
+<span class="cmt"># 5. Delete the cluster (also removes its MC_ node resource group)</span>
+az aks delete -g $RG -n lab-aks --yes --no-wait</code></pre>
+  <p class="verify">The nginx welcome page loads from the external IP, and <code>kubectl get pods</code> shows four running pods after the scale command.</p>
+  <p>AKS creates a second resource group named <code>MC_compute-lab-rg_lab-aks_&lt;region&gt;</code> for the node VMs and networking. Look at it in the portal, but don't change it by hand; AKS manages it, and it's removed when you delete the cluster.</p>
+</div>
+
+<!-- 8 choose -->
+<h2 id="choose">8. Which one should I use?</h2>
+<p>Ask these questions in order and stop at the first "yes":</p>
+
+<figure>
+<div class="diagram">
+<svg viewBox="0 0 740 420" role="img" aria-labelledby="ch-t">
+  <title id="ch-t">Decision flow for choosing an Azure compute service.</title>
+  <defs><marker id="a5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--muted)"/></marker></defs>
+  <g>
+    <rect x="20" y="16" width="420" height="50" rx="8" class="sv-box" style="stroke:var(--line)"/>
+    <text x="36" y="46" class="sv-t" style="font-size:14px">Need OS-level control or software that must be installed?</text>
+    <rect x="20" y="96" width="420" height="50" rx="8" class="sv-box" style="stroke:var(--line)"/>
+    <text x="36" y="126" class="sv-t" style="font-size:14px">Short code that runs when an event happens?</text>
+    <rect x="20" y="176" width="420" height="50" rx="8" class="sv-box" style="stroke:var(--line)"/>
+    <text x="36" y="206" class="sv-t" style="font-size:14px">A web app or API from source code (no containers)?</text>
+    <rect x="20" y="256" width="420" height="50" rx="8" class="sv-box" style="stroke:var(--line)"/>
+    <text x="36" y="286" class="sv-t" style="font-size:14px">Need the Kubernetes API itself, or a large platform?</text>
+    <rect x="20" y="336" width="420" height="50" rx="8" class="sv-box" style="stroke:var(--line)"/>
+    <text x="36" y="366" class="sv-t" style="font-size:14px">A long-running containerized service?</text>
+  </g>
+  <g>
+    <path d="M230 66 V94" class="sv-line" marker-end="url(#a5)"/><text x="238" y="85" class="sv-s">no</text>
+    <path d="M230 146 V174" class="sv-line" marker-end="url(#a5)"/><text x="238" y="165" class="sv-s">no</text>
+    <path d="M230 226 V254" class="sv-line" marker-end="url(#a5)"/><text x="238" y="245" class="sv-s">no</text>
+    <path d="M230 306 V334" class="sv-line" marker-end="url(#a5)"/><text x="238" y="325" class="sv-s">no</text>
+  </g>
+  <g>
+    <path d="M442 41 H498" class="sv-line" marker-end="url(#a5)"/><text x="452" y="34" class="sv-s">yes</text>
+    <rect x="500" y="16" width="220" height="50" rx="8" class="sv-box" style="stroke:var(--c-vm);stroke-width:2"/>
+    <text x="516" y="38" class="sv-t" style="font-size:14px;fill:var(--c-vm)">Virtual Machines</text>
+    <text x="516" y="56" class="sv-s">many identical ones → Scale Sets</text>
+    <path d="M442 121 H498" class="sv-line" marker-end="url(#a5)"/><text x="452" y="114" class="sv-s">yes</text>
+    <rect x="500" y="96" width="220" height="50" rx="8" class="sv-box" style="stroke:var(--c-fn);stroke-width:2"/>
+    <text x="516" y="126" class="sv-t" style="font-size:14px;fill:var(--c-fn)">Azure Functions</text>
+    <path d="M442 201 H498" class="sv-line" marker-end="url(#a5)"/><text x="452" y="194" class="sv-s">yes</text>
+    <rect x="500" y="176" width="220" height="50" rx="8" class="sv-box" style="stroke:var(--c-app);stroke-width:2"/>
+    <text x="516" y="206" class="sv-t" style="font-size:14px;fill:var(--c-app)">App Service</text>
+    <path d="M442 281 H498" class="sv-line" marker-end="url(#a5)"/><text x="452" y="274" class="sv-s">yes</text>
+    <rect x="500" y="256" width="220" height="50" rx="8" class="sv-box" style="stroke:var(--c-ctr);stroke-width:2"/>
+    <text x="516" y="286" class="sv-t" style="font-size:14px;fill:var(--c-ctr)">AKS</text>
+    <path d="M442 361 H498" class="sv-line" marker-end="url(#a5)"/><text x="452" y="354" class="sv-s">yes</text>
+    <rect x="500" y="336" width="220" height="50" rx="8" class="sv-box" style="stroke:var(--c-ctr);stroke-width:2"/>
+    <text x="516" y="358" class="sv-t" style="font-size:14px;fill:var(--c-ctr)">Container Apps</text>
+    <text x="516" y="376" class="sv-s">a one-off or batch run → ACI</text>
+  </g>
+  <text x="20" y="410" class="sv-s">These are starting points. Real systems often combine several services (see section 9).</text>
+</svg>
+</div>
+<figcaption>Figure 7. A quick way to narrow the choice.</figcaption>
+</figure>
+
+<div class="tbl"><table>
+  <thead><tr><th>Scenario</th><th>Best fit</th><th>Why</th></tr></thead>
+  <tbody>
+    <tr><td>Move an on-prem Oracle 19c server as is</td><td>Virtual Machines</td><td>Needs the OS, custom kernel parameters and installed software</td></tr>
+    <tr><td>Web servers for a sale that gets 10× traffic for one week</td><td>VM Scale Sets</td><td>Autoscale identical VMs behind a load balancer</td></tr>
+    <tr><td>Company website in .NET or Python, deployed from GitHub</td><td>App Service</td><td>Managed runtime, slots for safe releases, custom domain and TLS</td></tr>
+    <tr><td>Resize every image uploaded to Blob Storage</td><td>Functions</td><td>Event-driven, runs for seconds, pay only per upload</td></tr>
+    <tr><td>Nightly data export job in a container</td><td>Container Instances</td><td>Start, run, stop; billed per second</td></tr>
+    <tr><td>Ten microservices that talk to each other, quiet at night</td><td>Container Apps</td><td>Service discovery, scale to zero, no cluster to run</td></tr>
+    <tr><td>Platform team running 200 services with Helm and operators</td><td>AKS</td><td>Full Kubernetes control and ecosystem</td></tr>
+  </tbody>
+</table></div>
+
+<!-- 9 real -->
+<h2 id="real">9. Real-world design: an online pharmacy</h2>
+<p>Here's how one product, an online pharmacy for a hospital group, could use five of these services together. Each service is picked for the job it does best:</p>
+
+<figure>
+<div class="diagram">
+<svg viewBox="0 0 740 300" role="img" aria-labelledby="rw-t">
+  <title id="rw-t">Online pharmacy architecture using App Service, Container Apps, Functions, Container Instances and Virtual Machines.</title>
+  <defs><marker id="a6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--muted)"/></marker></defs>
+  <text x="50" y="146" text-anchor="middle" class="sv-t">Customers</text>
+  <path d="M90 140 H128" class="sv-line" marker-end="url(#a6)"/>
+  <rect x="130" y="110" width="150" height="60" rx="8" class="sv-box" style="stroke:var(--c-app);stroke-width:2"/>
+  <text x="205" y="136" text-anchor="middle" class="sv-t" style="font-size:14px">App Service</text>
+  <text x="205" y="154" text-anchor="middle" class="sv-s">storefront website</text>
+  <path d="M282 140 H328" class="sv-line" marker-end="url(#a6)"/>
+  <rect x="330" y="90" width="170" height="100" rx="8" class="sv-box" style="stroke:var(--c-ctr);stroke-width:2"/>
+  <text x="415" y="114" text-anchor="middle" class="sv-t" style="font-size:14px">Container Apps</text>
+  <text x="415" y="134" text-anchor="middle" class="sv-m" style="font-size:11px">orders-api</text>
+  <text x="415" y="152" text-anchor="middle" class="sv-m" style="font-size:11px">catalog-api</text>
+  <text x="415" y="170" text-anchor="middle" class="sv-m" style="font-size:11px">payments-api</text>
+  <path d="M502 120 H548" class="sv-line" marker-end="url(#a6)"/>
+  <rect x="550" y="20" width="170" height="60" rx="8" class="sv-box" style="stroke:var(--c-fn);stroke-width:2"/>
+  <text x="635" y="46" text-anchor="middle" class="sv-t" style="font-size:14px">Functions</text>
+  <text x="635" y="64" text-anchor="middle" class="sv-s">SMS on order placed</text>
+  <path d="M502 110 Q530 50 548 50" class="sv-line" marker-end="url(#a6)"/>
+  <rect x="550" y="100" width="170" height="70" rx="8" class="sv-box" style="stroke:var(--c-vm);stroke-width:2"/>
+  <text x="635" y="126" text-anchor="middle" class="sv-t" style="font-size:14px">Virtual Machines</text>
+  <text x="635" y="144" text-anchor="middle" class="sv-s">legacy inventory DB</text>
+  <text x="635" y="160" text-anchor="middle" class="sv-s">(vendor-certified OS)</text>
+  <rect x="550" y="200" width="170" height="60" rx="8" class="sv-box" style="stroke:var(--c-ctr);stroke-width:2;stroke-dasharray:5 4"/>
+  <text x="635" y="226" text-anchor="middle" class="sv-t" style="font-size:14px">Container Instances</text>
+  <text x="635" y="244" text-anchor="middle" class="sv-s">nightly sales report</text>
+  <path d="M635 198 V174" class="sv-line" marker-end="url(#a6)"/>
+  <text x="330" y="250" class="sv-s">Timer Function starts the</text>
+  <text x="330" y="266" class="sv-s">report container at 02:00</text>
+  <path d="M500 258 H548" class="sv-line" marker-end="url(#a6)"/>
+</svg>
+</div>
+<figcaption>Figure 8. Five compute services in one product, each used where it fits.</figcaption>
+</figure>
+
+<ul>
+  <li><strong>App Service</strong> runs the storefront. Releases go to a staging slot first and are swapped in after a smoke test.</li>
+  <li><strong>Container Apps</strong> runs the order, catalog and payment APIs as separate microservices. They scale on HTTP traffic during the day and drop to one replica (or zero for the catalog importer) at night.</li>
+  <li><strong>Functions</strong> sends an SMS when an order message lands on a Service Bus queue, and a timer function starts the nightly report.</li>
+  <li><strong>Container Instances</strong> runs the nightly report job for about 15 minutes and then stops, so it costs only those 15 minutes.</li>
+  <li><strong>Virtual Machines</strong> host the old inventory database, which the vendor only supports on a specific OS version. It sits in an availability zone pair with backups to a Recovery Services vault.</li>
+</ul>
+<p>No AKS here, because the team has no need for the Kubernetes API itself. If they later grow to a platform team running dozens of services with Helm charts and custom operators, that's when AKS becomes the right call.</p>
+
+<!-- 10 cleanup -->
+<h2 id="cleanup">10. Clean up</h2>
+<p>Everything from every lab lives in one resource group, so one command removes it all, including the VMs, disks, load balancer, plans, function app, storage account and container apps. If you created the AKS cluster, its <code>MC_</code> resource group is removed along with the cluster.</p>
+<pre><code>az group delete --name compute-lab-rg --yes --no-wait
+
+<span class="cmt"># Confirm it's gone after a few minutes</span>
+az group exists --name compute-lab-rg     <span class="cmt"># false</span></code></pre>
+<p>Also check <strong>Cost Management → Cost analysis</strong> the next day to confirm that nothing kept running.</p>
+
+<!-- 11 quiz -->
+<h2 id="quiz">11. Quiz: test yourself</h2>
+<p>Pick an answer to see whether it's right and why.</p>
+<div class="quiz" id="quiz"></div>
+<p class="score" id="score" aria-live="polite"></p>
+<button class="reset" id="reset" type="button">Reset quiz</button>
+
+<!-- 12 -->
+<h2 id="takeaways">12. Key takeaways</h2>
+<ul>
+  <li><strong>Virtual Machines</strong> give full control of the OS. Remember to <em>deallocate</em>, not just shut down, to stop compute charges.</li>
+  <li><strong>Scale Sets</strong> run many identical VMs with autoscale and a load balancer; Flexible orchestration is the default for new ones.</li>
+  <li><strong>App Service</strong> runs web apps and APIs on a managed platform. You pay for the plan, and slots give zero-downtime releases from Standard tier up.</li>
+  <li><strong>Functions</strong> run event-driven code with triggers and bindings. Use <strong>Flex Consumption</strong> for new serverless apps.</li>
+  <li><strong>Containers:</strong> ACI for a quick or one-off container, Container Apps for serverless microservices that scale to zero, AKS when you need Kubernetes itself. ACR stores the images.</li>
+  <li>Moving from VMs toward Functions, you manage less and get less control, so pick the most managed service that still meets the requirement.</li>
+</ul>
+<p><strong>Next in the series:</strong> Azure Storage: storage accounts, blobs, files, queues, tables and access tiers.</p>
+
+<footer>
+  Written by Sunke Nithin while learning Azure for AZ-900. Commands were written for the Azure CLI in Cloud Shell; flag names can change between CLI versions, so if one fails, check <code>az &lt;command&gt; --help</code>.
+</footer>
+</div>
+
+<script>
+/* Figure 1 cells: 0 = Azure, 1 = you, 2 = shared */
+(function(){
+  const cols=[210,300,390,480,570,660,750];
+  const rows=[128,168,208,248];
+  const m=[ // per column: code, runtime, scaling, os
+    [1,1,1,1],[1,1,2,1],[1,1,2,2],[1,1,1,0],[1,1,2,0],[1,0,2,0],[1,0,0,0]];
+  const g=document.getElementById('cells'),ns='http://www.w3.org/2000/svg';
+  m.forEach((c,i)=>c.forEach((v,j)=>{
+    const r=document.createElementNS(ns,'rect');
+    r.setAttribute('x',cols[i]-38);r.setAttribute('y',rows[j]);
+    r.setAttribute('width',76);r.setAttribute('height',24);r.setAttribute('rx',5);
+    if(v===0)r.setAttribute('style','fill:none;stroke:var(--muted);stroke-width:1.5');
+    else r.setAttribute('style','fill:var(--accent);'+(v===2?'opacity:.4':''));
+    g.appendChild(r);
+  }));
+})();
+
+const QS=[
+ {q:"You shut down a VM from inside Linux with 'sudo shutdown now'. What are you still paying for?",
+  o:["Nothing","Only the disks","Compute and disks, because the VM is Stopped but not deallocated","Only the public IP"],a:2,
+  w:"A shutdown from inside the OS leaves the VM allocated. Use Stop in the portal or az vm deallocate to stop compute charges."},
+ {q:"Which VM size family is designed for memory-heavy workloads such as large databases?",
+  o:["B-series","E-series","F-series","N-series"],a:1,
+  w:"E-series is memory optimized. B is burstable, F is compute optimized and N has GPUs."},
+ {q:"Your web tier must grow from 2 to 10 identical VMs when CPU is high. Which service fits best?",
+  o:["Availability set","Virtual Machine Scale Set","App Service Free tier","Container Instances"],a:1,
+  w:"Scale sets manage groups of identical VMs and autoscale them on metrics such as CPU."},
+ {q:"In App Service, what do you actually pay for?",
+  o:["Each web app","Each deployment","The App Service plan","Each HTTP request"],a:2,
+  w:"The plan is the compute. Several apps can share one plan, and an empty plan still costs money (except Free)."},
+ {q:"Which App Service feature lets you release a new version with zero downtime and roll back quickly?",
+  o:["Deployment slots with swap","Always On","WebJobs","Hybrid connections"],a:0,
+  w:"Deploy to a staging slot, test it, then swap it into production. Swapping back undoes the release. Slots need Standard tier or higher."},
+ {q:"What starts an Azure Function?",
+  o:["A binding","A trigger","An App Service plan","A deployment slot"],a:1,
+  w:"Each function has exactly one trigger, such as HTTP, timer, blob or queue. Bindings connect it to other services."},
+ {q:"Which Functions hosting plan does Microsoft recommend for new serverless apps?",
+  o:["Consumption (legacy)","Flex Consumption","Dedicated","Isolated"],a:1,
+  w:"Flex Consumption is the recommended serverless plan. Linux hosting on the legacy Consumption plan retires on 30 September 2028."},
+ {q:"You need ten containerized microservices that scale to zero at night, without running a Kubernetes cluster. What should you use?",
+  o:["Azure Kubernetes Service","Azure Container Instances","Azure Container Apps","Virtual Machines with Docker"],a:2,
+  w:"Container Apps is serverless, scales to zero, and handles ingress and service discovery while hiding the cluster."},
+ {q:"In AKS on the Free tier, what are you charged for?",
+  o:["The control plane only","Nothing at all","The node VMs and their related resources","Each kubectl command"],a:2,
+  w:"The control plane is free on the Free tier; you pay for the nodes, disks, load balancers and public IPs. The Standard tier adds a paid uptime SLA."}
+];
+const box=document.getElementById('quiz'),score=document.getElementById('score');
+let answered=0,right=0;
+function render(){
+  box.innerHTML='';answered=0;right=0;score.textContent='';
+  QS.forEach((it,i)=>{
+    const d=document.createElement('div');d.className='q';
+    d.innerHTML=`<p class="qt">${i+1}. ${it.q}</p><div class="opts"></div><p class="why" hidden></p>`;
+    const opts=d.querySelector('.opts'),why=d.querySelector('.why');
+    it.o.forEach((t,j)=>{
+      const b=document.createElement('button');b.type='button';b.id=`q${i}o${j}`;b.textContent=t;
+      b.addEventListener('click',()=>{
+        opts.querySelectorAll('button').forEach((x,k)=>{x.disabled=true;if(k===it.a)x.classList.add('ok')});
+        if(j!==it.a)b.classList.add('no');else right++;
+        answered++;
+        why.textContent=(j===it.a?'Correct. ':'Not quite. ')+it.w;why.hidden=false;
+        if(answered===QS.length)score.textContent=`You scored ${right} out of ${QS.length}.`;
+      });
+      opts.appendChild(b);
+    });
+    box.appendChild(d);
+  });
+}
+document.getElementById('reset').addEventListener('click',render);
+render();
+</script>
+
+</body></html>
