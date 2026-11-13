@@ -1,0 +1,614 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Transactional Replication to Azure SQL Database: CLI Runbook</title>
+<meta name="description" content="A scripted transactional replication migration from a SQL Server VM to Azure SQL Database: Azure CLI for the subscriber, T-SQL for the distributor, publication and push subscription, plus monitoring, validation and cut-over.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap">
+
+<style>
+/* Layout: one reading column with a sticky contents rail on wide screens;
+   every command block is labelled with the shell or language it belongs to. */
+:root{
+  --bg:#f7f8fa; --surface:#fff; --fg:#17202a; --muted:#56616e; --faint:#7c8894;
+  --line:#dde3ea; --accent:#9c2a2a; --accent-soft:#fbeceb; --code-bg:#1d2430; --code-fg:#e7eef7;
+  --warn:#8a5300; --warn-soft:#fdf3e2;
+  --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --body:"Source Sans 3","Segoe UI",Arial,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#10151b; --surface:#161d26; --fg:#e6edf3; --muted:#9fabb9; --faint:#78828e;
+        --line:#28313c; --accent:#ef8f8f; --accent-soft:#2a1a1a; --code-bg:#0c1117; --code-fg:#dbe5ef;
+        --warn:#e2b464; --warn-soft:#2a2112;}
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.65 var(--body);
+  -webkit-font-smoothing:antialiased}
+.back-home{display:inline-block;margin:20px 0 0;font:600 14px/1 var(--body);
+  color:var(--accent);text-decoration:none}
+.back-home:hover{text-decoration:underline}
+.wrap{max-width:62rem;margin-inline:auto;padding:0 1.25rem 4rem}
+header.post{padding:1rem 0 2rem;border-bottom:1px solid var(--line);margin-bottom:2rem}
+.eyebrow{font:600 .72rem/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+h1{font:700 2.1rem/1.2 var(--display);letter-spacing:-.02em;margin:.7rem 0 .6rem}
+.lede{font-size:1.06rem;color:var(--muted);max-width:46rem;margin:0}
+.byline{margin:1.1rem 0 0;font:.85rem/1 var(--body);color:var(--faint)}
+.byline b{color:var(--muted);font-weight:600}
+.layout{display:grid;grid-template-columns:1fr;gap:2rem}
+@media (min-width:62rem){.layout{grid-template-columns:15rem 1fr;align-items:start}}
+.toc{font-size:.88rem}
+@media (min-width:62rem){.toc{position:sticky;top:1.5rem;max-height:calc(100vh - 3rem);overflow:auto}}
+.toc p{margin:0 0 .5rem;font:600 .7rem/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+.toc ol{list-style:none;margin:0;padding:0}
+.toc li+li{margin-top:.15rem}
+.toc a{display:flex;gap:.5rem;padding:.15rem 0;color:var(--muted);text-decoration:none}
+.toc a:hover{color:var(--accent)}
+.toc .n{font:500 .75rem/1.5 var(--mono);color:var(--faint)}
+main{min-width:0}
+h2{font:700 1.3rem/1.3 var(--display);letter-spacing:-.015em;margin:2.4rem 0 .8rem;
+  padding-top:1.2rem;border-top:1px solid var(--line)}
+main>h2:first-child{margin-top:0;padding-top:0;border-top:0}
+h3{font:600 1.03rem/1.35 var(--display);margin:1.6rem 0 .5rem}
+p{margin:.7rem 0}
+ul{margin:.7rem 0;padding-left:1.15rem}
+li+li{margin-top:.25rem}
+code{font:.88em/1.5 var(--mono);background:var(--accent-soft);color:inherit;
+  padding:.08em .35em;border-radius:4px;overflow-wrap:anywhere}
+.code{position:relative;margin:1.1rem 0}
+.code pre{margin:0;padding:1rem 1rem .9rem;background:var(--code-bg);color:var(--code-fg);
+  border-radius:10px;overflow-x:auto;font:.84rem/1.6 var(--mono)}
+.code pre code{background:none;padding:0;color:inherit;font-size:1em}
+.code::after{content:attr(data-lang);position:absolute;top:0;right:.75rem;transform:translateY(-50%);
+  font:600 .65rem/1.6 var(--mono);letter-spacing:.1em;text-transform:uppercase;
+  color:#fff;background:var(--accent);padding:0 .5rem;border-radius:4px}
+.tbl{overflow-x:auto;margin:1.1rem 0}
+table{border-collapse:collapse;width:100%;font-size:.92rem;background:var(--surface)}
+th,td{border:1px solid var(--line);padding:.5rem .65rem;text-align:left;vertical-align:top}
+th{background:var(--accent-soft);font-weight:600}
+footer.post{margin-top:3rem;padding-top:1.2rem;border-top:1px solid var(--line);
+  font-size:.85rem;color:var(--faint)}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+<a class="back-home" href="../index.html">&#8592;&nbsp;All articles</a>
+
+<header class="post">
+  <div class="eyebrow">SQL Server &middot; Azure SQL Database &middot; CLI runbook</div>
+  <h1>Transactional Replication from a SQL Server VM to Azure SQL Database: a CLI Runbook</h1>
+  <p class="lede">Every step of a transactional replication migration as commands you can paste: Azure CLI for the subscriber, sqlcmd and T-SQL for the publisher and distributor on the VM. The same shape as the portal walkthrough, but scripted end to end, with the agent jobs, latency checks, row-count validation, cut-over and a troubleshooting table.</p>
+  <p class="byline">By <b>Sunke Nithin</b> &middot; 5 November 2026 &middot; ~16 min read</p>
+</header>
+
+<div class="layout">
+
+<nav class="toc" aria-label="Contents">
+  <p>Contents</p>
+  <ol>
+    <li><a href="#overview"><span class="n">01</span>Overview</a></li>
+    <li><a href="#step-1-create-the-azure-side-azure-cli"><span class="n">02</span>Step 1 — Create the Azure side (Azure CLI)</a></li>
+    <li><a href="#step-2-check-the-vm-prerequisites"><span class="n">03</span>Step 2 — Check the VM prerequisites</a></li>
+    <li><a href="#step-3-configure-distribution-t-sql-on-the-vm"><span class="n">04</span>Step 3 — Configure distribution (T-SQL on the VM)</a></li>
+    <li><a href="#step-4-create-the-publication-t-sql-on-the-vm"><span class="n">05</span>Step 4 — Create the publication (T-SQL on the VM)</a></li>
+    <li><a href="#step-5-create-the-push-subscription-to-azure-sql-database"><span class="n">06</span>Step 5 — Create the push subscription to Azure SQL Database</a></li>
+    <li><a href="#step-6-monitor-the-agents-and-latency"><span class="n">07</span>Step 6 — Monitor the agents and latency</a></li>
+    <li><a href="#step-7-validate-the-data"><span class="n">08</span>Step 7 — Validate the data</a></li>
+    <li><a href="#step-8-cut-over-to-azure-sql-database"><span class="n">09</span>Step 8 — Cut over to Azure SQL Database</a></li>
+    <li><a href="#step-9-clean-up"><span class="n">10</span>Step 9 — Clean up</a></li>
+    <li><a href="#troubleshooting"><span class="n">11</span>Troubleshooting</a></li>
+  </ol>
+</nav>
+
+<main>
+<h2 id="overview">Overview</h2>
+
+<p>The SQL Server VM is both <strong>publisher</strong> and <strong>distributor</strong>, and Azure SQL Database is a <strong>push subscriber</strong>. Three SQL Agent jobs on the VM move the data: the Snapshot Agent makes the initial copy, the Log Reader Agent reads committed changes from the transaction log, and the Distribution Agent pushes both to Azure over port 1433.</p>
+
+<p>Azure SQL Database can only be a subscriber. It cannot publish or distribute, and it only accepts <strong>push</strong> subscriptions.</p>
+
+<p><strong>Tools used</strong></p>
+
+<ul><li><strong>Azure CLI (<code>az</code>)</strong> for the Azure resources, run from your laptop or Cloud Shell.</li><li><strong>sqlcmd</strong> on the VM to run every T-SQL script, for example <code>sqlcmd -S localhost -E -C -i 03_distribution.sql</code>. Here <code>-E</code> means Windows auth and <code>-C</code> trusts the local server certificate.</li><li><strong>PowerShell</strong> on the VM for service and network checks.</li></ul>
+
+<p><strong>Lab values used throughout</strong> (replace with your own)</p>
+
+<div class="tbl"><table>
+<thead><tr><th>Placeholder</th><th>Example</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>LabDB</code></td><td>LabDB</td><td>Source database on the VM, and the target database name in Azure</td></tr>
+<tr><td><code>Pub_LabDB</code></td><td>Pub_LabDB</td><td>Publication name</td></tr>
+<tr><td><code>&lt;srv&gt;</code></td><td>sqlrepl-lab-01</td><td>Azure SQL logical server name (globally unique)</td></tr>
+<tr><td><code>&lt;srv&gt;.database.windows.net</code></td><td>sqlrepl-lab-01.database.windows.net</td><td>Subscriber name used in replication</td></tr>
+<tr><td><code>sqladmin</code> / <code>&lt;SqlPwd&gt;</code></td><td>sqladmin</td><td>Azure SQL admin login (SQL auth)</td></tr>
+<tr><td><code>&lt;AgentAccount&gt;</code> / <code>&lt;AgentPwd&gt;</code></td><td>.\repladmin</td><td>Windows account the replication agents run as on the VM</td></tr>
+<tr><td><code>C:\ReplData</code></td><td>C:\ReplData</td><td>Snapshot folder on the VM</td></tr>
+</tbody></table></div>
+
+<h2 id="step-1-create-the-azure-side-azure-cli">Step 1 — Create the Azure side (Azure CLI)</h2>
+
+<p>This step creates the subscriber: a logical server, a firewall rule that lets the VM in, and an <strong>empty</strong> target database. The snapshot will create the tables, so don't create any schema here.</p>
+
+<div class="code" data-lang="bash"><pre><code># 1. Sign in and pick the subscription
+az login
+az account set --subscription "&lt;subscription-name-or-id&gt;"
+
+# 2. Variables
+RG=rg-repl-lab
+LOC=centralindia
+SRV=sqlrepl-lab-01            # must be globally unique
+DB=LabDB
+ADMIN=sqladmin
+SQLPWD='&lt;StrongPassword&gt;'
+VM_IP=&lt;public-IP-of-the-VM&gt;
+
+# 3. Resource group
+az group create --name $RG --location $LOC
+
+# 4. Logical SQL server (holds logins and firewall rules)
+az sql server create --resource-group $RG --name $SRV --location $LOC \
+  --admin-user $ADMIN --admin-password "$SQLPWD"
+
+# 5. Firewall rule so the VM can reach the server on 1433
+az sql server firewall-rule create --resource-group $RG --server $SRV \
+  --name AllowReplVM --start-ip-address $VM_IP --end-ip-address $VM_IP
+
+# 6. Empty target database (small tier is fine for a lab)
+az sql db create --resource-group $RG --server $SRV --name $DB \
+  --service-objective S0
+
+# 7. Confirm
+az sql db show --resource-group $RG --server $SRV --name $DB \
+  --query "{name:name, status:status, sku:currentSku.name}" -o table</code></pre></div>
+
+<p><strong>What each part does</strong></p>
+
+<ul><li><strong>Steps 3–4:</strong> the logical server is the endpoint <code>&lt;srv&gt;.database.windows.net</code>. The admin login you set here is the SQL-auth login the Distribution Agent will use.</li><li><strong>Step 5:</strong> Azure SQL blocks all traffic by default. If the VM is in Azure, get its outbound IP with <code>az vm show -d -g &lt;vm-rg&gt; -n &lt;vm-name&gt; --query publicIps -o tsv</code>. If it reaches the internet through a NAT gateway, use the NAT gateway's IP instead.</li><li><strong>Step 6:</strong> S0 is enough for a lab. For a real migration, size the database for the snapshot load, which is the heaviest part.</li><li><strong>Optional, for Azure VMs only:</strong> connections from inside Azure use <em>Redirect</em> mode by default, which also needs outbound ports 11000–11999. In a lab, the simplest fix is to force Proxy mode with <code>az sql server conn-policy update -g $RG -s $SRV --connection-type Proxy</code>.</li></ul>
+
+<h2 id="step-2-check-the-vm-prerequisites">Step 2 — Check the VM prerequisites</h2>
+
+<p>Fix everything in this step before configuring replication. Most replication failures come from one of these checks.</p>
+
+<p><strong>2a. SQL Server Agent running, snapshot folder ready</strong> (PowerShell as Administrator)</p>
+
+<div class="code" data-lang="powershell"><pre><code># Default instance = SQLSERVERAGENT; named instance = SQLAgent$&lt;InstanceName&gt;
+Get-Service SQLSERVERAGENT
+Set-Service SQLSERVERAGENT -StartupType Automatic
+Start-Service SQLSERVERAGENT
+
+# Snapshot folder; the agent account needs Modify rights on it
+New-Item -ItemType Directory -Path C:\ReplData -Force
+icacls C:\ReplData /grant "&lt;AgentAccount&gt;:(OI)(CI)M"
+
+# Can the VM reach Azure SQL on 1433?
+Test-NetConnection &lt;srv&gt;.database.windows.net -Port 1433</code></pre></div>
+
+<p>The replication agents run as SQL Agent jobs, so the Agent must be running. <code>TcpTestSucceeded : True</code> confirms the firewall rule from Step 1 works. The <strong>Replication</strong> feature must also be installed with SQL Server; if it isn't, add it from SQL Server Setup.</p>
+
+<p><strong>2b. Version and server name</strong> (<code>sqlcmd -S localhost -E -C -i 02_checks.sql</code>)</p>
+
+<div class="code" data-lang="sql"><pre><code>-- Version: SQL Server 2016 or later is the safe baseline for an Azure SQL Database subscriber
+SELECT SERVERPROPERTY('ProductVersion') AS version,
+       SERVERPROPERTY('Edition')        AS edition;
+
+-- These two must match, or distribution setup fails
+SELECT @@SERVERNAME AS at_servername,
+       SERVERPROPERTY('ServerName') AS actual_name;</code></pre></div>
+
+<p>A mismatch is common on VMs that were cloned or renamed. To fix it, run the following, then restart the SQL Server service:</p>
+
+<div class="code" data-lang="sql"><pre><code>EXEC sp_dropserver '&lt;old_name&gt;';
+EXEC sp_addserver  '&lt;actual_name&gt;', 'local';</code></pre></div>
+
+<p><strong>2c. Every table to publish needs a primary key</strong></p>
+
+<div class="code" data-lang="sql"><pre><code>USE LabDB;
+SELECT s.name AS schema_name, t.name AS table_name
+FROM sys.tables t
+JOIN sys.schemas s ON s.schema_id = t.schema_id
+WHERE t.is_ms_shipped = 0
+  AND NOT EXISTS (SELECT 1 FROM sys.indexes i
+                  WHERE i.object_id = t.object_id AND i.is_primary_key = 1);</code></pre></div>
+
+<p>Any table listed here must either get a primary key or be left out of the publication.</p>
+
+<p><strong>2d. Test the SQL-auth login to the subscriber</strong></p>
+
+<div class="code" data-lang="powershell"><pre><code>sqlcmd -S tcp:&lt;srv&gt;.database.windows.net,1433 -d LabDB -U sqladmin -P "&lt;SqlPwd&gt;" -Q "SELECT DB_NAME(), @@VERSION"</code></pre></div>
+
+<p>This is the same connection the Distribution Agent will make. If it fails here, replication will fail too.</p>
+
+<h2 id="step-3-configure-distribution-t-sql-on-the-vm">Step 3 — Configure distribution (T-SQL on the VM)</h2>
+
+<p>This step makes the VM its own distributor. It creates the <code>distribution</code> database, which stores replicated commands until they are delivered, and registers the VM as a publisher that uses it.</p>
+
+<p>Run it with <code>sqlcmd -S localhost -E -C -i 03_distribution.sql</code>:</p>
+
+<div class="code" data-lang="sql"><pre><code>USE master;
+GO
+-- 1. Make this instance its own distributor
+DECLARE @srv sysname = @@SERVERNAME;
+EXEC sp_adddistributor
+     @distributor = @srv,
+     @password    = N'&lt;DistributorAdminPwd&gt;';
+GO
+
+-- 2. Create the distribution database
+EXEC sp_adddistributiondb
+     @database          = N'distribution',
+     @security_mode     = 1,      -- Windows auth to the distributor
+     @min_distretention = 0,
+     @max_distretention = 72,     -- hours to keep delivered commands
+     @history_retention = 48;
+GO
+
+-- 3. Register this instance as a publisher using that distributor
+DECLARE @srv sysname = @@SERVERNAME;
+EXEC sp_adddistpublisher
+     @publisher         = @srv,
+     @distribution_db   = N'distribution',
+     @security_mode     = 1,
+     @working_directory = N'C:\ReplData';   -- snapshot folder
+GO
+
+-- 4. Verify
+EXEC sp_get_distributor;
+EXEC sp_helpdistpublisher;</code></pre></div>
+
+<p><strong>What each call does</strong></p>
+
+<ul><li><strong><code>sp_adddistributor</code></strong> marks the instance as a distributor. The password belongs to the internal <code>distributor_admin</code> link, which matters only when publisher and distributor are on different servers.</li><li><strong><code>sp_adddistributiondb</code></strong> creates the <code>distribution</code> database and its cleanup jobs. Retention controls how long commands are kept, in hours.</li><li><strong><code>sp_adddistpublisher</code></strong> lets this instance publish through the distributor. <code>@working_directory</code> is where the Snapshot Agent writes files. For a push subscription, the Distribution Agent reads them locally on the VM.</li><li><strong>Verify:</strong> <code>sp_get_distributor</code> should show <code>installed = 1</code>. <code>sp_helpdistpublisher</code> should list your server with <code>C:\ReplData</code>.</li></ul>
+
+<h2 id="step-4-create-the-publication-t-sql-on-the-vm">Step 4 — Create the publication (T-SQL on the VM)</h2>
+
+<p>This step enables <code>LabDB</code> for publishing, creates the Log Reader and Snapshot agents, defines the publication, and adds the tables as articles.</p>
+
+<p>Run it with <code>sqlcmd -S localhost -E -C -i 04_publication.sql</code>:</p>
+
+<div class="code" data-lang="sql"><pre><code>-- 1. Enable the database for transactional publishing
+USE master;
+EXEC sp_replicationdboption
+     @dbname = N'LabDB', @optname = N'publish', @value = N'true';
+GO
+
+USE LabDB;
+GO
+-- 2. Log Reader Agent (one per published database)
+EXEC sp_addlogreader_agent
+     @job_login    = N'&lt;AgentAccount&gt;',
+     @job_password = N'&lt;AgentPwd&gt;',
+     @publisher_security_mode = 1;
+GO
+
+-- 3. The publication
+EXEC sp_addpublication
+     @publication       = N'Pub_LabDB',
+     @description       = N'LabDB to Azure SQL Database',
+     @status            = N'active',
+     @repl_freq         = N'continuous',  -- transactional
+     @sync_method       = N'concurrent',  -- no long table locks during snapshot
+     @allow_push        = N'true',
+     @allow_pull        = N'false',
+     @independent_agent = N'true',
+     @immediate_sync    = N'true';
+GO
+
+-- 4. Snapshot Agent for this publication (run on demand)
+EXEC sp_addpublication_snapshot
+     @publication    = N'Pub_LabDB',
+     @frequency_type = 1,                -- once / on demand
+     @job_login      = N'&lt;AgentAccount&gt;',
+     @job_password   = N'&lt;AgentPwd&gt;',
+     @publisher_security_mode = 1;
+GO
+
+-- 5. Add every user table that has a primary key as an article
+DECLARE @sch sysname, @tbl sysname;
+DECLARE c CURSOR LOCAL FAST_FORWARD FOR
+  SELECT s.name, t.name
+  FROM sys.tables t
+  JOIN sys.schemas s ON s.schema_id = t.schema_id
+  WHERE t.is_ms_shipped = 0
+    AND EXISTS (SELECT 1 FROM sys.indexes i
+                WHERE i.object_id = t.object_id AND i.is_primary_key = 1);
+OPEN c;
+FETCH NEXT FROM c INTO @sch, @tbl;
+WHILE @@FETCH_STATUS = 0
+BEGIN
+  DECLARE @art sysname = @sch + N'_' + @tbl;
+  EXEC sp_addarticle
+       @publication       = N'Pub_LabDB',
+       @article           = @art,
+       @source_owner      = @sch,
+       @source_object     = @tbl,
+       @type              = N'logbased',
+       @destination_owner = @sch,
+       @destination_table = @tbl,
+       @pre_creation_cmd  = N'drop';    -- recreate table at subscriber
+  FETCH NEXT FROM c INTO @sch, @tbl;
+END
+CLOSE c; DEALLOCATE c;
+GO
+
+-- 6. Verify
+EXEC sp_helppublication @publication = N'Pub_LabDB';
+EXEC sp_helparticle     @publication = N'Pub_LabDB';</code></pre></div>
+
+<p><strong>What each part does</strong></p>
+
+<ul><li><strong><code>sp_replicationdboption</code></strong> flags the database so the Log Reader can read its transaction log.</li><li><strong><code>sp_addlogreader_agent</code></strong> creates the job that reads committed transactions from the log and writes them to the <code>distribution</code> database. <code>&lt;AgentAccount&gt;</code> is the Windows account the job runs as. It needs <code>db_owner</code> in <code>LabDB</code> and <code>distribution</code>, plus rights on <code>C:\ReplData</code>.</li><li><strong><code>sp_addpublication</code></strong> defines what gets published and how:</li><li><code>continuous</code> means transactional replication.</li><li><code>concurrent</code> takes the snapshot without holding table locks for its whole duration.</li><li><code>allow_push</code> is required, because Azure SQL Database supports only push subscriptions.</li><li><strong><code>sp_addpublication_snapshot</code></strong> creates the Snapshot Agent job. It runs on demand, which is all a one-time migration needs.</li><li><strong><code>sp_addarticle</code></strong> adds each table. <code>logbased</code> means changes come from the log. <code>@pre_creation_cmd = 'drop'</code> lets the snapshot drop and recreate the table at the subscriber. The loop skips tables without a primary key, because they can't be published.</li><li><strong>Objects other than tables</strong> (views, procedures, functions) can be added as articles with <code>@type = N'view schema only'</code> or <code>N'proc schema only'</code>. You can also deploy them to Azure separately with a script or DACPAC.</li></ul>
+
+<h2 id="step-5-create-the-push-subscription-to-azure-sql-database">Step 5 — Create the push subscription to Azure SQL Database</h2>
+
+<p>This step registers Azure SQL Database as the subscriber, creates the Distribution Agent that pushes data there, and generates the initial snapshot.</p>
+
+<p>Run it with <code>sqlcmd -S localhost -E -C -i 05_subscription.sql</code>:</p>
+
+<div class="code" data-lang="sql"><pre><code>USE LabDB;
+GO
+-- 1. Register the subscription (push, all articles)
+EXEC sp_addsubscription
+     @publication       = N'Pub_LabDB',
+     @subscriber        = N'&lt;srv&gt;.database.windows.net',
+     @destination_db    = N'LabDB',
+     @subscription_type = N'Push',
+     @sync_type         = N'automatic',   -- initialize from snapshot
+     @article           = N'all',
+     @update_mode       = N'read only';
+GO
+
+-- 2. Distribution Agent: runs on the VM, connects to Azure with SQL auth
+EXEC sp_addpushsubscription_agent
+     @publication              = N'Pub_LabDB',
+     @subscriber               = N'&lt;srv&gt;.database.windows.net',
+     @subscriber_db            = N'LabDB',
+     @job_login                = N'&lt;AgentAccount&gt;',
+     @job_password             = N'&lt;AgentPwd&gt;',
+     @subscriber_security_mode = 0,          -- 0 = SQL Server authentication
+     @subscriber_login         = N'sqladmin',
+     @subscriber_password      = N'&lt;SqlPwd&gt;',
+     @frequency_type           = 64;         -- run continuously
+GO
+
+-- 3. Generate the initial snapshot
+EXEC sp_startpublication_snapshot @publication = N'Pub_LabDB';
+GO
+
+-- 4. Verify
+EXEC sp_helpsubscription @publication = N'Pub_LabDB';</code></pre></div>
+
+<p><strong>What each call does</strong></p>
+
+<ul><li><strong><code>sp_addsubscription</code></strong> records the Azure database as a subscriber to all articles. <code>@sync_type = 'automatic'</code> means the subscriber is initialized from the snapshot, so the tables are created and loaded for you.</li><li><strong><code>sp_addpushsubscription_agent</code></strong> creates the Distribution Agent job on the VM:</li><li><strong><code>@subscriber_security_mode = 0</code> is the key setting.</strong> Azure SQL Database accepts only SQL authentication from the agent, so this must not be 1.</li><li><code>@job_login</code> is the Windows account the job runs as on the VM. <code>@subscriber_login</code> is what it uses to sign in to Azure.</li><li><code>@frequency_type = 64</code> keeps the agent running, so changes flow within seconds.</li><li><strong><code>sp_startpublication_snapshot</code></strong> runs the Snapshot Agent. It writes schema scripts and BCP data files to <code>C:\ReplData</code>. The Distribution Agent then applies them to Azure and starts delivering ongoing changes.</li></ul>
+
+<p>You can also start the agent jobs from the command line with <code>sqlcmd -S localhost -E -C -Q "EXEC msdb.dbo.sp_start_job @job_name = N'&lt;job name&gt;'"</code>. Get the job names from <code>SELECT name FROM msdb.dbo.sysjobs WHERE category_id IN (10,13,15)</code>, which lists the distribution, log reader and snapshot jobs.</p>
+
+<h2 id="step-6-monitor-the-agents-and-latency">Step 6 — Monitor the agents and latency</h2>
+
+<p>Watch the snapshot finish, then confirm ongoing changes are flowing. Everything below runs on the VM.</p>
+
+<p><strong>6a. Agent status and latest messages</strong></p>
+
+<div class="code" data-lang="sql"><pre><code>USE distribution;
+-- Snapshot Agent: look for "A snapshot of N article(s) was generated"
+SELECT TOP 5 time, comments FROM MSsnapshot_history ORDER BY time DESC;
+
+-- Log Reader Agent: transactions read from the log
+SELECT TOP 5 time, comments, delivered_commands FROM MSlogreader_history ORDER BY time DESC;
+
+-- Distribution Agent: what has been delivered to Azure
+SELECT TOP 5 time, comments, delivered_transactions, delivered_commands
+FROM MSdistribution_history ORDER BY time DESC;
+
+-- Any replication errors
+SELECT TOP 10 time, error_code, error_text FROM MSrepl_errors ORDER BY time DESC;</code></pre></div>
+
+<p>The snapshot is fully applied when the Distribution Agent history shows <em>Delivered snapshot from the …</em> followed by <em>No replicated transactions are available</em>.</p>
+
+<p><strong>6b. Commands still waiting for delivery</strong></p>
+
+<div class="code" data-lang="sql"><pre><code>USE distribution;
+EXEC sp_replmonitorsubscriptionpendingcmds
+     @publisher         = N'&lt;VM server name&gt;',   -- value of @@SERVERNAME
+     @publisher_db      = N'LabDB',
+     @publication       = N'Pub_LabDB',
+     @subscriber        = N'&lt;srv&gt;.database.windows.net',
+     @subscriber_db     = N'LabDB',
+     @subscription_type = 0;                      -- 0 = push</code></pre></div>
+
+<p>This returns <code>pendingcmdcount</code> and an estimated time to catch up. It should drop to 0 after the snapshot is applied.</p>
+
+<p><strong>6c. Tracer tokens: end-to-end latency</strong></p>
+
+<div class="code" data-lang="sql"><pre><code>USE LabDB;
+-- Post a token into the log
+DECLARE @id int;
+EXEC sp_posttracertoken @publication = N'Pub_LabDB', @tracer_token_id = @id OUTPUT;
+SELECT @id AS tracer_id;
+GO
+-- A few seconds later: list tokens, then read one token's timings
+EXEC sp_helptracertokens @publication = N'Pub_LabDB';
+EXEC sp_helptracertokenhistory @publication = N'Pub_LabDB', @tracer_id = &lt;tracer_id&gt;;</code></pre></div>
+
+<p>A tracer token is a marker written into the log. Its history shows how long it took to get from the publisher to the distributor and from the distributor to Azure. When <code>subscriber_latency</code> has a value, everything committed before the token has reached Azure. You'll use this again at cutover.</p>
+
+<p><strong>6d. Agent jobs at a glance</strong></p>
+
+<div class="code" data-lang="sql"><pre><code>SELECT j.name, ja.start_execution_date, ja.stop_execution_date
+FROM msdb.dbo.sysjobs j
+JOIN msdb.dbo.sysjobactivity ja ON ja.job_id = j.job_id
+WHERE j.category_id IN (10,13,15)
+  AND ja.session_id = (SELECT MAX(session_id) FROM msdb.dbo.syssessions);</code></pre></div>
+
+<p>The Log Reader and Distribution jobs should show a start time with no stop time, which means they are running continuously.</p>
+
+<h2 id="step-7-validate-the-data">Step 7 — Validate the data</h2>
+
+<p>Run the same row-count query on both sides and compare, then prove that live changes arrive.</p>
+
+<p><strong>7a. Row counts per table</strong> (save as <code>07_rowcounts.sql</code>)</p>
+
+<div class="code" data-lang="sql"><pre><code>SELECT s.name + '.' + t.name AS table_name,
+       SUM(p.rows)            AS row_count
+FROM sys.tables t
+JOIN sys.schemas s    ON s.schema_id = t.schema_id
+JOIN sys.partitions p ON p.object_id = t.object_id AND p.index_id IN (0,1)
+WHERE t.is_ms_shipped = 0
+GROUP BY s.name, t.name
+ORDER BY table_name;</code></pre></div>
+
+<div class="code" data-lang="powershell"><pre><code># Source (VM)
+sqlcmd -S localhost -E -C -d LabDB -i 07_rowcounts.sql -o src_counts.txt
+# Target (Azure SQL Database)
+sqlcmd -S tcp:&lt;srv&gt;.database.windows.net,1433 -d LabDB -U sqladmin -P "&lt;SqlPwd&gt;" -i 07_rowcounts.sql -o tgt_counts.txt
+# Compare: no output means the counts match
+Compare-Object (Get-Content src_counts.txt) (Get-Content tgt_counts.txt)</code></pre></div>
+
+<p>The counts come from <code>sys.partitions</code>, so they are fast but approximate on a busy source. Compare them while writes are quiet, or use <code>COUNT(*)</code> on the key tables.</p>
+
+<p><strong>7b. Live-change test</strong></p>
+
+<div class="code" data-lang="sql"><pre><code>-- On the VM
+USE LabDB;
+INSERT INTO dbo.&lt;SomeTable&gt; (&lt;cols&gt;) VALUES (&lt;values&gt;);
+UPDATE dbo.&lt;SomeTable&gt; SET &lt;col&gt; = &lt;new value&gt; WHERE &lt;key&gt; = &lt;id&gt;;</code></pre></div>
+
+<div class="code" data-lang="powershell"><pre><code># A few seconds later, on Azure
+sqlcmd -S tcp:&lt;srv&gt;.database.windows.net,1433 -d LabDB -U sqladmin -P "&lt;SqlPwd&gt;" `
+  -Q "SELECT * FROM dbo.&lt;SomeTable&gt; WHERE &lt;key&gt; = &lt;id&gt;"</code></pre></div>
+
+<p>If the new and updated rows appear, the Log Reader and Distribution agents are working end to end.</p>
+
+<p><strong>7c. Built-in row-count validation (optional)</strong></p>
+
+<div class="code" data-lang="sql"><pre><code>USE LabDB;
+EXEC sp_publication_validation @publication = N'Pub_LabDB', @rowcount_only = 1;</code></pre></div>
+
+<p>This asks the Distribution Agent to compare row counts at the subscriber. The pass or fail result for each article appears in <code>MSdistribution_history</code> (Step 6a).</p>
+
+<h2 id="step-8-cut-over-to-azure-sql-database">Step 8 — Cut over to Azure SQL Database</h2>
+
+<p>Downtime equals the time from stopping writes to repointing the app, usually a few minutes. Replication has already copied everything else.</p>
+
+<p><strong>8a. Stop writes on the source</strong></p>
+
+<p>Stop the application, or block new writes at the database level:</p>
+
+<div class="code" data-lang="sql"><pre><code>USE master;
+ALTER DATABASE LabDB SET READ_ONLY WITH ROLLBACK IMMEDIATE;</code></pre></div>
+
+<p>The Log Reader can still read changes that were committed before the switch.</p>
+
+<p><strong>8b. Confirm nothing is left in flight</strong></p>
+
+<p>Post a tracer token (Step 6c) and wait for <code>subscriber_latency</code> to show a value. Then confirm the pending command count from Step 6b is 0. Finally, re-run the row counts from Step 7a; they should match exactly now.</p>
+
+<p><strong>8c. Create the database users in Azure</strong> (replication doesn't copy logins or users)</p>
+
+<div class="code" data-lang="sql"><pre><code>-- Run on Azure SQL Database (LabDB) as sqladmin
+CREATE USER app_user WITH PASSWORD = N'&lt;AppPwd&gt;';   -- contained user, no server login needed
+ALTER ROLE db_datareader ADD MEMBER app_user;
+ALTER ROLE db_datawriter ADD MEMBER app_user;
+-- add any GRANT EXECUTE / custom roles the app had on the source</code></pre></div>
+
+<p><strong>8d. Fix identity seeds</strong></p>
+
+<div class="code" data-lang="sql"><pre><code>-- On Azure: check each table that has an identity column
+DBCC CHECKIDENT ('dbo.&lt;TableName&gt;', NORESEED);
+-- If the current identity value is lower than MAX(id), reseed to the max
+DBCC CHECKIDENT ('dbo.&lt;TableName&gt;', RESEED);</code></pre></div>
+
+<p>Rows arrive at the subscriber with their original ID values. If the target's identity seed lags behind, the first insert from the app fails with a duplicate key error.</p>
+
+<p><strong>8e. Other objects to check</strong></p>
+
+<ul><li><strong>Not replicated as table articles:</strong> views, procedures, functions and triggers. Deploy any that you didn't add as schema-only articles.</li><li><strong>Not supported in Azure SQL Database:</strong> SQL Agent jobs and cross-database queries. Move jobs to Azure Automation, Elastic Jobs or the app itself.</li><li><strong>Sequences:</strong> set each sequence to restart above its current value with <code>ALTER SEQUENCE ... RESTART WITH</code>.</li></ul>
+
+<p><strong>8f. Repoint the application</strong></p>
+
+<div class="code" data-lang="text"><pre><code>Server=tcp:&lt;srv&gt;.database.windows.net,1433;Database=LabDB;User ID=app_user;Password=&lt;AppPwd&gt;;Encrypt=True;TrustServerCertificate=False;</code></pre></div>
+
+<p>Start the app against Azure and test a write. Keep the VM database read-only until you're sure you won't roll back.</p>
+
+<h2 id="step-9-clean-up">Step 9 — Clean up</h2>
+
+<p>Remove replication in reverse order: subscription, then publication, then distribution. Delete the Azure resources too if this was only a lab.</p>
+
+<p><strong>9a. Remove replication on the VM</strong></p>
+
+<div class="code" data-lang="sql"><pre><code>-- Dropping the publication writes to LabDB, so make it writable again first
+USE master;
+ALTER DATABASE LabDB SET READ_WRITE WITH ROLLBACK IMMEDIATE;
+GO
+
+USE LabDB;
+GO
+-- 1. Drop the subscription (also removes the Distribution Agent job)
+EXEC sp_dropsubscription
+     @publication    = N'Pub_LabDB',
+     @article        = N'all',
+     @subscriber     = N'&lt;srv&gt;.database.windows.net',
+     @destination_db = N'LabDB';
+GO
+-- 2. Drop the publication (removes the articles and Snapshot Agent job)
+EXEC sp_droppublication @publication = N'Pub_LabDB';
+GO
+-- 3. Turn off publishing for the database
+USE master;
+EXEC sp_replicationdboption
+     @dbname = N'LabDB', @optname = N'publish', @value = N'false';
+GO
+-- 4. Remove distribution (drops the distribution database and its jobs)
+EXEC sp_dropdistributor @no_checks = 1, @ignore_distributor = 1;
+GO</code></pre></div>
+
+<p>If any step fails because metadata is half-removed, use <code>EXEC sp_removedbreplication N'LabDB';</code>. It strips all replication objects from the database in one call.</p>
+
+<p><strong>9b. Clean the Azure database</strong> (only if you plan to keep it)</p>
+
+<p>The Distribution Agent leaves tracking tables in the subscriber database, such as <code>MSreplication_subscriptions</code>. Remove them with this command on Azure:</p>
+
+<div class="code" data-lang="sql"><pre><code>EXEC sp_subscription_cleanup
+     @publisher    = N'&lt;VM server name&gt;',
+     @publisher_db = N'LabDB',
+     @publication  = N'Pub_LabDB';</code></pre></div>
+
+<p><strong>9c. Delete the lab resources</strong> (Azure CLI)</p>
+
+<div class="code" data-lang="bash"><pre><code>az group delete --name rg-repl-lab --yes --no-wait</code></pre></div>
+
+<p>This deletes the logical server, database and firewall rule together, so you stop paying for them.</p>
+
+<h2 id="troubleshooting">Troubleshooting</h2>
+
+<p>Most failures show up in <code>MSrepl_errors</code> or the agent history tables (Step 6a). Match the message against this table.</p>
+
+<div class="tbl"><table>
+<thead><tr><th>Symptom or error</th><th>Likely cause</th><th>Fix</th></tr></thead>
+<tbody>
+<tr><td>Distribution Agent: <em>Login failed</em> at the subscriber</td><td>Agent is using Windows auth to Azure</td><td>Recreate the agent with <code>@subscriber_security_mode = 0</code> and the SQL login (Step 5)</td></tr>
+<tr><td>Error 40615: <em>Cannot open server … client with IP address … is not allowed</em></td><td>Missing Azure firewall rule</td><td>Add the IP shown in the error with <code>az sql server firewall-rule create</code> (Step 1)</td></tr>
+<tr><td>Agent times out connecting, but <code>Test-NetConnection</code> to 1433 works (VM in Azure)</td><td>Redirect connection policy needs outbound ports 11000–11999</td><td>Open those ports in the NSG, or set the policy to Proxy with <code>az sql server conn-policy update --connection-type Proxy</code></td></tr>
+<tr><td>Error 18483 / <em>distributor_admin is not defined as a remote login</em> when configuring distribution</td><td><code>@@SERVERNAME</code> doesn't match the actual host name</td><td>Run <code>sp_dropserver</code> then <code>sp_addserver ... 'local'</code>, and restart SQL Server (Step 2b)</td></tr>
+<tr><td>Snapshot Agent: <em>Access to the path C:\ReplData is denied</em></td><td>Agent account lacks rights on the folder</td><td>Grant Modify with <code>icacls</code> (Step 2a)</td></tr>
+<tr><td><code>sp_addarticle</code>: <em>table does not have a primary key</em></td><td>Transactional replication requires a primary key</td><td>Add a primary key, or leave the table out (Step 2c)</td></tr>
+<tr><td>Source transaction log keeps growing</td><td>Log Reader Agent not running; <code>log_reuse_wait_desc = REPLICATION</code></td><td>Start the Log Reader job. Check with <code>SELECT name, log_reuse_wait_desc FROM sys.databases</code></td></tr>
+<tr><td>Agents never start</td><td>SQL Server Agent stopped, or a wrong <code>@job_login</code> password</td><td>Start the Agent service. Fix the credentials with <code>sp_changelogreader_agent_properties</code> or <code>sp_changesubscription</code></td></tr>
+<tr><td>Distribution Agent: errors 2627/2601 duplicate key, or 20598 row not found</td><td>Someone changed data directly in the subscriber</td><td>Treat the Azure database as read-only until cutover. Reinitialize with <code>sp_reinitsubscription</code></td></tr>
+</tbody></table></div>
+
+<footer class="post">
+  Lab values such as <code>LabDB</code>, <code>&lt;srv&gt;</code> and <code>&lt;SqlPwd&gt;</code>
+  are placeholders &mdash; substitute your own before running anything here.
+</footer>
+</main>
+
+</div>
+</div>
+</body>
+</html>
