@@ -1,0 +1,702 @@
+<!doctype html><html lang="en"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><title>Oracle Database API for MongoDB with Data Guard</title>
+<meta name="description" content="Running the Oracle Database API for MongoDB through one ORDS container that always reaches the current Data Guard primary: role-based service, Docker build, the switchover test and every error hit.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+</head><body>
+<style>
+/* Layout: technical runbook — sticky contents rail on wide screens, one reading column, screenshots framed like terminal captures */
+:root {
+  --bg: #f6f7f6;
+  --surface: #ffffff;
+  --fg: #1c2421;
+  --muted: #56645e;
+  --line: #d7ddda;
+  --accent: #0f6b5c;
+  --accent-soft: #e2f0ec;
+  --code-bg: #eef2f0;
+  --warn: #8a5300;
+  --warn-soft: #fbf0dc;
+  --font-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Source Sans 3", "Segoe UI", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121715; --surface: #18201d; --fg: #e3ebe7; --muted: #9aaaa3; --line: #2c3833;
+  --accent: #5cc4ae; --accent-soft: #1a332d; --code-bg: #1d2723; --warn: #f0b765; --warn-soft: #33281a; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #121715; --surface: #18201d; --fg: #e3ebe7; --muted: #9aaaa3; --line: #2c3833;
+  --accent: #5cc4ae; --accent-soft: #1a332d; --code-bg: #1d2723; --warn: #f0b765; --warn-soft: #33281a; color-scheme: dark }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 17px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 64px; }
+a { color: var(--accent); }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.masthead { max-width: 1180px; margin: 0 auto; padding-block: 40px 28px; border-bottom: 1px solid var(--line); }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(28px, 4.2vw, 44px); line-height: 1.12; margin: 8px 0 12px; text-wrap: balance; max-width: 22ch; }
+.lede { max-width: 68ch; color: var(--muted); margin: 0; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 18px; font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+.meta b { color: var(--fg); font-weight: 600; }
+
+.layout { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 48px; padding-top: 32px; }
+nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); align-self: start; max-height: calc(100vh - 32px); overflow-y: auto; font-size: 14px; }
+nav.toc p { font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
+nav.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+nav.toc a { display: block; padding: 4px 8px; border-radius: 4px; color: var(--fg); text-decoration: none; }
+nav.toc a:hover { background: var(--accent-soft); }
+nav.toc .n { font-family: var(--font-mono); color: var(--muted); margin-right: 6px; font-size: 12px; }
+
+main { min-width: 0; }
+section { padding-bottom: 40px; margin-bottom: 40px; border-bottom: 1px solid var(--line); }
+section:last-child { border-bottom: 0; }
+h2 { font-family: var(--font-display); font-weight: 600; font-size: 26px; line-height: 1.2; margin: 0 0 14px; text-wrap: balance; scroll-margin-top: 16px; }
+h2 .n { font-family: var(--font-mono); font-size: 15px; color: var(--accent); margin-right: 10px; vertical-align: 3px; }
+h3 { font-family: var(--font-display); font-weight: 600; font-size: 19px; margin: 28px 0 10px; }
+h4 { font-family: var(--font-body); font-weight: 600; font-size: 17px; margin: 22px 0 8px; }
+p, li { max-width: 72ch; }
+p { margin: 0 0 14px; }
+ul, ol { padding-left: 22px; margin: 0 0 14px; }
+li { margin-bottom: 4px; }
+code { font-family: var(--font-mono); font-size: .86em; background: var(--code-bg); padding: 1px 5px; border-radius: 3px; overflow-wrap: anywhere; }
+pre { position: relative; background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; margin: 0 0 16px; overflow-x: auto; font-size: 13.5px; line-height: 1.55; }
+pre code { background: none; padding: 0; font-size: inherit; overflow-wrap: normal; }
+pre .lang { position: absolute; top: 6px; right: 10px; font-family: var(--font-mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.copy { position: absolute; bottom: 6px; right: 8px; font: 12px var(--font-mono); background: var(--surface); color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 2px 8px; cursor: pointer; }
+.copy:hover { color: var(--accent); border-color: var(--accent); }
+
+.table-wrap { overflow-x: auto; margin: 0 0 18px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 15px; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--font-display); font-weight: 600; font-size: 13.5px; background: var(--code-bg); }
+tr:last-child td { border-bottom: 0; }
+td code { white-space: nowrap; overflow-wrap: normal; }
+td.wrap code { white-space: normal; overflow-wrap: anywhere; }
+
+figure { margin: 4px 0 22px; }
+figure .shot { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+figure img { display: block; max-width: 100%; height: auto; }
+figcaption { font-size: 14px; color: var(--muted); margin-top: 6px; }
+figcaption .fig { font-family: var(--font-mono); font-size: 12px; color: var(--accent); margin-right: 6px; }
+
+.callout { border: 1px solid var(--warn); background: var(--warn-soft); border-radius: 6px; padding: 14px 16px; margin: 0 0 18px; }
+.callout p:last-child { margin: 0; }
+.callout .tag { font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--warn); display: block; margin-bottom: 4px; }
+.pill { display: inline-block; font-family: var(--font-mono); font-size: 11.5px; padding: 1px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); white-space: nowrap; }
+.step { font-family: var(--font-display); font-weight: 600; font-size: 16px; margin: 22px 0 8px; }
+.step .k { font-family: var(--font-mono); color: var(--accent); margin-right: 8px; }
+.checklist { list-style: none; padding: 0; }
+.checklist li::before { content: "\2610"; margin-right: 8px; color: var(--muted); }
+
+.diagram { overflow-x: auto; margin: 6px 0 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); padding: 8px; }
+.diagram svg { display: block; width: 100%; min-width: 620px; height: auto; }
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  nav.toc { position: static; max-height: none; border: 1px solid var(--line); border-radius: 6px; padding: 12px; background: var(--surface); }
+  nav.toc ol { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+}
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+
+/* Back to the blog index; uses this page's own accent so it fits either theme. */
+.back-home{display:inline-block;margin:16px 0 0 24px;font-size:14px;font-weight:600;
+  color:var(--accent);text-decoration:none;font-family:var(--font-body)}
+.back-home:hover{text-decoration:underline}
+</style>
+
+<a class="back-home" href="../index.html">&#8592;&nbsp;All articles</a>
+<header class="masthead">
+  <div class="eyebrow">Oracle REST Data Services 26.3 · MongoDB API · Data Guard</div>
+  <h1>ORDS MongoDB API with Data Guard</h1>
+  <p class="lede">How the Oracle Database API for MongoDB was set up through one ORDS container that always reaches the current Data Guard primary. Covers the build on DBCS (single instance on LVM storage), the equivalent RAC / ExaCC steps, every issue met along the way, and the switchover test.</p>
+  <div class="meta"><span>As of <b>4 Nov 2026</b></span><span>Author <b>Nithin Sunke</b></span><span>Primary <b>ORAUAT_4mb_jed</b></span><span>Standby <b>ORAUAT_d4g_jed</b></span></div>
+</header>
+
+<div class="layout">
+<nav class="toc" aria-label="Contents">
+  <p>Contents</p>
+  <ol>
+    <li><a href="#summary"><span class="n">01</span>Summary and architecture</a></li>
+    <li><a href="#environment"><span class="n">02</span>Environment</a></li>
+    <li><a href="#prereqs"><span class="n">03</span>Prerequisites</a></li>
+    <li><a href="#phase1"><span class="n">04</span>Role-based service</a></li>
+    <li><a href="#phase2"><span class="n">05</span>Docker VM</a></li>
+    <li><a href="#phase3"><span class="n">06</span>Install ORDS</a></li>
+    <li><a href="#phase4"><span class="n">07</span>Connect string</a></li>
+    <li><a href="#phase5"><span class="n">08</span>Users and privileges</a></li>
+    <li><a href="#phase6"><span class="n">09</span>Testing</a></li>
+    <li><a href="#phase7"><span class="n">10</span>Switchover test</a></li>
+    <li><a href="#pools"><span class="n">11</span>Multiple databases</a></li>
+    <li><a href="#nodocker"><span class="n">12</span>Without Docker</a></li>
+    <li><a href="#issues"><span class="n">13</span>Issues and fixes</a></li>
+    <li><a href="#limitation"><span class="n">14</span>Standby limitation</a></li>
+    <li><a href="#operations"><span class="n">15</span>Operations and security</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<section id="summary">
+<h2><span class="n">01</span>Summary and architecture</h2>
+<p>MongoDB clients connect to one ORDS container on its own VM. A role-based database service, <code>ords_svc</code>, runs only on the Data Guard primary, and the ORDS connect string lists both databases. ORDS therefore follows the primary across switchover and failover with no configuration change, and clients always use 10.0.1.114:27017.</p>
+<p>The build ran on DBCS (single instance, LVM storage, Oracle 19c) with ORDS 26.3. Each phase also gives the RAC / Grid Infrastructure steps used on ExaCC, where SCAN names and <code>srvctl</code> replace host IPs and triggers.</p>
+<div class="diagram">
+<svg viewBox="0 0 760 360" role="img" aria-label="ORDS always reaches whichever database runs ords_svc" font-family="Source Sans 3, Arial, sans-serif" font-size="13">
+  <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--muted)"/></marker></defs>
+  <text x="24" y="30" font-size="15" font-weight="600" fill="var(--fg)">ORDS always reaches whichever database runs ords_svc</text>
+  <g fill="none" stroke="var(--muted)" stroke-width="1.25">
+    <path d="M176 204H230" marker-end="url(#arr)"/>
+    <path d="M440 212H470V116H510" marker-end="url(#arr)"/>
+    <path d="M440 236H470V292H510" stroke-dasharray="4 4" marker-end="url(#arr)"/>
+    <path d="M624 160V246" marker-end="url(#arr)"/>
+  </g>
+  <rect x="24" y="168" width="152" height="72" rx="8" fill="none" stroke="var(--muted)"/>
+  <text x="100" y="192" text-anchor="middle" font-weight="600" fill="var(--fg)">Clients</text>
+  <text x="100" y="208" text-anchor="middle" font-size="11.5" fill="var(--muted)">mongosh, drivers, REST</text>
+  <text x="100" y="224" text-anchor="middle" font-size="11.5" fill="var(--muted)">10.0.1.114:27017</text>
+  <rect x="232" y="132" width="224" height="144" rx="8" fill="none" stroke="var(--muted)"/>
+  <text x="248" y="156" font-weight="600" fill="var(--fg)">ORDS 26.3 (orcl-ords)</text>
+  <text x="248" y="172" font-size="11.5" fill="var(--muted)">docvm 10.0.1.114</text>
+  <rect x="248" y="188" width="192" height="72" rx="8" fill="none" stroke="var(--muted)"/>
+  <text x="264" y="212" font-weight="600" fill="var(--fg)">Pool: default</text>
+  <text x="264" y="228" font-size="11.5" fill="var(--muted)">custom URL, both hosts</text>
+  <text x="264" y="244" font-size="11.5" fill="var(--muted)">service ords_svc</text>
+  <rect x="512" y="72" width="224" height="88" rx="8" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2"/>
+  <text x="528" y="96" font-weight="600" fill="var(--fg)">Primary: dbuat 10.0.1.80</text>
+  <text x="528" y="112" font-size="11.5" fill="var(--fg)">ORAUAT_4mb_jed, PDB UATPDB</text>
+  <text x="528" y="128" font-size="11.5" fill="var(--fg)">ords_svc running</text>
+  <text x="528" y="144" font-size="11.5" fill="var(--muted)">RAC: primary SCAN</text>
+  <rect x="512" y="248" width="224" height="88" rx="8" fill="none" stroke="var(--muted)"/>
+  <text x="528" y="272" font-weight="600" fill="var(--fg)">Standby: druat 10.0.1.78</text>
+  <text x="528" y="288" font-size="11.5" fill="var(--muted)">ORAUAT_d4g_jed</text>
+  <text x="528" y="304" font-size="11.5" fill="var(--muted)">ords_svc stopped</text>
+  <text x="528" y="320" font-size="11.5" fill="var(--muted)">RAC: standby SCAN</text>
+  <text x="504" y="104" text-anchor="end" font-size="11.5" fill="var(--muted)">connects now</text>
+  <text x="504" y="316" text-anchor="end" font-size="11.5" fill="var(--muted)">after switchover</text>
+  <text x="634" y="208" font-size="11.5" fill="var(--muted)">Data Guard redo</text>
+</svg>
+</div>
+<p style="font-size:14px;color:var(--muted)">The dashed path is used only after a switchover or failover, when <code>ords_svc</code> moves to the former standby.</p>
+<div class="table-wrap"><table>
+<tr><th>Decision</th><th>Choice</th><th>Reason</th></tr>
+<tr><td>Where ORDS runs</td><td>Separate VM (container), not on the database servers</td><td>Keeps DB VMs clean for patching; no contention with licensed cores</td></tr>
+<tr><td>How ORDS finds the primary</td><td>Role-based service + two-host connect string</td><td>Survives switchover and failover without touching ORDS</td></tr>
+<tr><td>Standby use</td><td>Failover target only</td><td>MongoDB API logins through a read-only standby pool fail (section 14)</td></tr>
+<tr><td>Database version</td><td>21c or later for official MongoDB API support</td><td>Non-autonomous 19c works in testing but is outside Oracle's supported list</td></tr>
+</table></div>
+</section>
+
+<section id="environment">
+<h2><span class="n">02</span>Environment</h2>
+<p>Values are from the final build on 4 Nov 2026. An earlier test pair (ORDUAT, 10.0.1.168 / 10.0.1.231) was used for the first experiments; its issues are in section 13.</p>
+<div class="table-wrap"><table>
+<tr><th>Component</th><th>Host / IP</th><th>Detail</th></tr>
+<tr><td>ORDS host</td><td><code>docvm</code> 10.0.1.114</td><td class="wrap">Oracle Linux 9, Docker Compose; container <code>orcl-ords</code>, compose service <code>ords</code>; ORDS 26.3.0.r2721811</td></tr>
+<tr><td>Primary database</td><td><code>dbuat</code> 10.0.1.80</td><td class="wrap">CDB <code>ORAUAT</code>, db_unique_name <code>ORAUAT_4mb_jed</code>, PDB <code>UATPDB</code>; 19c EE High Performance; LVM storage</td></tr>
+<tr><td>Standby database</td><td><code>druat</code> 10.0.1.78</td><td class="wrap">db_unique_name <code>ORAUAT_d4g_jed</code>; physical standby</td></tr>
+<tr><td>Data Guard</td><td>broker <code>orauat_dgconf</code></td><td>MaxPerformance; Fast-Start Failover disabled</td></tr>
+<tr><td>Role-based service</td><td>both hosts</td><td class="wrap"><code>ords_svc.prvsharedsn.hubssvcn.oraclevcn.com</code>, runs only on the primary</td></tr>
+<tr><td>ORDS pool</td><td><code>default</code></td><td class="wrap">Custom URL, 10.0.1.80 then 10.0.1.78; <code>jdbc.InitialLimit</code> 10, <code>jdbc.MaxLimit</code> 30</td></tr>
+<tr><td>MongoDB schema</td><td><code>MONGOUSER</code></td><td>ORDS-enabled, <code>SODA_APP</code></td></tr>
+<tr><td>Client</td><td>mongosh 2.14.0</td><td>Server reports MongoDB 7.0.22 compatibility</td></tr>
+</table></div>
+<div class="table-wrap"><table>
+<tr><th>Port</th><th>Direction</th><th>Purpose</th></tr>
+<tr><td>1521/TCP</td><td>ORDS VM → both DB hosts</td><td>JDBC (RAC: every SCAN IP and node VIP)</td></tr>
+<tr><td>27017/TCP</td><td>Clients → ORDS VM</td><td>MongoDB API (TLS)</td></tr>
+<tr><td>8080/TCP</td><td>Clients → ORDS VM</td><td>REST, REST-enabled SQL, SQL Developer Web</td></tr>
+</table></div>
+</section>
+
+<section id="prereqs">
+<h2><span class="n">03</span>Prerequisites</h2>
+<p>Decide the storage type first. It changes Phase 1 (the service) and Phase 4 (the connect string).</p>
+<div class="table-wrap"><table>
+<tr><th>Check</th><th>Command</th><th>LVM single instance</th><th>RAC / Grid (ExaCC, ASM)</th></tr>
+<tr><td>Clusterware</td><td><code>srvctl config database</code></td><td>"command not found"</td><td>Lists the database</td></tr>
+<tr><td>SCAN</td><td><code>srvctl config scan</code></td><td>None: use host IP</td><td>SCAN name with 3 IPs</td></tr>
+<tr><td>Service tooling</td><td>—</td><td><code>DBMS_SERVICE</code> + triggers</td><td><code>srvctl add service -role PRIMARY</code></td></tr>
+<tr><td>Connect string hosts</td><td>—</td><td>Primary IP + standby IP</td><td>Primary SCAN + standby SCAN</td></tr>
+</table></div>
+<h4>Database checks (as SYS)</h4>
+<pre data-lang="sql"><code>SELECT banner_full FROM v$version;                 -- 21c+ for official MongoDB API support
+SELECT database_role, open_mode FROM v$database;    -- primary READ WRITE
+SHOW PDBS;                                          -- target PDB READ WRITE
+SELECT name, network_name, pdb FROM v$services;     -- existing services and domain</code></pre>
+<figure><div class="shot"><img src="images/fig01.png" alt="show pdbs on the primary: UATPDB open READ WRITE" loading="lazy"></div><figcaption><span class="fig">Fig 1</span>show pdbs on the primary: UATPDB open READ WRITE</figcaption></figure>
+<figure><div class="shot"><img src="images/fig02.png" alt="v$services before ords_svc was created" loading="lazy"></div><figcaption><span class="fig">Fig 2</span>v$services before ords_svc was created</figcaption></figure>
+<h4>Network checks from the ORDS VM</h4>
+<pre data-lang="bash"><code>nc -zv 10.0.1.80 1521      # primary
+nc -zv 10.0.1.78 1521      # standby
+nslookup &lt;scan-name&gt;       # RAC only: must return the SCAN IPs</code></pre>
+<ul>
+<li>Security list or NSG allows TCP 1521 from 10.0.1.114 to both database hosts. For RAC, open it to every SCAN IP and node VIP, because SCAN redirects each connection to a VIP.</li>
+<li>Clients can reach 10.0.1.114 on 27017 and 8080.</li>
+<li>An Oracle Container Registry login works for the ORDS image (<code>docker login container-registry.oracle.com</code>).</li>
+</ul>
+</section>
+
+<section id="phase1">
+<h2><span class="n">04</span>Phase 1: Role-based service</h2>
+<p>ORDS connects by service name, and <code>ords_svc</code> must run only where the database role is PRIMARY. Use 4A on RAC/Grid or 4B on LVM. This build used 4B.</p>
+<h3>4A. RAC / Grid Infrastructure (ExaCC, DBCS on ASM)</h3>
+<p>Clusterware handles role awareness. Register the service on both databases with <code>-role PRIMARY</code> and start it on the primary only.</p>
+<pre data-lang="bash"><code># primary cluster, as oracle
+srvctl add service -db &lt;primary_db_unique_name&gt; -pdb UATPDB -service ords_svc \
+  -role PRIMARY -preferred &lt;inst1&gt;,&lt;inst2&gt; -failovertype SELECT -failovermethod BASIC
+srvctl start service -db &lt;primary_db_unique_name&gt; -service ords_svc
+
+# standby cluster: add only, do not start
+srvctl add service -db &lt;standby_db_unique_name&gt; -pdb UATPDB -service ords_svc \
+  -role PRIMARY -preferred &lt;inst1&gt;,&lt;inst2&gt;
+
+# verify
+srvctl status service -db &lt;primary_db_unique_name&gt; -service ords_svc</code></pre>
+<p><code>-preferred</code> spreads the service across all RAC instances, so SCAN balances ORDS connections across nodes. On ExaCC the same commands run on each VM cluster; get each <code>db_unique_name</code> from <code>srvctl config database</code>.</p>
+<h3>4B. LVM single instance (used in this build)</h3>
+<p>There is no clusterware, so two triggers do the work. Oracle allows <code>AFTER DB_ROLE_CHANGE</code> triggers only in <code>CDB$ROOT</code> (ORA-65069 in a PDB), so the role-change trigger lives in the root and starts the service inside the PDB.</p>
+<div class="step"><span class="k">Step 1</span>In the PDB, on the primary</div>
+<p>Create the service, a control procedure and a startup trigger. The objects reach the standby through redo.</p>
+<pre data-lang="sql"><code>ALTER SESSION SET CONTAINER = UATPDB;
+
+EXEC DBMS_SERVICE.CREATE_SERVICE(service_name =&gt; 'ords_svc', network_name =&gt; 'ords_svc');
+EXEC DBMS_SERVICE.START_SERVICE('ords_svc');
+
+CREATE OR REPLACE PROCEDURE sys.ords_svc_ctl AS
+  v_role VARCHAR2(30);
+BEGIN
+  SELECT database_role INTO v_role FROM v$database;
+  IF v_role = 'PRIMARY' THEN
+    DBMS_SERVICE.START_SERVICE('ords_svc');
+  ELSE
+    DBMS_SERVICE.STOP_SERVICE('ords_svc');
+  END IF;
+EXCEPTION
+  WHEN OTHERS THEN NULL;   -- already started/stopped
+END;
+/
+
+CREATE OR REPLACE TRIGGER sys.ords_svc_startup
+AFTER STARTUP ON DATABASE
+BEGIN
+  sys.ords_svc_ctl;
+END;
+/</code></pre>
+<figure><div class="shot"><img src="images/fig03.png" alt="Service, procedure and PDB startup trigger created in UATPDB" loading="lazy"></div><figcaption><span class="fig">Fig 3</span>Service, procedure and PDB startup trigger created in UATPDB</figcaption></figure>
+<div class="step"><span class="k">Step 2</span>In the root, on the primary</div>
+<p>Create the role-change trigger. Set <code>container =&gt;</code> to your own PDB name.</p>
+<pre data-lang="sql"><code>ALTER SESSION SET CONTAINER = CDB$ROOT;
+
+CREATE OR REPLACE TRIGGER sys.ords_svc_role_change
+AFTER DB_ROLE_CHANGE ON DATABASE
+DECLARE
+  v_role VARCHAR2(30);
+  c      INTEGER;
+  n      INTEGER;
+BEGIN
+  SELECT database_role INTO v_role FROM v$database;
+  IF v_role = 'PRIMARY' THEN
+    c := DBMS_SQL.OPEN_CURSOR;
+    DBMS_SQL.PARSE(c, 'BEGIN DBMS_SERVICE.START_SERVICE(''ords_svc''); END;',
+                   DBMS_SQL.NATIVE, container =&gt; 'UATPDB');
+    n := DBMS_SQL.EXECUTE(c);
+    DBMS_SQL.CLOSE_CURSOR(c);
+  END IF;
+EXCEPTION
+  WHEN OTHERS THEN NULL;   -- PDB not open yet: the PDB startup trigger covers it
+END;
+/</code></pre>
+<figure><div class="shot"><img src="images/fig04.png" alt="Root trigger as first created, with container => 'ORDUAT_PDB1'" loading="lazy"></div><figcaption><span class="fig">Fig 4</span>Root trigger as first created, with container =&gt; 'ORDUAT_PDB1'</figcaption></figure>
+<div class="callout"><span class="tag">Correction needed</span><p>The trigger in the screenshot names <code>ORDUAT_PDB1</code>, the PDB of the earlier test database. On ORAUAT the PDB is <code>UATPDB</code>. The error is silent because of <code>WHEN OTHERS THEN NULL</code>. The switchover test still worked because the PDB startup trigger started the service when the new primary opened UATPDB. Recreate the root trigger with <code>container =&gt; 'UATPDB'</code> so the service also starts when the PDB is already open at the role change.</p></div>
+<h3>Verify</h3>
+<pre data-lang="bash"><code>lsnrctl status | grep -i ords_svc     # on each host: present only on the primary</code></pre>
+<figure><div class="shot"><img src="images/fig05.png" alt="ords_svc registered on the primary listener" loading="lazy"></div><figcaption><span class="fig">Fig 5</span>ords_svc registered on the primary listener</figcaption></figure>
+<p>The listener shows the full name with its domain, <code>ords_svc.prvsharedsn.hubssvcn.oraclevcn.com</code>. Phases 3 and 4 use that exact string.</p>
+</section>
+
+<section id="phase2">
+<h2><span class="n">05</span>Phase 2: Docker VM and compose file</h2>
+<p>ORDS runs from Oracle's official image, with its configuration in a host folder so settings survive restarts and image upgrades. The image runs as uid 54321, which must own that folder.</p>
+<ol>
+<li>Create the project folder and log in to the registry:
+<pre data-lang="bash"><code>mkdir -p oracle-ords/config &amp;&amp; cd oracle-ords
+sudo chown -R 54321:54321 config
+docker login container-registry.oracle.com</code></pre></li>
+<li>Open the client ports on the VM (and in its security list):
+<pre data-lang="bash"><code>sudo firewall-cmd --permanent --add-port=27017/tcp --add-port=8080/tcp
+sudo firewall-cmd --reload</code></pre></li>
+<li>Create <code>docker-compose.yml</code>:
+<pre data-lang="yaml"><code>services:
+  ords:
+    image: container-registry.oracle.com/database/ords:${ORDS_TAG:-latest}
+    container_name: orcl-ords
+    command: ["serve"]
+    restart: unless-stopped
+    volumes:
+      - ./config:/etc/ords/config
+    ports:
+      - "8080:8080"
+      - "27017:27017"</code></pre></li>
+<li>Create <code>.env</code> with <code>ORDS_TAG=latest</code>. Pin a specific release tag for production.</li>
+<li>Start the container with <code>docker compose up -d</code>, then check it with <code>docker ps</code>.</li>
+</ol>
+<figure><div class="shot"><img src="images/fig06.png" alt="Project folder and ownership" loading="lazy"></div><figcaption><span class="fig">Fig 6</span>Project folder and ownership</figcaption></figure>
+<figure><div class="shot"><img src="images/fig07.png" alt="Firewall ports opened" loading="lazy"></div><figcaption><span class="fig">Fig 7</span>Firewall ports opened</figcaption></figure>
+<figure><div class="shot"><img src="images/fig08.png" alt="docker-compose.yml used in this build" loading="lazy"></div><figcaption><span class="fig">Fig 8</span>docker-compose.yml used in this build</figcaption></figure>
+<figure><div class="shot"><img src="images/fig09.png" alt="Container orcl-ords started" loading="lazy"></div><figcaption><span class="fig">Fig 9</span>Container orcl-ords started</figcaption></figure>
+<p><strong>Service name vs container name.</strong> <code>docker compose run</code> takes the compose service name (<code>ords</code>), not <code>container_name</code> (<code>orcl-ords</code>). Every ORDS command here starts with <code>docker compose run --rm ords …</code>. Check with <code>docker compose config --services</code>. The container starts with an empty config and serves nothing until Phase 3 completes and it is restarted.</p>
+</section>
+
+<section id="phase3">
+<h2><span class="n">06</span>Phase 3: Install ORDS into the primary PDB</h2>
+<p>Install once, on the primary, through <code>ords_svc</code>. The ORDS schema reaches the standby through redo. Never run <code>ords install</code> against a standby: it is read-only, and ORDS stops with "Missing the ORDS_PUBLIC_USER password".</p>
+<h3>6.1 Before installing</h3>
+<ul>
+<li>Pick an <code>ORDS_PUBLIC_USER</code> password that passes the PDB's password profile and differs from SYS. DBCS sets the <code>DEFAULT</code> profile to <code>ORA12C_STRONG_VERIFY_FUNCTION</code>. Test the exact string first:
+<pre data-lang="sql"><code>ALTER SESSION SET CONTAINER = UATPDB;
+SELECT profile, limit FROM dba_profiles WHERE resource_name = 'PASSWORD_VERIFY_FUNCTION';
+CREATE USER pwtest IDENTIFIED BY "&lt;candidate&gt;";
+DROP USER pwtest;</code></pre></li>
+<li>Start from an empty pool folder. A failed install leaves <code>config/databases/default/</code>, and a retry reuses its stored settings and password:
+<pre data-lang="bash"><code>sudo rm -rf config/databases/default</code></pre></li>
+</ul>
+<h3>6.2 Install</h3>
+<p>The two stdin lines are the SYS password and the new <code>ORDS_PUBLIC_USER</code> password. Single quotes stop bash from expanding <code>!</code>, <code>$</code> and <code>#</code>, and each <code>\</code> must end its line.</p>
+<pre data-lang="bash"><code>printf '%s\n%s\n' '&lt;sys_pwd&gt;' '&lt;ords_public_pwd&gt;' | \
+docker compose run --rm -T ords install \
+  --admin-user SYS \
+  --db-hostname 10.0.1.80 --db-port 1521 \
+  --db-servicename ords_svc.prvsharedsn.hubssvcn.oraclevcn.com \
+  --feature-db-api true \
+  --feature-rest-enabled-sql true \
+  --feature-sdw true \
+  --password-stdin</code></pre>
+<p>A clean run prints the "setting named … was set" lines, creates the proxy user, schema and objects, and ends with "Completed installation" (about 14 seconds here).</p>
+<figure><div class="shot"><img src="images/fig10.png" alt="Successful install into UATPDB (passwords masked)" loading="lazy"></div><figcaption><span class="fig">Fig 10</span>Successful install into UATPDB (passwords masked)</figcaption></figure>
+<h3>6.3 If ORA-28003 persists</h3>
+<p>If the install still fails with ORA-28003 using a password that passed the <code>pwtest</code> check, relax the profile only for the install and restore it immediately:</p>
+<pre data-lang="sql"><code>ALTER PROFILE DEFAULT LIMIT PASSWORD_VERIFY_FUNCTION NULL;
+-- run the install
+ALTER PROFILE DEFAULT LIMIT PASSWORD_VERIFY_FUNCTION ORA12C_STRONG_VERIFY_FUNCTION;</code></pre>
+<p>If a failed run left <code>ORDS_METADATA</code> behind, remove it first with <code>ords uninstall</code> (same connection options, SYS password on stdin).</p>
+<h3>6.4 Verify</h3>
+<pre data-lang="sql"><code>SELECT version FROM ords_metadata.ords_version;
+SELECT username, account_status FROM dba_users
+ WHERE username IN ('ORDS_METADATA','ORDS_PUBLIC_USER');</code></pre>
+<figure><div class="shot"><img src="images/fig11.png" alt="ORDS 26.3 installed; ORDS_METADATA and ORDS_PUBLIC_USER open" loading="lazy"></div><figcaption><span class="fig">Fig 11</span>ORDS 26.3 installed; ORDS_METADATA and ORDS_PUBLIC_USER open</figcaption></figure>
+<p><code>ORDSYS</code> is an old built-in Oracle schema unrelated to this install. Leave it alone.</p>
+</section>
+
+<section id="phase4">
+<h2><span class="n">07</span>Phase 4: Connect string and MongoDB API</h2>
+<p>Replace the install's single-host connection with a custom URL that lists the primary first and the standby second. ORDS tries each address and connects wherever <code>ords_svc</code> runs.</p>
+<pre data-lang="bash"><code>docker compose run --rm ords config set db.connectionType customurl</code></pre>
+<h3>7A. LVM single instance (used in this build): host IPs</h3>
+<pre data-lang="bash"><code>docker compose run --rm ords config set db.customURL \
+'jdbc:oracle:thin:@(DESCRIPTION=(CONNECT_TIMEOUT=5)(TRANSPORT_CONNECT_TIMEOUT=3)(RETRY_COUNT=3)(RETRY_DELAY=2)(FAILOVER=ON)(ADDRESS_LIST=(LOAD_BALANCE=OFF)(ADDRESS=(PROTOCOL=TCP)(HOST=10.0.1.80)(PORT=1521))(ADDRESS=(PROTOCOL=TCP)(HOST=10.0.1.78)(PORT=1521)))(CONNECT_DATA=(SERVICE_NAME=ords_svc.prvsharedsn.hubssvcn.oraclevcn.com)))'</code></pre>
+<figure><div class="shot"><img src="images/fig12.png" alt="Custom URL with both hosts set on the default pool" loading="lazy"></div><figcaption><span class="fig">Fig 12</span>Custom URL with both hosts set on the default pool</figcaption></figure>
+<h3>7B. RAC / ExaCC: SCAN names</h3>
+<p>Use one <code>DESCRIPTION</code> per cluster. Inside a cluster, <code>LOAD_BALANCE=ON</code> spreads connections across SCAN listeners. Between clusters, <code>FAILOVER=ON</code> tries the primary first.</p>
+<pre data-lang="bash"><code>docker compose run --rm ords config set db.customURL \
+'jdbc:oracle:thin:@(DESCRIPTION_LIST=(FAILOVER=ON)(LOAD_BALANCE=OFF)(DESCRIPTION=(CONNECT_TIMEOUT=5)(TRANSPORT_CONNECT_TIMEOUT=3)(RETRY_COUNT=3)(ADDRESS_LIST=(LOAD_BALANCE=ON)(ADDRESS=(PROTOCOL=TCP)(HOST=&lt;primary-scan&gt;)(PORT=1521)))(CONNECT_DATA=(SERVICE_NAME=&lt;ords_svc_full_name&gt;)))(DESCRIPTION=(CONNECT_TIMEOUT=5)(TRANSPORT_CONNECT_TIMEOUT=3)(RETRY_COUNT=3)(ADDRESS_LIST=(LOAD_BALANCE=ON)(ADDRESS=(PROTOCOL=TCP)(HOST=&lt;standby-scan&gt;)(PORT=1521)))(CONNECT_DATA=(SERVICE_NAME=&lt;ords_svc_full_name&gt;))))'</code></pre>
+<div class="table-wrap"><table>
+<tr><th>Parameter</th><th>Effect</th></tr>
+<tr><td><code>FAILOVER=ON</code>, outer <code>LOAD_BALANCE=OFF</code></td><td>Try the primary first, then the standby</td></tr>
+<tr><td><code>CONNECT_TIMEOUT=5</code>, <code>TRANSPORT_CONNECT_TIMEOUT=3</code></td><td>Give up on a dead host quickly</td></tr>
+<tr><td><code>RETRY_COUNT=3</code>, <code>RETRY_DELAY=2</code></td><td>Retry the list while roles change</td></tr>
+<tr><td>Inner <code>LOAD_BALANCE=ON</code> (RAC)</td><td>Spread across SCAN listeners and instances</td></tr>
+</table></div>
+<h3>Enable the MongoDB API and size the pool</h3>
+<pre data-lang="bash"><code>docker compose run --rm ords config set mongo.enabled true
+docker compose run --rm ords config set mongo.port 27017
+docker compose run --rm ords config set jdbc.InitialLimit 10
+docker compose run --rm ords config set jdbc.MaxLimit 30
+docker compose restart</code></pre>
+<figure><div class="shot"><img src="images/fig13.png" alt="MongoDB API enabled" loading="lazy"></div><figcaption><span class="fig">Fig 13</span>MongoDB API enabled</figcaption></figure>
+<h3>Confirm</h3>
+<p>Wait about 30 seconds after a restart. Pools are created after startup.</p>
+<pre data-lang="bash"><code>docker compose logs --since 2m ords | grep -A8 "Mapped local pools"
+docker compose logs --since 2m ords | grep -i mongodb</code></pre>
+<figure><div class="shot"><img src="images/fig14.png" alt="default pool VALID and the MongoDB API listening on 27017" loading="lazy"></div><figcaption><span class="fig">Fig 14</span>default pool VALID and the MongoDB API listening on 27017</figcaption></figure>
+<p>The API uses TLS with a self-signed certificate by default. For production, set <code>standalone.https.cert</code> and <code>standalone.https.cert.key</code> to a CA-signed certificate. <code>mongo.tls false</code> is for isolated tests only, and it disables routing to extra pools (section 11).</p>
+</section>
+
+<section id="phase5">
+<h2><span class="n">08</span>Phase 5: Database users and privileges</h2>
+<p>Create users on the primary only; Data Guard copies them to the standby. On RAC, run once in the PDB from any instance. Each MongoDB "database" maps to one ORDS-enabled schema.</p>
+<div class="table-wrap"><table>
+<tr><th>User</th><th>Created by</th><th>Role</th></tr>
+<tr><td>SYS (or <code>ORDS_INSTALL_ADMIN</code>)</td><td>DBA</td><td>Runs <code>ords install</code> and upgrades only</td></tr>
+<tr><td><code>ORDS_METADATA</code></td><td><code>ords install</code></td><td>Owns ORDS objects; never log in as it</td></tr>
+<tr><td><code>ORDS_PUBLIC_USER</code></td><td><code>ords install</code></td><td>Pool user; proxies into application schemas</td></tr>
+<tr><td><code>MONGOUSER</code></td><td>DBA</td><td>Owns the MongoDB collections</td></tr>
+</table></div>
+<pre data-lang="sql"><code>ALTER SESSION SET CONTAINER = UATPDB;
+
+CREATE USER mongouser IDENTIFIED BY "&lt;pwd&gt;"
+  DEFAULT TABLESPACE users QUOTA UNLIMITED ON users;
+
+GRANT CREATE SESSION   TO mongouser;
+GRANT SODA_APP         TO mongouser;   -- required for the MongoDB API
+GRANT CREATE TABLE     TO mongouser;
+GRANT CREATE VIEW      TO mongouser;
+GRANT CREATE SEQUENCE  TO mongouser;
+GRANT CREATE PROCEDURE TO mongouser;
+GRANT CREATE JOB       TO mongouser;   -- optional
+
+BEGIN
+  ORDS_ADMIN.ENABLE_SCHEMA(p_schema =&gt; 'MONGOUSER');
+END;
+/</code></pre>
+<figure><div class="shot"><img src="images/fig15.png" alt="MONGOUSER created, granted and ORDS-enabled (password masked)" loading="lazy"></div><figcaption><span class="fig">Fig 15</span>MONGOUSER created, granted and ORDS-enabled (password masked)</figcaption></figure>
+<p><code>ENABLE_SCHEMA</code> registers the schema and gives <code>ORDS_PUBLIC_USER</code> proxy access to it. <code>PLS-00201</code> on <code>ORDS_ADMIN</code> means ORDS is not installed in this PDB, or the session is in <code>CDB$ROOT</code>.</p>
+<h4>Verify</h4>
+<pre data-lang="sql"><code>SELECT granted_role FROM dba_role_privs WHERE grantee = 'MONGOUSER';
+SELECT proxy, client FROM proxy_users   WHERE client  = 'MONGOUSER';</code></pre>
+<figure><div class="shot"><img src="images/fig16.png" alt="SODA_APP granted; proxy ORDS_PUBLIC_USER → MONGOUSER present" loading="lazy"></div><figcaption><span class="fig">Fig 16</span>SODA_APP granted; proxy ORDS_PUBLIC_USER → MONGOUSER present</figcaption></figure>
+<p><strong>Optional installer user without SYS.</strong> Run <code>CREATE USER ords_install_admin IDENTIFIED BY "&lt;pwd&gt;";</code>, then <code>ords_installer_privileges.sql ORDS_INSTALL_ADMIN</code> from the ORDS <code>scripts/installer/</code> folder. Use <code>--admin-user ORDS_INSTALL_ADMIN</code> in Phase 3 and lock the account between upgrades.</p>
+</section>
+
+<section id="phase6">
+<h2><span class="n">09</span>Phase 6: Testing</h2>
+<p>All four checks passed on the primary, ORAUAT_4mb_jed. Clients always use the ORDS address 10.0.1.114, never a database host.</p>
+<div class="step"><span class="k">9.1</span>Install mongosh</div>
+<p>On the client, run <code>sudo dnf install -y mongodb-mongosh</code>, or run the shell from Docker: <code>docker run -it --rm --network host mongo:7 mongosh '&lt;uri&gt;'</code>.</p>
+<div class="step"><span class="k">9.2</span>REST-enabled SQL</div>
+<p>The reply names the database that served it.</p>
+<pre data-lang="bash"><code>curl -s -u 'MONGOUSER:&lt;pwd&gt;' -H 'Content-Type: application/sql' \
+  -d "select sys_context('userenv','db_unique_name') from dual" \
+  http://10.0.1.114:8080/ords/mongouser/_/sql</code></pre>
+<figure><div class="shot"><img src="images/fig17.png" alt="REST answered by ORAUAT_4mb_jed (password masked)" loading="lazy"></div><figcaption><span class="fig">Fig 17</span>REST answered by ORAUAT_4mb_jed (password masked)</figcaption></figure>
+<div class="step"><span class="k">9.3</span>MongoDB API login</div>
+<p><code>-p</code> prompts for the password and keeps it out of shell history.</p>
+<pre data-lang="bash"><code>mongosh 'mongodb://mongouser@10.0.1.114:27017/mongouser?authMechanism=PLAIN&amp;authSource=$external&amp;tls=true&amp;tlsAllowInvalidCertificates=true&amp;retryWrites=false&amp;loadBalanced=true' -p</code></pre>
+<figure><div class="shot"><img src="images/fig18.png" alt="mongosh connected through ORDS" loading="lazy"></div><figcaption><span class="fig">Fig 18</span>mongosh connected through ORDS</figcaption></figure>
+<div class="step"><span class="k">9.4</span>Write, read, and see it from SQL</div>
+<pre data-lang="javascript"><code>db.test.insertOne({site: "primary", at: new Date()})
+db.test.find()</code></pre>
+<figure><div class="shot"><img src="images/fig19.png" alt="Document inserted and read back; collection test created" loading="lazy"></div><figcaption><span class="fig">Fig 19</span>Document inserted and read back; collection test created</figcaption></figure>
+<pre data-lang="sql"><code>SELECT json_serialize(data) FROM mongouser.test;</code></pre>
+<figure><div class="shot"><img src="images/fig20.png" alt="The same document seen from SQL" loading="lazy"></div><figcaption><span class="fig">Fig 20</span>The same document seen from SQL</figcaption></figure>
+<p>A password typed inside the URI must be URL-encoded (<code>#</code> → <code>%23</code>, <code>@</code> → <code>%40</code>). With <code>-p</code> it does not.</p>
+</section>
+
+<section id="phase7">
+<h2><span class="n">10</span>Phase 7: Switchover test</h2>
+<p><span class="pill">Passed</span> After roles swapped, <code>ords_svc</code> ran only on the new primary (druat), and the same mongosh command to 10.0.1.114 returned the document written before the switchover. ORDS needed no change or restart.</p>
+<div class="step"><span class="k">Step 1</span>Confirm the broker configuration</div>
+<pre data-lang="bash"><code>dgmgrl sys@&lt;primary_tns&gt;
+DGMGRL&gt; show configuration;</code></pre>
+<figure><div class="shot"><img src="images/fig21.png" alt="Before: ORAUAT_4mb_jed primary, ORAUAT_d4g_jed standby" loading="lazy"></div><figcaption><span class="fig">Fig 21</span>Before: ORAUAT_4mb_jed primary, ORAUAT_d4g_jed standby</figcaption></figure>
+<div class="step"><span class="k">Step 2</span>Switch roles</div>
+<pre data-lang="bash"><code>DGMGRL&gt; switchover to ORAUAT_d4g_jed;
+DGMGRL&gt; show configuration;</code></pre>
+<figure><div class="shot"><img src="images/fig22.png" alt="Switchover succeeded" loading="lazy"></div><figcaption><span class="fig">Fig 22</span>Switchover succeeded</figcaption></figure>
+<figure><div class="shot"><img src="images/fig23.png" alt="After: ORAUAT_d4g_jed primary" loading="lazy"></div><figcaption><span class="fig">Fig 23</span>After: ORAUAT_d4g_jed primary</figcaption></figure>
+<div class="step"><span class="k">Step 3</span>Check the service moved (on the new primary)</div>
+<pre data-lang="bash"><code>lsnrctl status | grep -i ords_svc</code></pre>
+<figure><div class="shot"><img src="images/fig24.png" alt="ords_svc now registered on druat" loading="lazy"></div><figcaption><span class="fig">Fig 24</span>ords_svc now registered on druat</figcaption></figure>
+<div class="step"><span class="k">Step 4</span>Reconnect and read the marker document</div>
+<p>Wait about 30 seconds, reconnect with the same mongosh command to 10.0.1.114, and run <code>db.test.find()</code>.</p>
+<figure><div class="shot"><img src="images/fig25.png" alt="The marker document read through the new primary" loading="lazy"></div><figcaption><span class="fig">Fig 25</span>The marker document read through the new primary</figcaption></figure>
+<div class="step"><span class="k">Step 5</span>Optional REST check</div>
+<p>Rerun the <code>curl</code> test. <code>db_unique_name</code> now returns <code>ORAUAT_d4g_jed</code>.</p>
+<div class="step"><span class="k">Step 6</span>Switch back when done</div>
+<pre data-lang="bash"><code>DGMGRL&gt; switchover to ORAUAT_4mb_jed;</code></pre>
+<h3>RAC differences</h3>
+<div class="table-wrap"><table>
+<tr><th>Item</th><th>LVM single instance</th><th>RAC / ExaCC</th></tr>
+<tr><td>What moves the service</td><td>PDB startup trigger and root role-change trigger</td><td>Clusterware, from <code>-role PRIMARY</code></td></tr>
+<tr><td>Check the service</td><td><code>lsnrctl status | grep ords_svc</code></td><td><code>srvctl status service -db &lt;db&gt; -service ords_svc</code></td></tr>
+<tr><td>Where ORDS reconnects</td><td>Standby host IP</td><td>Standby SCAN, then any instance running the service</td></tr>
+<tr><td>Fast failover notice</td><td>Not available</td><td>Optional: enable FAN/ONS so the pool drops dead connections faster</td></tr>
+</table></div>
+<p>Expect a few seconds of errors while roles change. Applications should retry the operation.</p>
+<p>If ORDS still fails after the switchover, run <code>docker compose logs --since 5m ords | grep ORA-</code>. ORA-12514 on both hosts means <code>ords_svc</code> did not start on the new primary. Start it (<code>srvctl start service …</code>, or <code>EXEC DBMS_SERVICE.START_SERVICE('ords_svc');</code> in the PDB) and recheck Phase 1, including the PDB name in the root trigger.</p>
+</section>
+
+<section id="pools">
+<h2><span class="n">11</span>Multiple databases in one ORDS</h2>
+<p>One ORDS container can serve several databases, each through its own named pool. ORDS picks the pool from the hostname the client connects with: the REST <code>Host</code> header, or the host in the MongoDB URI. Requests that match no hostname go to <code>default</code>. Hostname routing needs <code>mongo.tls</code> left at <code>true</code>.</p>
+<p>Each pool lives in <code>config/databases/&lt;pool&gt;/</code> with <code>pool.xml</code>, a <code>wallet/</code> holding the <code>ORDS_PUBLIC_USER</code> password, and an optional <code>hostnames</code> file. To check whether the target PDB already has ORDS, run <code>SELECT version FROM ords_metadata.ords_version;</code>. ORA-00942 means Method A; a version means Method B.</p>
+<h3>Method A: new database without ORDS</h3>
+<p>Installs the schema and creates the pool.</p>
+<pre data-lang="bash"><code>printf '%s\n%s\n' '&lt;db2_sys_pwd&gt;' '&lt;db2_ords_public_pwd&gt;' | \
+docker compose run --rm -T ords install --db-pool db2 \
+  --admin-user SYS --db-hostname &lt;db2-ip-or-scan&gt; --db-port 1521 \
+  --db-servicename &lt;db2_service&gt; \
+  --feature-db-api true --feature-rest-enabled-sql true --feature-sdw true \
+  --password-stdin</code></pre>
+<h3>Method B: database already has ORDS</h3>
+<p>Writes the pool configuration only.</p>
+<pre data-lang="bash"><code>P=db3
+docker compose run --rm ords config --db-pool $P set db.connectionType basic
+docker compose run --rm ords config --db-pool $P set db.hostname &lt;db-ip-or-scan&gt;
+docker compose run --rm ords config --db-pool $P set db.port 1521
+docker compose run --rm ords config --db-pool $P set db.servicename &lt;service&gt;
+docker compose run --rm ords config --db-pool $P set db.username ORDS_PUBLIC_USER
+docker compose run --rm ords config --db-pool $P set restEnabledSql.active true
+printf '%s' '&lt;ords_public_pwd&gt;' | \
+docker compose run --rm -T ords config --db-pool $P secret --password-stdin db.password</code></pre>
+<p>For a Data Guard pair behind an extra pool, use <code>db.connectionType customurl</code> with a role-based service, exactly as in Phase 4.</p>
+<h3>Route, restart, verify</h3>
+<pre data-lang="bash"><code>printf '%s\n%s\n' 'ords-db2.local' 'db2.prvsharedsn.hubssvcn.oraclevcn.com' | sudo tee config/databases/db2/hostnames
+sudo chown -R 54321:54321 config/databases
+docker compose restart ords &amp;&amp; sleep 30
+docker compose logs --since 1m ords | grep -A12 "Mapped local pools"</code></pre>
+<p>Each name in <code>hostnames</code> must be unique across pools and must resolve, on the client, to the ORDS VM (10.0.1.114). Clients then connect with that name, for example <code>mongodb://mongouser@ords-db2.local:27017/mongouser?…</code>. Connecting by IP lands on <code>default</code>.</p>
+<div class="table-wrap"><table>
+<tr><th>Task</th><th>Command (prefix <code>docker compose run --rm ords</code>)</th></tr>
+<tr><td>List one pool</td><td><code>config --db-pool db2 list</code></td></tr>
+<tr><td>Show stored password</td><td><code>config --db-pool db2 get --secret db.password</code></td></tr>
+<tr><td>Size a pool</td><td><code>config --db-pool db2 set jdbc.MaxLimit 30</code></td></tr>
+<tr><td>Remove a pool</td><td><code>sudo rm -rf config/databases/db2</code>, then restart</td></tr>
+</table></div>
+</section>
+
+<section id="nodocker">
+<h2><span class="n">12</span>Traditional install without Docker</h2>
+<p>The same design runs with ORDS installed from RPM on a Linux VM as a systemd service. Phases 1, 5, 6 and 7 are unchanged; only the ORDS commands and paths differ.</p>
+<div class="table-wrap"><table>
+<tr><th>Item</th><th>Docker</th><th>Traditional</th></tr>
+<tr><td>ORDS command</td><td><code>docker compose run --rm ords &lt;args&gt;</code></td><td><code>ords --config /etc/ords/config &lt;args&gt;</code> (as <code>oracle</code>)</td></tr>
+<tr><td>Config folder</td><td><code>./config</code></td><td><code>/etc/ords/config</code></td></tr>
+<tr><td>Start / restart</td><td><code>docker compose up -d</code> / <code>restart</code></td><td><code>sudo systemctl start ords</code> / <code>restart ords</code></td></tr>
+<tr><td>Logs</td><td><code>docker compose logs ords</code></td><td><code>sudo journalctl -u ords</code></td></tr>
+<tr><td>Owner of config</td><td>uid 54321</td><td><code>oracle:oinstall</code></td></tr>
+</table></div>
+<ol>
+<li>Install ORDS and its JDK from the Oracle Linux repo:
+<pre data-lang="bash"><code>sudo dnf config-manager --add-repo https://yum.oracle.com/repo/OracleLinux/OL9/oracle/software/x86_64
+sudo dnf install -y ords
+sudo mkdir -p /etc/ords/config &amp;&amp; sudo chown -R oracle:oinstall /etc/ords/config
+sudo grep ORDS_CONFIG /etc/ords.conf          # should read ORDS_CONFIG=/etc/ords/config
+sudo firewall-cmd --permanent --add-port=8080/tcp --add-port=27017/tcp &amp;&amp; sudo firewall-cmd --reload</code></pre></li>
+<li>Install into the primary PDB, as <code>oracle</code>:
+<pre data-lang="bash"><code>sudo su - oracle
+printf '%s\n%s\n' '&lt;sys_pwd&gt;' '&lt;ords_public_pwd&gt;' | \
+ords --config /etc/ords/config install --admin-user SYS \
+  --db-hostname 10.0.1.80 --db-port 1521 \
+  --db-servicename ords_svc.prvsharedsn.hubssvcn.oraclevcn.com \
+  --feature-db-api true --feature-rest-enabled-sql true --feature-sdw true \
+  --password-stdin</code></pre></li>
+<li>Set the two-host URL (Phase 4, 7A or 7B), the MongoDB API and the pool size:
+<pre data-lang="bash"><code>ords --config /etc/ords/config config set db.connectionType customurl
+ords --config /etc/ords/config config set db.customURL '&lt;URL from Phase 4&gt;'
+ords --config /etc/ords/config config set mongo.enabled true
+ords --config /etc/ords/config config set jdbc.MaxLimit 30
+exit</code></pre></li>
+<li>Start and check:
+<pre data-lang="bash"><code>sudo systemctl enable --now ords
+sudo journalctl -u ords --since "5 min ago" | grep -E -A8 "Mapped local pools|MongoDB"</code></pre></li>
+</ol>
+<p>Run every <code>ords</code> command as <code>oracle</code>. Files created as root break the service with permission errors; <code>sudo chown -R oracle:oinstall /etc/ords/config</code> fixes them. To upgrade, run <code>sudo dnf update ords</code>, rerun the install against the primary, then restart.</p>
+</section>
+
+<section id="issues">
+<h2><span class="n">13</span>Issues and fixes log</h2>
+<p>Every problem met during the build, in the order it occurred. Start any new investigation with <code>docker compose logs --since 10m ords | grep -A10 "Mapped local pools"</code> and <code>… | grep -i -E "SEVERE|ORA-"</code>.</p>
+<div class="table-wrap"><table>
+<tr><th>#</th><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+<tr><td>1</td><td class="wrap"><code>mongosh: command not found</code></td><td>Shell not installed on the VM</td><td class="wrap"><code>sudo dnf install -y mongodb-mongosh</code>, or the <code>mongo:7</code> image</td></tr>
+<tr><td>2</td><td class="wrap"><code>MongoParseError: Password contains unescaped characters</code></td><td><code>#</code> in the password inside the URI</td><td class="wrap">URL-encode (<code>%23</code>), or omit it and use <code>-p</code></td></tr>
+<tr><td>3</td><td class="wrap"><code>ORA-01017</code> for SYS during <code>ords install</code></td><td><code>--password-stdin</code> given but nothing piped in</td><td class="wrap">Put <code>printf '%s\n%s\n' … |</code> before the command</td></tr>
+<tr><td>4</td><td>"Missing the ORDS_PUBLIC_USER password"</td><td><code>ords install</code> run against the read-only standby</td><td>Never install on a standby; use config-only pool settings</td></tr>
+<tr><td>5</td><td class="wrap">Pool INVALID, <code>ORA-01017</code> for ORDS_PUBLIC_USER; <code>get --secret</code> → "Index 0 out of bounds"</td><td>Empty pool wallet</td><td class="wrap">Delete <code>config/databases/&lt;pool&gt;/wallet</code>, set the secret with <code>--password-stdin</code></td></tr>
+<tr><td>6</td><td class="wrap"><code>Database unavailable … named database is not available</code></td><td>The pool behind that address was INVALID, or the hostname was missing from its <code>hostnames</code> file</td><td>Fix the pool error; add the exact client hostname; restart and wait 30 s</td></tr>
+<tr><td>7</td><td class="wrap"><code>default =&gt; INVALID</code>, ORA-12514 at 10.0.1.168</td><td>Static service on one host; after a role change the service was not there</td><td>The role-based service and two-host URL in this document</td></tr>
+<tr><td>8</td><td class="wrap">Pool INVALID, ORA-12170 to 10.0.1.30</td><td>Port 1521 blocked or host down</td><td class="wrap">Security list/NSG and host firewall; <code>nc -zv &lt;host&gt; 1521</code></td></tr>
+<tr><td>9</td><td><code>ORA-65069</code> creating the role-change trigger</td><td><code>AFTER DB_ROLE_CHANGE</code> not allowed in a PDB</td><td class="wrap">Create it in <code>CDB$ROOT</code>; start the service with <code>DBMS_SQL.PARSE(…, container =&gt; '&lt;PDB&gt;')</code></td></tr>
+<tr><td>10</td><td>Root trigger names <code>ORDUAT_PDB1</code> on ORAUAT</td><td>Copied from the earlier test database</td><td>Recreate with <code>container =&gt; 'UATPDB'</code> (open item)</td></tr>
+<tr><td>11</td><td><code>no such service: orcl-ords</code></td><td><code>docker compose run</code> takes the service name, not <code>container_name</code></td><td>Use <code>ords</code></td></tr>
+<tr><td>12</td><td class="wrap"><code>ORA-20202 … ORA-28003 password verification failed</code> during install</td><td><code>ORDS_PUBLIC_USER</code> password rejected by <code>ORA12C_STRONG_VERIFY_FUNCTION</code>; the second stdin line was the SYS password</td><td>Use a separate, tested password (section 6.1)</td></tr>
+<tr><td>13</td><td>ORA-28003 again with a new password, and no "setting named" lines</td><td>The first failed run had written <code>config/databases/default</code>; the retry reused it</td><td class="wrap"><code>sudo rm -rf config/databases/default</code> and rerun; if it still fails, relax the profile for the install only (section 6.3)</td></tr>
+<tr><td>14</td><td>MongoDB login "Invalid credential or not authorized" through a standby pool</td><td>ORDS MongoDB layer rejects logins on a read-only standby (section 14)</td><td>Use the standby only as a failover target</td></tr>
+<tr><td>15</td><td class="wrap"><code>tail: cannot open 'config/mongologs/*'</code></td><td>Relative <code>mongo.access.log</code> resolves under <code>global/standalone/</code></td><td class="wrap">Read <code>config/global/standalone/mongologs/mongo-access.log</code></td></tr>
+</table></div>
+<h3>Issue 11: service vs container name</h3>
+<figure><div class="shot"><img src="images/fig26.png" alt="no such service: orcl-ords (passwords masked)" loading="lazy"></div><figcaption><span class="fig">Fig 26</span>no such service: orcl-ords (passwords masked)</figcaption></figure>
+<h3>Issue 12: first ORA-28003</h3>
+<figure><div class="shot"><img src="images/fig27.png" alt="ORA-28003 during ORDS_PUBLIC_USER creation (passwords masked)" loading="lazy"></div><figcaption><span class="fig">Fig 27</span>ORA-28003 during ORDS_PUBLIC_USER creation (passwords masked)</figcaption></figure>
+<h3>Profile check while diagnosing issue 12</h3>
+<figure><div class="shot"><img src="images/fig28.png" alt="DEFAULT profile uses ORA12C_STRONG_VERIFY_FUNCTION; no ORDS users left behind" loading="lazy"></div><figcaption><span class="fig">Fig 28</span>DEFAULT profile uses ORA12C_STRONG_VERIFY_FUNCTION; no ORDS users left behind</figcaption></figure>
+<h3>Issue 13: retry reused the stale pool</h3>
+<p>Note that the "setting named" lines are missing from this output.</p>
+<figure><div class="shot"><img src="images/fig29.png" alt="Retry before the stale config was removed" loading="lazy"></div><figcaption><span class="fig">Fig 29</span>Retry before the stale config was removed</figcaption></figure>
+<p>After removing <code>config/databases/default</code>, the install completed (section 6.2).</p>
+</section>
+
+<section id="limitation">
+<h2><span class="n">14</span>Known limitation: MongoDB API through a standby pool</h2>
+<p>Reading MongoDB data from an Active Data Guard standby through a separate ORDS pool did not work. Treat the standby as a failover target only, and raise an Oracle SR if read offload is a requirement.</p>
+<p>Test setup: ORDS 26.3, Oracle 19.33, standby <code>READ ONLY WITH APPLY</code>, a second pool routed by a <code>hostnames</code> file as described in the ORDS documentation (§9.5).</p>
+<div class="table-wrap"><table>
+<tr><th>Check on the standby pool</th><th>Result</th></tr>
+<tr><td>Pool status at startup</td><td>VALID</td></tr>
+<tr><td>REST-enabled SQL as MONGOUSER (<code>curl</code> with <code>Host:</code> header)</td><td>HTTP 200</td></tr>
+<tr><td>SQL*Plus login as MONGOUSER</td><td>Succeeds</td></tr>
+<tr><td>SQL*Plus proxy login <code>ORDS_PUBLIC_USER[MONGOUSER]</code></td><td>Succeeds</td></tr>
+<tr><td>MongoDB API login (<code>saslStart</code>)</td><td>"Invalid credential or not authorized; logon denied" in about 6 ms</td></tr>
+<tr><td>ORDS log with debug on</td><td>No ORA- error, no stack trace</td></tr>
+<tr><td><code>v$session</code> during the attempt</td><td>Proxy session opened as MONGOUSER; only logon-recursive SQL ran</td></tr>
+</table></div>
+<p>The ORDS documentation describes pool routing but doesn't state that a read-only standby is supported for the MongoDB API, and non-autonomous 19c is outside its supported list. For the SR, attach the MongoDB access-log lines, <code>config --db-pool &lt;pool&gt; list</code> and the startup log.</p>
+</section>
+
+<section id="operations">
+<h2><span class="n">15</span>Operations and security</h2>
+<div class="table-wrap"><table>
+<tr><th>Task</th><th>Command (prefix <code>docker compose run --rm ords</code>)</th></tr>
+<tr><td>Show pool settings</td><td><code>config list</code></td></tr>
+<tr><td>Show the connect string</td><td><code>config get db.customURL</code></td></tr>
+<tr><td>Show the pool password</td><td><code>config get --secret db.password</code></td></tr>
+<tr><td>Reset the pool password</td><td class="wrap"><code>printf '%s' '&lt;pwd&gt;' | docker compose run --rm -T ords config secret --password-stdin db.password</code></td></tr>
+<tr><td>MongoDB access log</td><td class="wrap"><code>config set mongo.access.log mongologs</code> → <code>config/global/standalone/mongologs/</code></td></tr>
+<tr><td>Follow logs</td><td><code>docker compose logs -f ords</code></td></tr>
+<tr><td>Upgrade ORDS</td><td>Change <code>ORDS_TAG</code>, <code>docker compose pull</code>, rerun Phase 3 against the primary, restart</td></tr>
+</table></div>
+<h3>Open items</h3>
+<ul class="checklist">
+<li>Recreate <code>sys.ords_svc_role_change</code> in <code>CDB$ROOT</code> with <code>container =&gt; 'UATPDB'</code></li>
+<li>Rotate the SYS, <code>ORDS_PUBLIC_USER</code> and <code>MONGOUSER</code> passwords used during setup, then update the pool secret after changing <code>ORDS_PUBLIC_USER</code></li>
+<li>Clear install commands from shell history on docvm (<code>history -d &lt;n&gt;</code>)</li>
+<li>Remove leftover pools from the earlier test (<code>standby</code>, <code>dbsty</code>, <code>db2</code>) if they still exist in any config folder</li>
+</ul>
+<h3>Security checklist</h3>
+<ul class="checklist">
+<li>Replace the self-signed certificate (<code>standalone.https.cert</code>, <code>standalone.https.cert.key</code>) with a CA-signed one covering every client hostname</li>
+<li>Restrict 27017 and 8080 to application subnets</li>
+<li>Pin <code>ORDS_TAG</code> to a specific release</li>
+<li>Back up the <code>config/</code> folder; it holds pool settings and wallets</li>
+<li>Production: run two or more ORDS containers behind a TCP load balancer on 27017 and 8080</li>
+<li>Production: move to 21c or later (23ai preferred) for official MongoDB API support</li>
+</ul>
+<h3>Sources</h3>
+<ul>
+<li><a href="https://docs.oracle.com/en/database/oracle/oracle-rest-data-services/24.3/ordig/enabling-and-configuring-oracle-database-api-mongodb.html" target="_blank" rel="noopener">ORDS: Enabling and Configuring the Oracle Database API for MongoDB</a></li>
+<li><a href="https://docs.oracle.com/en/database/oracle/oracle-rest-data-services/25.3/ordig/installing-and-configuring-oracle-rest-data-services.html" target="_blank" rel="noopener">ORDS: Installing and Configuring ORDS</a></li>
+<li><a href="https://container-registry.oracle.com/ords/ocr/ba/database/ords" target="_blank" rel="noopener">ORDS container image, Oracle Container Registry</a></li>
+<li><a href="https://docs.oracle.com/en/database/oracle/mongodb-api/index.html" target="_blank" rel="noopener">Oracle Database API for MongoDB</a></li>
+</ul>
+</section>
+
+</main>
+</div>
+
+<script>
+document.querySelectorAll('pre').forEach(function (pre) {
+  var lang = pre.getAttribute('data-lang');
+  if (lang) { var s = document.createElement('span'); s.className = 'lang'; s.textContent = lang; pre.appendChild(s); }
+  var b = document.createElement('button'); b.className = 'copy'; b.type = 'button'; b.textContent = 'Copy';
+  b.addEventListener('click', function () {
+    var text = pre.querySelector('code').innerText;
+    var done = function () { b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy'; }, 1500); };
+    var fallback = function () { var r = document.createRange(); r.selectNodeContents(pre.querySelector('code')); var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r); b.textContent = 'Selected'; };
+    try { navigator.clipboard.writeText(text).then(done, fallback); } catch (e) { fallback(); }
+  });
+  pre.appendChild(b);
+});
+</script>
+
+</body></html>
