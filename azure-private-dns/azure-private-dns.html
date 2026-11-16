@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Private DNS Zones: Name Resolution Across VNets and Regions</title>
+<meta name="description" content="A hands-on lab that creates an Azure private DNS zone so VMs in two peered virtual networks can reach each other by name, plus troubleshooting, limitations, and designs for cross-VNet, cross-region and hybrid DNS.">
+<style>
+  :root {
+    --bg: #f6f8fb;
+    --surface: #ffffff;
+    --text: #1c2733;
+    --muted: #5b6b7c;
+    --line: #dde4ec;
+    --accent: #0067b8;
+    --accent-soft: #e6f1fa;
+    --ok: #107c41;
+    --ok-soft: #e7f5ec;
+    --warn: #8a5a00;
+    --warn-soft: #fff5dc;
+    --code-bg: #10202f;
+    --code-text: #e3edf7;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f161d;
+      --surface: #17212b;
+      --text: #e4ebf2;
+      --muted: #9aabbb;
+      --line: #2a3846;
+      --accent: #5db3f0;
+      --accent-soft: #16324a;
+      --ok: #6fd39a;
+      --ok-soft: #153526;
+      --warn: #f0c668;
+      --warn-soft: #3a2f12;
+      --code-bg: #0a1118;
+      --code-text: #dbe7f3;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    font-size: 17px;
+    line-height: 1.7;
+  }
+  header.hero {
+    background: linear-gradient(135deg, #003a6c 0%, #0067b8 60%, #2b8fd6 100%);
+    color: #fff;
+    padding: 56px 20px 48px;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; }
+  .tag {
+    display: inline-block;
+    font-size: 13px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    background: rgba(255,255,255,.16);
+    padding: 4px 12px;
+    border-radius: 999px;
+    margin-bottom: 16px;
+  }
+  h1 {
+    font-size: clamp(28px, 4.6vw, 42px);
+    line-height: 1.2;
+    margin: 0 0 14px;
+    text-wrap: balance;
+  }
+  .hero p.lead { font-size: 19px; margin: 0 0 18px; max-width: 46em; opacity: .95; }
+  .meta { font-size: 14px; opacity: .85; }
+  main { padding: 36px 20px 64px; }
+  article {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: clamp(20px, 4vw, 44px);
+  }
+  h2 {
+    font-size: 26px;
+    line-height: 1.3;
+    margin: 44px 0 12px;
+    padding-top: 8px;
+    border-top: 1px solid var(--line);
+  }
+  h2:first-of-type { margin-top: 28px; }
+  h3 { font-size: 20px; margin: 30px 0 8px; }
+  p { margin: 0 0 16px; }
+  a { color: var(--accent); }
+  ul, ol { padding-left: 24px; margin: 0 0 16px; }
+  li { margin-bottom: 6px; }
+  code {
+    font-family: Consolas, "Cascadia Mono", Menlo, monospace;
+    font-size: .9em;
+    background: var(--accent-soft);
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+  pre {
+    background: var(--code-bg);
+    color: var(--code-text);
+    padding: 16px 18px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: 14.5px;
+    line-height: 1.55;
+    margin: 0 0 18px;
+  }
+  td code { white-space: nowrap; }
+  pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+  nav.toc {
+    background: var(--accent-soft);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 8px;
+  }
+  nav.toc strong { display: block; margin-bottom: 6px; }
+  nav.toc ol { margin: 0; }
+  .table-scroll { overflow-x: auto; margin: 0 0 18px; }
+  table { border-collapse: collapse; width: 100%; font-size: 15.5px; }
+  th, td { border: 1px solid var(--line); padding: 9px 12px; text-align: left; vertical-align: top; }
+  th { background: var(--accent-soft); }
+  figure { margin: 18px 0 24px; }
+  figure img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+  }
+  figure.small img { max-width: min(100%, 540px); }
+  figcaption { font-size: 14px; color: var(--muted); margin-top: 8px; }
+  .note {
+    border-left: 4px solid var(--accent);
+    background: var(--accent-soft);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 0 0 18px;
+  }
+  .note.ok { border-color: var(--ok); background: var(--ok-soft); }
+  .note.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .note > strong:first-child { display: block; margin-bottom: 2px; }
+  .step {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    padding: 2px 10px;
+    border-radius: 4px;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+  @media (prefers-color-scheme: dark) { .step { color: #06131f; } }
+  footer { text-align: center; color: var(--muted); font-size: 14px; padding: 0 20px 40px; }
+.back-home{display:inline-block;margin:0 0 14px;font-size:14px;font-weight:600;text-decoration:none;color:#fff;opacity:.85}
+.back-home:hover{opacity:1;text-decoration:underline}
+</style>
+<style>
+  .diagram { margin: 18px 0 24px; }
+  .diagram svg { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+  .diagram figcaption { font-size: 14px; color: var(--muted); margin-top: 8px; }
+  .dg-vnet { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.2; }
+  .dg-node { fill: var(--surface); stroke: var(--muted); stroke-width: 1; }
+  .dg-zone { fill: var(--ok-soft); stroke: var(--ok); stroke-width: 1.2; }
+  .dg-onp { fill: var(--warn-soft); stroke: var(--warn); stroke-width: 1.2; }
+  .dg-region { fill: none; stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 4; }
+  .dg-t { fill: var(--text); font-size: 14px; font-weight: 600; font-family: inherit; }
+  .dg-s { fill: var(--muted); font-size: 12.5px; font-family: inherit; }
+  .dg-net { stroke: var(--muted); stroke-width: 1.6; fill: none; }
+  .dg-dns { stroke: var(--ok); stroke-width: 1.6; stroke-dasharray: 6 4; fill: none; }
+  .dg-head { fill: var(--muted); }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <a class="back-home" href="../index.html">&#8592;&nbsp;All articles</a>
+    <span class="tag">Azure Networking · Hands-on Lab</span>
+    <h1>Azure Private DNS Zones: Name Resolution Across VNets and Regions</h1>
+    <p class="lead">Peering lets two virtual networks talk by IP address, but not by name. In this lab I add a private DNS zone so the VMs find each other by name, then look at how the same idea scales to many VNets, several regions and on-premises.</p>
+    <div class="meta">By Nithin Sunke · 16 November 2026 · 10 min read</div>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+<article>
+
+  <nav class="toc" aria-label="Contents">
+    <strong>In this post</strong>
+    <ol>
+      <li><a href="#problem">The problem</a></li>
+      <li><a href="#what">What a private DNS zone is</a></li>
+      <li><a href="#prereq">Prerequisites</a></li>
+      <li><a href="#steps">Steps</a></li>
+      <li><a href="#test">Test</a></li>
+      <li><a href="#trouble">Troubleshooting</a></li>
+      <li><a href="#limits">Limitations</a></li>
+      <li><a href="#crossvnet">Cross-VNet DNS design</a></li>
+      <li><a href="#crossregion">Cross-region DNS design</a></li>
+      <li><a href="#hybrid">Hybrid DNS with on-premises</a></li>
+      <li><a href="#cli">Azure CLI version</a></li>
+      <li><a href="#cleanup">Cost and clean-up</a></li>
+    </ol>
+  </nav>
+
+  <h2 id="problem">1. The problem</h2>
+  <p>My lab has two Linux VMs in two peered virtual networks. They reach each other by IP address, but names are another matter. Here is what each VM can and cannot resolve before any DNS work.</p>
+  <figure>
+    <img loading="lazy" src="images/fig01.png" alt="Terminal on scsubtusrv01: ping to its own name and to both IP addresses succeeds, but ping to scsubtusrv02 by short name and by its internal.cloudapp.net name fails with name resolution errors">
+    <figcaption>From <code>scsubtusrv01</code>: its own name resolves, both IPs reply, but <code>scsubtusrv02</code> cannot be resolved.</figcaption>
+  </figure>
+  <figure>
+    <img loading="lazy" src="images/fig02.png" alt="Terminal on scsubtusrv02: ping to its own name and to both IP addresses succeeds, but ping to scsubtusrv01 by name fails with a temporary failure in name resolution">
+    <figcaption>From <code>scsubtusrv02</code>: the mirror image. The other VM's name fails.</figcaption>
+  </figure>
+  <p>The output explains why. Every VNet gets Azure-provided DNS, which registers each VM under a suffix ending in <code>internal.cloudapp.net</code>. That suffix is different for each VNet, and it is only resolvable from inside that VNet. Peering joins the networks for traffic, but it does not join their DNS.</p>
+
+  <h2 id="what">2. What a private DNS zone is</h2>
+  <p>A private DNS zone is a DNS zone, such as <code>scslabs.internal</code>, that exists only inside the virtual networks you link to it. It is never visible on the internet.</p>
+  <ul>
+    <li><strong>Virtual network link.</strong> Connects a VNet to the zone. VMs in a linked VNet can resolve every record in the zone.</li>
+    <li><strong>Auto-registration.</strong> An option on the link. When it is on, each VM in that VNet gets an A record in the zone automatically, and the record is removed when the VM is deleted.</li>
+    <li><strong>Manual records.</strong> You can add your own A, CNAME, MX, TXT and other records, for example a friendly alias for a database server.</li>
+  </ul>
+  <figure class="diagram">
+    <svg viewBox="0 0 760 345" role="img" aria-label="Lab design: a private DNS zone linked to two peered virtual networks, each with one VM">
+      <rect class="dg-zone" x="260" y="20" width="240" height="56" rx="8"/>
+      <text class="dg-t" x="380" y="43" text-anchor="middle">Private DNS zone</text>
+      <text class="dg-s" x="380" y="62" text-anchor="middle">scslabs.internal</text>
+      <path class="dg-dns" d="M300 76 L190 150"/>
+      <path class="dg-dns" d="M460 76 L570 150"/>
+      <text class="dg-s" x="150" y="112" text-anchor="middle">Link + auto-registration</text>
+      <text class="dg-s" x="610" y="112" text-anchor="middle">Link + auto-registration</text>
+      <rect class="dg-vnet" x="40" y="150" width="300" height="130" rx="10"/>
+      <text class="dg-t" x="58" y="174">vnet-westus3-1</text>
+      <rect class="dg-node" x="70" y="196" width="240" height="60" rx="8"/>
+      <text class="dg-t" x="190" y="221" text-anchor="middle">scsubtusrv01</text>
+      <text class="dg-s" x="190" y="241" text-anchor="middle">172.16.0.4</text>
+      <rect class="dg-vnet" x="420" y="150" width="300" height="130" rx="10"/>
+      <text class="dg-t" x="438" y="174">vnet-westus3-2</text>
+      <rect class="dg-node" x="450" y="196" width="240" height="60" rx="8"/>
+      <text class="dg-t" x="570" y="221" text-anchor="middle">scsubtusrv02</text>
+      <text class="dg-s" x="570" y="241" text-anchor="middle">10.0.0.4</text>
+      <path class="dg-net" d="M340 226 L420 226"/>
+      <text class="dg-s" x="380" y="216" text-anchor="middle">Peering</text>
+      <path class="dg-net" d="M210 318 L250 318"/>
+      <text class="dg-s" x="258" y="322">Network path</text>
+      <path class="dg-dns" d="M400 318 L440 318"/>
+      <text class="dg-s" x="448" y="322">DNS zone link</text>
+    </svg>
+    <figcaption>The lab. Peering carries the traffic; the zone links provide the names.</figcaption>
+  </figure>
+
+  <h2 id="prereq">3. Prerequisites</h2>
+  <div class="table-scroll">
+  <table>
+    <thead><tr><th>Requirement</th><th>In this lab</th></tr></thead>
+    <tbody>
+      <tr><td>Two virtual networks with non-overlapping address spaces</td><td><code>vnet-westus3-1</code> (172.16.x) and <code>vnet-westus3-2</code> (10.0.0.0/16)</td></tr>
+      <tr><td>A VM in each VNet</td><td><code>scsubtusrv01</code> (172.16.0.4) and <code>scsubtusrv02</code> (10.0.0.4), Ubuntu</td></tr>
+      <tr><td>Network connectivity between the VNets</td><td>VNet peering in state Connected</td></tr>
+      <tr><td>Both VNets using Azure-provided DNS</td><td>DNS servers set to Default on each VNet</td></tr>
+      <tr><td>Permission to create DNS zones and link VNets</td><td>Owner on the subscription</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>Check the peering first. A DNS zone gives you names, not connectivity, so if the VMs cannot reach each other by IP, fix that before going further.</p>
+  <figure>
+    <img loading="lazy" src="images/fig03.png" alt="Peerings blade of vnet-westus3-1 showing peering VNET2-VNET1 as Fully Synchronized and Connected to vnet-westus3-2">
+    <figcaption>The peering between the two VNets is Connected.</figcaption>
+  </figure>
+  <figure>
+    <img loading="lazy" src="images/fig04.png" alt="Overview of virtual machine scsubtusrv01 showing it is running Ubuntu in West US 3 in vnet-westus3-1/snet-westus3-1">
+    <figcaption><code>scsubtusrv01</code> sits in <code>vnet-westus3-1</code>. The VM name shown here is the name that gets registered in DNS.</figcaption>
+  </figure>
+
+  <h2 id="steps">4. Steps</h2>
+
+  <h3><span class="step">Step 1</span>Open Private DNS zones</h3>
+  <p>In the portal, search for <strong>Private DNS zones</strong>. The list is empty. Click <strong>Create</strong>.</p>
+  <figure>
+    <img loading="lazy" src="images/fig05.png" alt="Private DNS zones page in the Azure portal with no zones listed and a Create button">
+    <figcaption>No private DNS zones yet.</figcaption>
+  </figure>
+
+  <h3><span class="step">Step 2</span>Create the zone</h3>
+  <p>Choose the resource group and enter the zone name. I used <code>scslabs.internal</code>.</p>
+  <figure class="small">
+    <img loading="lazy" src="images/fig06.png" alt="Create Private DNS Zone Basics tab with resource group scslabs-rg and name scslabs.internal">
+    <figcaption>The Basics tab. The wizard also has tabs for adding records and VNet links during creation; I added the links afterwards.</figcaption>
+  </figure>
+  <div class="note">
+    <strong>Choosing a zone name</strong>
+    Use a name with at least two labels that you control and that will not clash with a real internet domain. Avoid names ending in <code>.local</code>, which conflict with multicast DNS on Linux and macOS.
+  </div>
+  <figure class="small">
+    <img loading="lazy" src="images/fig07.png" alt="Review and Create tab showing validation passed, name scslabs.internal, 0 record sets and 0 virtual network links">
+    <figcaption>Validation passed. Click <strong>Create</strong>.</figcaption>
+  </figure>
+  <figure>
+    <img loading="lazy" src="images/fig08.png" alt="Private DNS zones list showing scslabs.internal with 1 record set, a maximum of 25,000 record sets, 0 of 1000 virtual network links and 0 of 100 links with auto registration">
+    <figcaption>The new zone. The list also shows the zone limits: 25,000 record sets, 1,000 VNet links, and 100 links with auto-registration.</figcaption>
+  </figure>
+  <figure>
+    <img loading="lazy" src="images/fig09.png" alt="Overview of the scslabs.internal private DNS zone showing location Global, 1 recordset and 0 virtual network links">
+    <figcaption>The zone overview. Note <strong>Location: Global</strong>. A private DNS zone is not tied to a region, which matters for the cross-region design later.</figcaption>
+  </figure>
+
+  <h3><span class="step">Step 3</span>Link the first VNet</h3>
+  <p>In the zone, open <strong>DNS Management → Virtual Network Links</strong> and click <strong>Add</strong>.</p>
+  <figure class="small">
+    <img loading="lazy" src="images/fig10.png" alt="Virtual Network Links page for scslabs.internal showing zero links and an Add button">
+    <figcaption>No links yet, so no VNet can use the zone.</figcaption>
+  </figure>
+  <p>Give the link a name, select the VNet, and tick <strong>Enable auto registration</strong>.</p>
+  <figure class="small">
+    <img loading="lazy" src="images/fig11.png" alt="Add Virtual Network Link form with link name link-vnet1, virtual network vnet-westus3-1 and Enable auto registration ticked">
+    <figcaption>Linking <code>vnet-westus3-1</code> with auto-registration. The "fallback to internet" option is greyed out because it applies only to Private Link zones.</figcaption>
+  </figure>
+
+  <h3><span class="step">Step 4</span>Link the second VNet</h3>
+  <p>Repeat for <code>vnet-westus3-2</code> with a link named <code>link-vnet2</code>. Wait until both links show <strong>Completed</strong>.</p>
+  <figure>
+    <img loading="lazy" src="images/fig12.png" alt="Virtual Network Links list showing link-vnet1 Completed and link-vnet2 InProgress, both with auto-registration Enabled">
+    <figcaption>The first link is Completed and the second is still InProgress. Both have auto-registration enabled.</figcaption>
+  </figure>
+
+  <h3><span class="step">Step 5</span>Check the records</h3>
+  <p>Open <strong>DNS Management → Recordsets</strong>. Within a minute or two, both VMs appear on their own.</p>
+  <figure>
+    <img loading="lazy" src="images/fig13.png" alt="Recordsets page showing the SOA record plus two auto-registered A records: scsubtusrv01 at 172.16.0.4 and scsubtusrv02 at 10.0.0.4, each with TTL 10">
+    <figcaption>Two A records with <strong>Auto registered: True</strong> and a TTL of 10 seconds. The running VMs did not need a restart.</figcaption>
+  </figure>
+
+  <h2 id="test">5. Test</h2>
+  <p>From <code>scsubtusrv01</code>, look up and ping the other VM by its full name.</p>
+  <figure class="small">
+    <img loading="lazy" src="images/fig14.png" alt="Terminal on scsubtusrv01: nslookup of scsubtusrv02.scslabs.internal returns 10.0.0.4 and ping to the same name gets replies">
+    <figcaption><code>nslookup</code> returns 10.0.0.4 and the ping replies in under 1 ms.</figcaption>
+  </figure>
+  <div class="note ok">
+    <strong>Result</strong>
+    The name that failed in section 1 now resolves across the two VNets. The server address 127.0.0.53 in the output is the local resolver on Ubuntu, which passes the query on to Azure DNS.
+  </div>
+  <p>Run the same check in the other direction from <code>scsubtusrv02</code>:</p>
+<pre><code>nslookup scsubtusrv01.scslabs.internal
+ping -c 4 scsubtusrv01.scslabs.internal</code></pre>
+  <p>Short names still need one more step. To make <code>ping scsubtusrv02</code> work without the suffix, add the zone as a search domain on each VM:</p>
+<pre><code>sudo resolvectl domain eth0 scslabs.internal
+ping -c 4 scsubtusrv02</code></pre>
+  <p>This setting does not survive a reboot. For a permanent change, set the search domain in the VM's netplan configuration.</p>
+
+  <h2 id="trouble">6. Troubleshooting</h2>
+  <div class="table-scroll">
+  <table>
+    <thead><tr><th>Symptom</th><th>Likely cause</th><th>What to check</th></tr></thead>
+    <tbody>
+      <tr><td>Name does not resolve (NXDOMAIN)</td><td>The VNet is not linked to the zone, or the link is not finished</td><td>Virtual Network Links shows the VNet with status Completed</td></tr>
+      <tr><td>No auto-registered records</td><td>Auto-registration is off on the link, or the VNet already auto-registers into another zone</td><td>The Auto-Registration column on the link shows Enabled</td></tr>
+      <tr><td>Name resolves, but ping or SSH fails</td><td>No network path between the VNets</td><td>Peering state is Connected; NSG rules allow the traffic</td></tr>
+      <tr><td>Name resolves to the wrong address, or not at all, on one VNet only</td><td>That VNet uses a custom DNS server that does not know about the zone</td><td>VNet DNS servers setting; forward to 168.63.129.16 if custom DNS is required</td></tr>
+      <tr><td>Full name works, short name fails</td><td>No search domain on the VM</td><td><code>resolvectl status</code>, then add the search domain</td></tr>
+      <tr><td>Old IP returned after a change</td><td>Cached answer on the VM</td><td><code>sudo resolvectl flush-caches</code></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>Useful commands on the VM:</p>
+<pre><code># Which DNS servers and search domains is the VM using?
+resolvectl status
+
+# Ask Azure DNS directly, bypassing the local cache
+nslookup scsubtusrv02.scslabs.internal 168.63.129.16
+
+# Test the network path separately from DNS
+ping -c 2 10.0.0.4
+nc -zv 10.0.0.4 22</code></pre>
+  <p>Separate the two questions every time: does the name resolve, and can I reach the address? They are fixed in different places.</p>
+
+  <h2 id="limits">7. Limitations</h2>
+  <ul>
+    <li><strong>One registration zone per VNet.</strong> A VNet can auto-register into only one private zone. It can be linked to many other zones for resolution only.</li>
+    <li><strong>Auto-registration covers VMs only.</strong> Internal load balancers, private endpoints and other resources are not registered. Add those records by hand or let the service's own integration do it.</li>
+    <li><strong>Zone limits apply.</strong> As the portal showed: 25,000 record sets per zone, 1,000 VNet links, and 100 links with auto-registration.</li>
+    <li><strong>A link is not a network path.</strong> Linking a VNet gives it names only. Reaching the addresses still needs peering, a VPN or ExpressRoute.</li>
+    <li><strong>Not reachable from on-premises directly.</strong> Azure DNS at 168.63.129.16 answers only from inside Azure. On-premises clients need a DNS Private Resolver or a DNS forwarder VM.</li>
+    <li><strong>No conditional forwarding in the zone.</strong> A private zone only hosts records. Forwarding other domains elsewhere needs a DNS Private Resolver ruleset.</li>
+    <li><strong>Custom DNS bypasses it.</strong> If a VNet points at your own DNS servers, those servers must forward to Azure DNS or the zone is ignored.</li>
+    <li><strong>Duplicate VM names collide.</strong> Two VMs with the same name in VNets that register into the same zone compete for one record. Keep VM names unique.</li>
+    <li><strong>Short names need a search suffix.</strong> Clients must use the full name unless a search domain is configured.</li>
+  </ul>
+
+  <h2 id="crossvnet">8. Cross-VNet DNS design</h2>
+  <p>Two VNets and one zone is the simplest case. With many VNets, the same building blocks apply, and the design question becomes where the zones live and who links to them.</p>
+
+  <h3>Option A: link every VNet to the same zone</h3>
+  <p>This is what the lab does. Each VNet gets a link, with auto-registration where VMs should publish their names. It needs no extra services and works well for a handful of VNets.</p>
+
+  <h3>Option B: central zones in a hub-and-spoke network</h3>
+  <p>In a larger estate, keep all private DNS zones in one central subscription owned by the network team. Link the hub and every spoke VNet to them. Spokes register and resolve; nobody creates their own copy of a zone.</p>
+  <figure class="diagram">
+    <svg viewBox="0 0 760 375" role="img" aria-label="Hub and spoke design: a hub VNet peered to three spoke VNets, with one central set of private DNS zones linked to all four VNets">
+      <rect class="dg-vnet" x="260" y="20" width="240" height="64" rx="10"/>
+      <text class="dg-t" x="380" y="47" text-anchor="middle">Hub VNet</text>
+      <text class="dg-s" x="380" y="67" text-anchor="middle">Firewall, gateways</text>
+      <path class="dg-net" d="M320 84 L135 150"/>
+      <path class="dg-net" d="M380 84 L380 150"/>
+      <path class="dg-net" d="M440 84 L625 150"/>
+      <rect class="dg-vnet" x="30" y="150" width="210" height="64" rx="10"/>
+      <text class="dg-t" x="135" y="177" text-anchor="middle">Spoke: application</text>
+      <text class="dg-s" x="135" y="197" text-anchor="middle">Registers its VMs</text>
+      <rect class="dg-vnet" x="275" y="150" width="210" height="64" rx="10"/>
+      <text class="dg-t" x="380" y="177" text-anchor="middle">Spoke: database</text>
+      <text class="dg-s" x="380" y="197" text-anchor="middle">Registers its VMs</text>
+      <rect class="dg-vnet" x="520" y="150" width="210" height="64" rx="10"/>
+      <text class="dg-t" x="625" y="177" text-anchor="middle">Spoke: shared services</text>
+      <text class="dg-s" x="625" y="197" text-anchor="middle">Registers its VMs</text>
+      <path class="dg-dns" d="M135 214 L135 280"/>
+      <path class="dg-dns" d="M380 214 L380 280"/>
+      <path class="dg-dns" d="M625 214 L625 280"/>
+      <path class="dg-dns" d="M500 52 L745 52 L745 310 L730 310"/>
+      <rect class="dg-zone" x="30" y="280" width="700" height="64" rx="8"/>
+      <text class="dg-t" x="380" y="307" text-anchor="middle">Central private DNS zones</text>
+      <text class="dg-s" x="380" y="327" text-anchor="middle">scslabs.internal and the privatelink zones, in one subscription</text>
+    </svg>
+    <figcaption>Solid lines are VNet peerings. Dashed lines are DNS zone links. Every VNet links to the same central zones.</figcaption>
+  </figure>
+  <ul>
+    <li><strong>Links work across subscriptions.</strong> A zone in the connectivity subscription can be linked to VNets in workload subscriptions, given the right permissions.</li>
+    <li><strong>Peering is not transitive, but DNS does not care.</strong> Two spokes resolve each other's names through the shared zone. Whether they can then connect depends on routing through the hub firewall.</li>
+    <li><strong>Private endpoints use the same pattern.</strong> Zones such as <code>privatelink.database.windows.net</code> are kept centrally and linked to all VNets, so every network resolves a private endpoint to its private IP.</li>
+    <li><strong>Automate the links.</strong> Use Azure Policy or your deployment pipeline to link each new spoke, so nobody forgets.</li>
+  </ul>
+
+  <h3>Option C: central resolver for VNets that cannot be linked</h3>
+  <p>If a VNet uses custom DNS servers, or belongs to a team that cannot be given a link, point it at a DNS Private Resolver in the hub instead. The resolver's VNet is linked to the zones and answers on behalf of everyone who forwards to it. Section 10 covers the resolver.</p>
+
+  <h2 id="crossregion">9. Cross-region DNS design</h2>
+  <p>A private DNS zone is a global resource. The zone overview in step 2 showed <strong>Location: Global</strong>. That makes cross-region name resolution simpler than most people expect: link VNets from any region to the same zone, and they all see the same records.</p>
+  <figure class="diagram">
+    <svg viewBox="0 0 760 335" role="img" aria-label="Cross-region design: one global private DNS zone linked to a VNet in West US 3 and a VNet in Central India, with global VNet peering between the two VNets">
+      <rect class="dg-zone" x="260" y="20" width="240" height="56" rx="8"/>
+      <text class="dg-t" x="380" y="43" text-anchor="middle">Private DNS zone (global)</text>
+      <text class="dg-s" x="380" y="62" text-anchor="middle">scslabs.internal</text>
+      <path class="dg-dns" d="M300 76 L190 180"/>
+      <path class="dg-dns" d="M460 76 L570 180"/>
+      <rect class="dg-region" x="30" y="130" width="320" height="160" rx="10"/>
+      <text class="dg-s" x="46" y="152">Region: West US 3</text>
+      <rect class="dg-vnet" x="60" y="180" width="260" height="80" rx="10"/>
+      <text class="dg-t" x="190" y="214" text-anchor="middle">vnet-westus3-1</text>
+      <text class="dg-s" x="190" y="235" text-anchor="middle">VMs auto-register</text>
+      <rect class="dg-region" x="410" y="130" width="320" height="160" rx="10"/>
+      <text class="dg-s" x="714" y="152" text-anchor="end">Region: Central India</text>
+      <rect class="dg-vnet" x="440" y="180" width="260" height="80" rx="10"/>
+      <text class="dg-t" x="570" y="214" text-anchor="middle">vnet-centralindia-1</text>
+      <text class="dg-s" x="570" y="235" text-anchor="middle">VMs auto-register</text>
+      <path class="dg-net" d="M320 220 L440 220"/>
+      <text class="dg-s" x="380" y="316" text-anchor="middle">Solid line: global VNet peering. Dashed lines: DNS zone links.</text>
+    </svg>
+    <figcaption>One zone, two regions. The zone links give both VNets the same records; global peering carries the traffic.</figcaption>
+  </figure>
+
+  <h3>What you need for a cross-region setup</h3>
+  <ol>
+    <li><strong>One private zone.</strong> Create it once. It is not deployed to a region.</li>
+    <li><strong>A link from each VNet,</strong> in every region, with auto-registration where needed.</li>
+    <li><strong>A network path between the regions.</strong> Use global VNet peering, or connect each region's hub. DNS resolution does not need the peering, but reaching the resolved address does.</li>
+    <li><strong>Non-overlapping address spaces</strong> across all regions.</li>
+  </ol>
+
+  <h3>One zone or one zone per region?</h3>
+  <div class="table-scroll">
+  <table>
+    <thead><tr><th></th><th>Single zone</th><th>Zone per region</th></tr></thead>
+    <tbody>
+      <tr><td>Example</td><td><code>scslabs.internal</code></td><td><code>wus3.scslabs.internal</code>, <code>cin.scslabs.internal</code></td></tr>
+      <tr><td>Names</td><td><code>db01.scslabs.internal</code></td><td><code>db01.wus3.scslabs.internal</code></td></tr>
+      <tr><td>Setup</td><td>Simplest: every VNet registers into one zone</td><td>Each VNet registers into its own region's zone and links to the others for resolution only</td></tr>
+      <tr><td>Best for</td><td>Small and medium estates with unique VM names</td><td>Large estates, or when the same VM name is reused in each region</td></tr>
+      <tr><td>Watch out for</td><td>Name collisions between regions</td><td>More links to manage; clients must know the region in the name</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Disaster recovery pattern</h3>
+  <p>For a database that fails over between regions, do not hand the application a VM name. Add a manual record, such as <code>ordersdb.scslabs.internal</code>, that points at the current primary. On failover, update that one record to the standby's IP in the other region. Keep its TTL short so clients pick up the change quickly. The application's connection string never changes.</p>
+
+  <h2 id="hybrid">10. Hybrid DNS with on-premises</h2>
+  <p>On-premises servers cannot query a private zone directly, and Azure VMs cannot resolve on-premises names through it either. <strong>Azure DNS Private Resolver</strong> bridges the two without any DNS server VMs. It sits in the hub VNet and has two kinds of endpoint.</p>
+  <figure class="diagram">
+    <svg viewBox="0 0 760 290" role="img" aria-label="Hybrid DNS: on-premises DNS forwards queries for Azure names to the resolver's inbound endpoint in the hub VNet, which reads the private DNS zone; the outbound endpoint forwards queries for corporate names back to on-premises DNS">
+      <defs><marker id="dgarrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="dg-head" d="M0 0 L10 5 L0 10 Z"/></marker></defs>
+      <rect class="dg-onp" x="30" y="105" width="200" height="80" rx="8"/>
+      <text class="dg-t" x="130" y="139" text-anchor="middle">On-premises DNS</text>
+      <text class="dg-s" x="130" y="160" text-anchor="middle">corp.example.com</text>
+      <rect class="dg-vnet" x="300" y="30" width="430" height="230" rx="10"/>
+      <text class="dg-t" x="318" y="55">Hub VNet: DNS Private Resolver</text>
+      <rect class="dg-node" x="330" y="76" width="180" height="64" rx="8"/>
+      <text class="dg-t" x="420" y="103" text-anchor="middle">Inbound endpoint</text>
+      <text class="dg-s" x="420" y="123" text-anchor="middle">Receives on-prem queries</text>
+      <rect class="dg-node" x="330" y="170" width="180" height="64" rx="8"/>
+      <text class="dg-t" x="420" y="197" text-anchor="middle">Outbound endpoint</text>
+      <text class="dg-s" x="420" y="217" text-anchor="middle">Uses forwarding rules</text>
+      <rect class="dg-zone" x="550" y="76" width="160" height="64" rx="8"/>
+      <text class="dg-t" x="630" y="103" text-anchor="middle">Private DNS zone</text>
+      <text class="dg-s" x="630" y="123" text-anchor="middle">scslabs.internal</text>
+      <path class="dg-net" d="M230 128 L328 108" marker-end="url(#dgarrow)"/>
+      <path class="dg-net" d="M330 202 L232 164" marker-end="url(#dgarrow)"/>
+      <path class="dg-net" d="M510 108 L548 108" marker-end="url(#dgarrow)"/>
+    </svg>
+    <figcaption>Queries for Azure names flow in through the inbound endpoint. Queries for corporate names flow out through the outbound endpoint.</figcaption>
+  </figure>
+  <ul>
+    <li><strong>Inbound endpoint.</strong> Gets a private IP in the hub. On the on-premises DNS servers, add a conditional forwarder that sends <code>scslabs.internal</code> to that IP, over the VPN or ExpressRoute connection.</li>
+    <li><strong>Outbound endpoint and forwarding ruleset.</strong> A rule sends queries for <code>corp.example.com</code> to the on-premises DNS servers. Link the ruleset to each VNet that needs to resolve corporate names.</li>
+    <li><strong>Dedicated subnets.</strong> Each endpoint needs its own subnet delegated to the resolver.</li>
+    <li><strong>One resolver per region.</strong> The resolver is a regional service. In a multi-region design, deploy one in each region's hub and list both inbound IPs on the on-premises forwarder, so name resolution survives a regional outage.</li>
+    <li><strong>It is not cheap.</strong> The resolver is billed per endpoint per month, unlike the zone itself. Leave it out of a lab unless hybrid DNS is what you are practising.</li>
+  </ul>
+
+  <h2 id="cli">11. Azure CLI version</h2>
+<pre><code># Create the zone
+az network private-dns zone create \
+  --resource-group scslabs-rg \
+  --name scslabs.internal
+
+# Link both VNets with auto-registration
+az network private-dns link vnet create \
+  --resource-group scslabs-rg \
+  --zone-name scslabs.internal \
+  --name link-vnet1 \
+  --virtual-network vnet-westus3-1 \
+  --registration-enabled true
+
+az network private-dns link vnet create \
+  --resource-group scslabs-rg \
+  --zone-name scslabs.internal \
+  --name link-vnet2 \
+  --virtual-network vnet-westus3-2 \
+  --registration-enabled true
+
+# List the records
+az network private-dns record-set a list \
+  --resource-group scslabs-rg \
+  --zone-name scslabs.internal \
+  --output table
+
+# Optional: a manual alias record
+az network private-dns record-set a add-record \
+  --resource-group scslabs-rg \
+  --zone-name scslabs.internal \
+  --record-set-name ordersdb \
+  --ipv4-address 10.0.0.4</code></pre>
+  <p>For a VNet in another resource group or subscription, pass its full resource ID to <code>--virtual-network</code>.</p>
+
+  <h2 id="cleanup">12. Cost and clean-up</h2>
+  <p>A private DNS zone is billed per zone per month plus a small charge per million queries. For a lab, that comes to well under a dollar a month. Check the Azure DNS pricing page for current rates.</p>
+  <p>To remove the zone, delete the VNet links first. Azure will not delete a zone that still has links.</p>
+<pre><code>az network private-dns link vnet delete -g scslabs-rg -z scslabs.internal -n link-vnet1 --yes
+az network private-dns link vnet delete -g scslabs-rg -z scslabs.internal -n link-vnet2 --yes
+az network private-dns zone delete -g scslabs-rg -n scslabs.internal --yes</code></pre>
+
+  <h2>Key takeaways</h2>
+  <ul>
+    <li>Azure-provided DNS resolves names inside one VNet only. Peering does not extend it.</li>
+    <li>A private DNS zone linked to several VNets gives them a shared namespace, and auto-registration keeps VM records up to date.</li>
+    <li>DNS and connectivity are separate. A zone link gives names; peering, VPN or ExpressRoute gives the path.</li>
+    <li>Private zones are global, so one zone can serve VNets in every region.</li>
+    <li>At scale, keep zones central and link every VNet. For on-premises, add a DNS Private Resolver.</li>
+  </ul>
+
+  <h2>References</h2>
+  <ul>
+    <li><a href="https://learn.microsoft.com/azure/dns/private-dns-overview">What is an Azure Private DNS zone, Microsoft Learn</a></li>
+    <li><a href="https://learn.microsoft.com/azure/dns/private-dns-autoregistration">Private DNS auto-registration, Microsoft Learn</a></li>
+    <li><a href="https://learn.microsoft.com/azure/dns/dns-private-resolver-overview">Azure DNS Private Resolver overview, Microsoft Learn</a></li>
+    <li><a href="https://azure.microsoft.com/pricing/details/dns/">Azure DNS pricing</a></li>
+  </ul>
+
+</article>
+</div>
+</main>
+
+<footer>
+  <p>Written by Nithin Sunke · Azure learning series</p>
+</footer>
+
+</body>
+</html>
