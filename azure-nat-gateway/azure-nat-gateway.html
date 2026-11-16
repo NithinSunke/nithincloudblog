@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure NAT Gateway: Outbound Internet for a Subnet, and the Step I Missed</title>
+<meta name="description" content="A hands-on lab that creates an Azure StandardV2 NAT gateway, attaches it to a subnet, and fixes the missing public IP that left the VM without internet access.">
+<style>
+  :root {
+    --bg: #f6f8fb;
+    --surface: #ffffff;
+    --text: #1c2733;
+    --muted: #5b6b7c;
+    --line: #dde4ec;
+    --accent: #0067b8;
+    --accent-soft: #e6f1fa;
+    --ok: #107c41;
+    --ok-soft: #e7f5ec;
+    --warn: #8a5a00;
+    --warn-soft: #fff5dc;
+    --code-bg: #10202f;
+    --code-text: #e3edf7;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f161d;
+      --surface: #17212b;
+      --text: #e4ebf2;
+      --muted: #9aabbb;
+      --line: #2a3846;
+      --accent: #5db3f0;
+      --accent-soft: #16324a;
+      --ok: #6fd39a;
+      --ok-soft: #153526;
+      --warn: #f0c668;
+      --warn-soft: #3a2f12;
+      --code-bg: #0a1118;
+      --code-text: #dbe7f3;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    font-size: 17px;
+    line-height: 1.7;
+  }
+  header.hero {
+    background: linear-gradient(135deg, #003a6c 0%, #0067b8 60%, #2b8fd6 100%);
+    color: #fff;
+    padding: 56px 20px 48px;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; }
+  .tag {
+    display: inline-block;
+    font-size: 13px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    background: rgba(255,255,255,.16);
+    padding: 4px 12px;
+    border-radius: 999px;
+    margin-bottom: 16px;
+  }
+  h1 {
+    font-size: clamp(28px, 4.6vw, 42px);
+    line-height: 1.2;
+    margin: 0 0 14px;
+    text-wrap: balance;
+  }
+  .hero p.lead { font-size: 19px; margin: 0 0 18px; max-width: 46em; opacity: .95; }
+  .meta { font-size: 14px; opacity: .85; }
+  main { padding: 36px 20px 64px; }
+  article {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: clamp(20px, 4vw, 44px);
+  }
+  h2 {
+    font-size: 26px;
+    line-height: 1.3;
+    margin: 44px 0 12px;
+    padding-top: 8px;
+    border-top: 1px solid var(--line);
+  }
+  h2:first-of-type { margin-top: 28px; }
+  h3 { font-size: 20px; margin: 30px 0 8px; }
+  p { margin: 0 0 16px; }
+  a { color: var(--accent); }
+  ul, ol { padding-left: 24px; margin: 0 0 16px; }
+  li { margin-bottom: 6px; }
+  code {
+    font-family: Consolas, "Cascadia Mono", Menlo, monospace;
+    font-size: .9em;
+    background: var(--accent-soft);
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+  pre {
+    background: var(--code-bg);
+    color: var(--code-text);
+    padding: 16px 18px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: 14.5px;
+    line-height: 1.55;
+    margin: 0 0 18px;
+  }
+  td code { white-space: nowrap; }
+  pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+  nav.toc {
+    background: var(--accent-soft);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 8px;
+  }
+  nav.toc strong { display: block; margin-bottom: 6px; }
+  nav.toc ol { margin: 0; }
+  .table-scroll { overflow-x: auto; margin: 0 0 18px; }
+  table { border-collapse: collapse; width: 100%; font-size: 15.5px; }
+  th, td { border: 1px solid var(--line); padding: 9px 12px; text-align: left; vertical-align: top; }
+  th { background: var(--accent-soft); }
+  figure { margin: 18px 0 24px; }
+  figure img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+  }
+  figure.small img { max-width: min(100%, 540px); }
+  figcaption { font-size: 14px; color: var(--muted); margin-top: 8px; }
+  .note {
+    border-left: 4px solid var(--accent);
+    background: var(--accent-soft);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 0 0 18px;
+  }
+  .note.ok { border-color: var(--ok); background: var(--ok-soft); }
+  .note.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .note > strong:first-child { display: block; margin-bottom: 2px; }
+  .step {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    padding: 2px 10px;
+    border-radius: 4px;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+  @media (prefers-color-scheme: dark) { .step { color: #06131f; } }
+  footer { text-align: center; color: var(--muted); font-size: 14px; padding: 0 20px 40px; }
+.back-home{display:inline-block;margin:0 0 14px;font-size:14px;font-weight:600;text-decoration:none;color:#fff;opacity:.85}
+.back-home:hover{opacity:1;text-decoration:underline}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <a class="back-home" href="../index.html">&#8592;&nbsp;All articles</a>
+    <span class="tag">Azure Networking · Hands-on Lab</span>
+    <h1>Azure NAT Gateway: Outbound Internet for a Subnet, and the Step I Missed</h1>
+    <p class="lead">I created a NAT gateway, attached it to my subnet, and the VM still could not reach the internet. This post walks through the full setup, the one tab I skipped, and how I fixed it.</p>
+    <div class="meta">By Nithin Sunke · 16 November 2026 · 7 min read</div>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+<article>
+
+  <nav class="toc" aria-label="Contents">
+    <strong>In this post</strong>
+    <ol>
+      <li><a href="#what">What a NAT gateway is</a></li>
+      <li><a href="#why">Why it matters now</a></li>
+      <li><a href="#setup">Lab setup</a></li>
+      <li><a href="#create">Create the NAT gateway</a></li>
+      <li><a href="#problem">The problem: still no internet</a></li>
+      <li><a href="#fix">The fix: add an outbound public IP</a></li>
+      <li><a href="#test">Test the connection</a></li>
+      <li><a href="#subnet">The subnet side of the setup</a></li>
+      <li><a href="#cli">Azure CLI version</a></li>
+      <li><a href="#best">Best practices</a></li>
+      <li><a href="#cost">Cost and clean-up</a></li>
+    </ol>
+  </nav>
+
+  <h2 id="what">1. What a NAT gateway is</h2>
+  <p>Azure NAT Gateway is a managed service that gives every resource in a subnet <strong>outbound</strong> internet access through one or more static public IP addresses. The resources themselves keep only private IPs.</p>
+  <ul>
+    <li><strong>Outbound only.</strong> A VM can start a connection to the internet and receive the reply. Nothing on the internet can start a connection to the VM through the gateway.</li>
+    <li><strong>Attached to subnets.</strong> You associate the gateway with a subnet, and all VMs in that subnet use it. One gateway can serve several subnets in the same virtual network.</li>
+    <li><strong>No routing work.</strong> You do not edit a route table. Once the subnet is associated, outbound traffic takes the gateway automatically.</li>
+    <li><strong>A predictable source IP.</strong> Every outbound connection leaves from the gateway's public IP, which is useful when a partner has to allow-list your address.</li>
+  </ul>
+
+  <h2 id="why">2. Why it matters now</h2>
+  <p>For years, an Azure VM with no public IP still reached the internet through a hidden "default outbound access" address. Microsoft has retired that behaviour for new networks: virtual networks created after 31 March 2026 get <strong>private subnets</strong> by default, and a VM in a private subnet has no outbound internet path until you configure one.</p>
+  <p>The explicit options are a NAT gateway, a public IP on the VM, load balancer outbound rules, or a firewall. For plain outbound access, the NAT gateway is the one Microsoft recommends.</p>
+
+  <h2 id="setup">3. Lab setup</h2>
+  <div class="table-scroll">
+  <table>
+    <thead>
+      <tr><th>Item</th><th>Value</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Region</td><td>West US 3</td></tr>
+      <tr><td>Resource group</td><td><code>scslabs-rg</code></td></tr>
+      <tr><td>Virtual network</td><td><code>vnet-westus3-2</code> (10.0.0.0/16)</td></tr>
+      <tr><td>Subnet</td><td><code>snet-westus3-2</code> (10.0.0.0/24)</td></tr>
+      <tr><td>Test VM</td><td><code>scsubtusrv02</code>, Linux, private IP 10.0.0.4</td></tr>
+      <tr><td>NAT gateway</td><td><code>NGW-1</code>, StandardV2 SKU</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>Before starting, I checked the VM's outbound access with a ping to <code>google.com</code>. The name resolves to an IP address, so DNS works, but no reply comes back.</p>
+  <figure class="small">
+    <img loading="lazy" src="images/fig01.png" alt="Terminal on scsubtusrv02 running ping google.com, which resolves to an IP address but shows no replies">
+    <figcaption>Before: the ping resolves the name and then hangs.</figcaption>
+  </figure>
+
+  <h2 id="create">4. Create the NAT gateway</h2>
+
+  <h3><span class="step">Step 1</span>Open NAT gateways</h3>
+  <p>In the portal, go to <strong>Network foundation → NAT gateways</strong>. The list is empty. Click <strong>Create</strong>.</p>
+  <figure>
+    <img loading="lazy" src="images/fig02.png" alt="Azure portal NAT gateways page showing No NAT gateways to display and a Create button">
+    <figcaption>No NAT gateways in the subscription yet.</figcaption>
+  </figure>
+
+  <h3><span class="step">Step 2</span>Basics tab</h3>
+  <figure class="small">
+    <img loading="lazy" src="images/fig03.png" alt="Create NAT gateway Basics tab with resource group scslabs-rg, name NGW-1, region West US 3, SKU Standard V2 selected, NAT64 unticked and TCP idle timeout of 4 minutes">
+    <figcaption>The Basics tab for <code>NGW-1</code>.</figcaption>
+  </figure>
+  <div class="table-scroll">
+  <table>
+    <thead>
+      <tr><th>Field</th><th>Value used</th><th>What it means</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Region</td><td>West US 3</td><td>Must be the same region as the virtual network.</td></tr>
+      <tr><td>SKU</td><td>Standard V2</td><td>Zone-redundant, with IPv6 support. The older Standard SKU runs in a single availability zone. Both are priced the same.</td></tr>
+      <tr><td>Enable NAT64</td><td>Unticked</td><td>Lets IPv6-only workloads reach IPv4 destinations. Not needed here.</td></tr>
+      <tr><td>TCP idle timeout</td><td>4 minutes</td><td>How long an idle TCP connection is kept before the gateway drops it. The range is 4 to 120 minutes.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3><span class="step">Step 3</span>Networking tab</h3>
+  <p>Pick the virtual network and the subnet that should use the gateway.</p>
+  <figure class="small">
+    <img loading="lazy" src="images/fig04.png" alt="Create NAT gateway Networking tab with virtual network vnet-westus3-2 and subnet snet-westus3-2 10.0.0.0/24 selected">
+    <figcaption>Associating <code>snet-westus3-2</code> with the gateway.</figcaption>
+  </figure>
+  <div class="note warn">
+    <strong>Where I went wrong</strong>
+    I went from Basics straight to Networking and skipped the <strong>Outbound IP</strong> tab in between. The portal does not stop you. It lets you create a NAT gateway with no public IP at all.
+  </div>
+
+  <h3><span class="step">Step 4</span>Review + create</h3>
+  <figure class="small">
+    <img loading="lazy" src="images/fig05.png" alt="Review and create summary for NGW-1 showing SKU StandardV2, all four Outbound IP rows set to None, and subnet vnet-westus3-2/snet-westus3-2">
+    <figcaption>The summary. Every row under <strong>Outbound IP</strong> says None, which is the warning sign I missed.</figcaption>
+  </figure>
+  <p>Validation passed, I clicked <strong>Create</strong>, and the gateway appeared in the list a few seconds later.</p>
+  <figure>
+    <img loading="lazy" src="images/fig06.png" alt="NAT gateways list showing NGW-1 in resource group scslabs-rg, location West US 3">
+    <figcaption><code>NGW-1</code> deployed.</figcaption>
+  </figure>
+
+  <h2 id="problem">5. The problem: still no internet</h2>
+  <p>With the gateway deployed and the subnet associated, I ran the ping again. It still hung.</p>
+  <p>The gateway's Overview page explains why. An orange banner reads "Your subnet(s) do not have outbound connectivity. Add a public IP or public IP prefix", and the Essentials panel shows <strong>Public IP addresses: 0</strong>.</p>
+  <figure>
+    <img loading="lazy" src="images/fig07.png" alt="NGW-1 overview page with a warning banner that the subnets do not have outbound connectivity, SKU StandardV2, 1 subnet and 0 public IP addresses">
+    <figcaption>The Overview page of <code>NGW-1</code>: one subnet attached, zero public IPs.</figcaption>
+  </figure>
+  <p>A NAT gateway translates private source addresses to a public one. With no public IP it has nothing to translate to, so it cannot send any traffic out. Because the gateway becomes the subnet's outbound path as soon as it is associated, an empty gateway leaves the subnet with no outbound route at all.</p>
+
+  <h2 id="fix">6. The fix: add an outbound public IP</h2>
+  <p>On the gateway, open <strong>Settings → Outbound IP</strong> and click <strong>Edit</strong>. In the side panel, choose <strong>Create a public IP address</strong> and give it a name. I called mine <code>nat-pip</code>.</p>
+  <figure>
+    <img loading="lazy" src="images/fig08.png" alt="NGW-1 Outbound IP page with the Manage public IP addresses and prefixes panel open and a new public IP named nat-pip selected">
+    <figcaption>Adding a new public IP address to the gateway.</figcaption>
+  </figure>
+  <div class="note">
+    <strong>StandardV2 needs StandardV2 public IPs</strong>
+    A StandardV2 NAT gateway only accepts StandardV2 public IP addresses. Existing Standard SKU public IPs do not show up in the list, so creating a new one from this panel is the simplest route.
+  </div>
+  <p>After saving, the new address is listed under Public IP addresses.</p>
+  <figure>
+    <img loading="lazy" src="images/fig09.png" alt="NGW-1 Outbound IP page listing the public IP nat-pip with an IPv4 address">
+    <figcaption><code>nat-pip</code> attached to <code>NGW-1</code>. All outbound traffic from the subnet now leaves from this address.</figcaption>
+  </figure>
+
+  <h2 id="test">7. Test the connection</h2>
+  <p>Back on the VM, the same ping now gets replies in about 3 ms.</p>
+  <figure class="small">
+    <img loading="lazy" src="images/fig10.png" alt="Terminal on scsubtusrv02 showing successful ping replies from google.com with times around 3 milliseconds">
+    <figcaption>After: replies from <code>google.com</code>.</figcaption>
+  </figure>
+  <div class="note ok">
+    <strong>Result</strong>
+    The VM reaches the internet through the NAT gateway. Nothing was changed on the VM itself.
+  </div>
+  <p>Two more checks are worth running:</p>
+<pre><code># A TCP test, which is closer to what applications actually do
+curl -I https://www.google.com
+
+# Shows the public IP the internet sees. It should match nat-pip.
+curl ifconfig.me</code></pre>
+  <div class="note warn">
+    <strong>A note on ping</strong>
+    Ping works here because the gateway is StandardV2, which has supported outbound ICMP echo (ping) since June 2026. The older Standard SKU handles TCP and UDP only, so ping through a Standard NAT gateway fails even when the connection is healthy. On a Standard gateway, test with <code>curl</code> or <code>nc</code> instead.
+  </div>
+
+  <h2 id="subnet">8. The subnet side of the setup</h2>
+  <p>The same association can be viewed or changed from the subnet. Open the virtual network, go to <strong>Subnets</strong>, and select the subnet.</p>
+  <figure>
+    <img loading="lazy" src="images/fig11.png" alt="Edit subnet panel for snet-westus3-2 showing the private subnet checkbox and the NAT gateway dropdown listing None and NGW-1">
+    <figcaption>The Edit subnet panel, with the private subnet option and the NAT gateway dropdown.</figcaption>
+  </figure>
+  <ul>
+    <li><strong>NAT gateway dropdown.</strong> Choose the gateway here to associate it with the subnet, or set it to None to detach it.</li>
+    <li><strong>Enable private subnet.</strong> Ticking this turns off default outbound access for the subnet. With it ticked, the NAT gateway becomes the only way out, which is the secure setup to aim for.</li>
+    <li><strong>The portal's own reminder.</strong> The panel notes that private subnet is the default selection for new virtual networks after 31 March 2026.</li>
+  </ul>
+
+  <h2 id="cli">9. Azure CLI version</h2>
+  <p>The same lab from the command line. The StandardV2 SKU needs a recent Azure CLI version, so run <code>az upgrade</code> first if a command rejects the SKU value.</p>
+<pre><code># 1. Public IP for the gateway (StandardV2 to match the gateway SKU)
+az network public-ip create \
+  --resource-group scslabs-rg \
+  --name nat-pip \
+  --sku StandardV2
+
+# 2. NAT gateway with the public IP attached
+az network nat gateway create \
+  --resource-group scslabs-rg \
+  --name NGW-1 \
+  --sku StandardV2 \
+  --public-ip-addresses nat-pip \
+  --idle-timeout 4
+
+# 3. Associate the subnet
+az network vnet subnet update \
+  --resource-group scslabs-rg \
+  --vnet-name vnet-westus3-2 \
+  --name snet-westus3-2 \
+  --nat-gateway NGW-1</code></pre>
+  <p>Doing it in this order means the gateway never exists without a public IP, which avoids the problem from section 5.</p>
+
+  <h2 id="best">10. Best practices</h2>
+  <ul>
+    <li><strong>Never skip the Outbound IP tab.</strong> On the Review + create page, confirm that at least one public IP or prefix is listed before you click Create.</li>
+    <li><strong>Use StandardV2 for production.</strong> It is zone-redundant and costs the same as Standard. A Standard gateway cannot be upgraded later, so choose at creation time.</li>
+    <li><strong>Check StandardV2 limitations first.</strong> Some regions and some delegated subnets are not supported. Read the current limitations list before you design around it.</li>
+    <li><strong>Make the subnet private.</strong> Disable default outbound access so the NAT gateway is the only path, and remove public IPs from the VMs. Use Azure Bastion for admin access.</li>
+    <li><strong>Plan for SNAT ports.</strong> Each public IP provides 64,512 SNAT ports. Add more IPs or a public IP prefix when many VMs open many connections.</li>
+    <li><strong>Do not mix outbound methods.</strong> If a subnet has both a NAT gateway and load balancer outbound rules, the NAT gateway takes precedence.</li>
+    <li><strong>Keep Azure service traffic off the gateway.</strong> Use private endpoints or service endpoints for Storage, SQL and similar services so that traffic does not incur NAT data charges.</li>
+    <li><strong>Remember it is per virtual network.</strong> A NAT gateway serves subnets in its own VNet only. A peered VNet cannot use it directly.</li>
+    <li><strong>Monitor it.</strong> Watch the SNAT connection count and dropped packets metrics in Azure Monitor.</li>
+  </ul>
+
+  <h2 id="cost">11. Cost and clean-up</h2>
+  <p>A NAT gateway is not free. Billing has two parts: an hourly charge for as long as the gateway exists, and a per-GB charge for data it processes, counting both outbound traffic and the replies. At the time of writing both are commonly quoted at about $0.045, per hour and per GB, but check the Azure pricing page for your region. The public IP is billed separately.</p>
+  <div class="note warn">
+    <strong>It bills even when idle</strong>
+    The hourly charge starts when the gateway is created and continues whether or not any traffic flows. A partial hour counts as a full hour. Delete the gateway when the lab is finished.
+  </div>
+<pre><code># Detach the gateway from the subnet
+az network vnet subnet update \
+  --resource-group scslabs-rg \
+  --vnet-name vnet-westus3-2 \
+  --name snet-westus3-2 \
+  --remove natGateway
+
+# Delete the gateway, then its public IP
+az network nat gateway delete --resource-group scslabs-rg --name NGW-1
+az network public-ip delete --resource-group scslabs-rg --name nat-pip</code></pre>
+
+  <h2>Key takeaways</h2>
+  <ul>
+    <li>A NAT gateway gives a whole subnet outbound internet access through a static public IP, with no inbound exposure.</li>
+    <li>It needs three things to work: the gateway, at least one public IP, and a subnet association. Missing any one of them means no internet.</li>
+    <li>If outbound access fails, look at the gateway's Overview page first. The warning banner and the public IP count tell you most of what you need.</li>
+    <li>New virtual networks default to private subnets, so an explicit outbound method is now part of every network design.</li>
+  </ul>
+
+  <h2>References</h2>
+  <ul>
+    <li><a href="https://learn.microsoft.com/azure/nat-gateway/nat-overview">Azure NAT Gateway overview, Microsoft Learn</a></li>
+    <li><a href="https://learn.microsoft.com/azure/nat-gateway/nat-sku">Azure NAT Gateway SKUs, Microsoft Learn</a></li>
+    <li><a href="https://learn.microsoft.com/azure/nat-gateway/troubleshoot-nat">Troubleshoot Azure NAT Gateway connectivity, Microsoft Learn</a></li>
+    <li><a href="https://azure.microsoft.com/pricing/details/azure-nat-gateway/">Azure NAT Gateway pricing</a></li>
+  </ul>
+
+</article>
+</div>
+</main>
+
+<footer>
+  <p>Written by Nithin Sunke · Azure learning series</p>
+</footer>
+
+</body>
+</html>
