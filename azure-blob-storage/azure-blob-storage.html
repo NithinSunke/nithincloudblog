@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Storage and Blob Storage: From Concepts to a Keyless VM Backup</title>
+<meta name="description" content="An introduction to Azure Storage and a detailed look at Blob Storage, followed by a hands-on lab that backs up files from an Azure VM to a blob container using a managed identity instead of keys.">
+<style>
+  :root {
+    --bg: #f6f8fb;
+    --surface: #ffffff;
+    --text: #1c2733;
+    --muted: #5b6b7c;
+    --line: #dde4ec;
+    --accent: #0067b8;
+    --accent-soft: #e6f1fa;
+    --ok: #107c41;
+    --ok-soft: #e7f5ec;
+    --warn: #8a5a00;
+    --warn-soft: #fff5dc;
+    --code-bg: #10202f;
+    --code-text: #e3edf7;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f161d;
+      --surface: #17212b;
+      --text: #e4ebf2;
+      --muted: #9aabbb;
+      --line: #2a3846;
+      --accent: #5db3f0;
+      --accent-soft: #16324a;
+      --ok: #6fd39a;
+      --ok-soft: #153526;
+      --warn: #f0c668;
+      --warn-soft: #3a2f12;
+      --code-bg: #0a1118;
+      --code-text: #dbe7f3;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    font-size: 17px;
+    line-height: 1.7;
+  }
+  header.hero {
+    background: linear-gradient(135deg, #003a6c 0%, #0067b8 60%, #2b8fd6 100%);
+    color: #fff;
+    padding: 56px 20px 48px;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; }
+  .tag {
+    display: inline-block;
+    font-size: 13px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    background: rgba(255,255,255,.16);
+    padding: 4px 12px;
+    border-radius: 999px;
+    margin-bottom: 16px;
+  }
+  h1 {
+    font-size: clamp(28px, 4.6vw, 42px);
+    line-height: 1.2;
+    margin: 0 0 14px;
+    text-wrap: balance;
+  }
+  .hero p.lead { font-size: 19px; margin: 0 0 18px; max-width: 46em; opacity: .95; }
+  .meta { font-size: 14px; opacity: .85; }
+  main { padding: 36px 20px 64px; }
+  article {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: clamp(20px, 4vw, 44px);
+  }
+  h2 {
+    font-size: 26px;
+    line-height: 1.3;
+    margin: 44px 0 12px;
+    padding-top: 8px;
+    border-top: 1px solid var(--line);
+  }
+  h2:first-of-type { margin-top: 28px; }
+  h3 { font-size: 20px; margin: 30px 0 8px; }
+  p { margin: 0 0 16px; }
+  a { color: var(--accent); }
+  ul, ol { padding-left: 24px; margin: 0 0 16px; }
+  li { margin-bottom: 6px; }
+  code {
+    font-family: Consolas, "Cascadia Mono", Menlo, monospace;
+    font-size: .9em;
+    background: var(--accent-soft);
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+  pre {
+    background: var(--code-bg);
+    color: var(--code-text);
+    padding: 16px 18px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: 14.5px;
+    line-height: 1.55;
+    margin: 0 0 18px;
+  }
+  td code { white-space: nowrap; }
+  pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+  nav.toc {
+    background: var(--accent-soft);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 8px;
+  }
+  nav.toc strong { display: block; margin-bottom: 6px; }
+  nav.toc ol { margin: 0; }
+  .table-scroll { overflow-x: auto; margin: 0 0 18px; }
+  table { border-collapse: collapse; width: 100%; font-size: 15.5px; }
+  th, td { border: 1px solid var(--line); padding: 9px 12px; text-align: left; vertical-align: top; }
+  th { background: var(--accent-soft); }
+  figure { margin: 18px 0 24px; }
+  figure img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+  }
+  figure.small img { max-width: min(100%, 540px); }
+  figcaption { font-size: 14px; color: var(--muted); margin-top: 8px; }
+  .note {
+    border-left: 4px solid var(--accent);
+    background: var(--accent-soft);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 0 0 18px;
+  }
+  .note.ok { border-color: var(--ok); background: var(--ok-soft); }
+  .note.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .note > strong:first-child { display: block; margin-bottom: 2px; }
+  .step {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    padding: 2px 10px;
+    border-radius: 4px;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+  @media (prefers-color-scheme: dark) { .step { color: #06131f; } }
+  footer { text-align: center; color: var(--muted); font-size: 14px; padding: 0 20px 40px; }
+.back-home{display:inline-block;margin:0 0 14px;font-size:14px;font-weight:600;text-decoration:none;color:#fff;opacity:.85}
+.back-home:hover{opacity:1;text-decoration:underline}
+</style>
+<style>
+  .diagram { margin: 18px 0 24px; }
+  .diagram svg { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+  .diagram figcaption { font-size: 14px; color: var(--muted); margin-top: 8px; }
+  .dg-vnet { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.2; }
+  .dg-node { fill: var(--surface); stroke: var(--muted); stroke-width: 1; }
+  .dg-zone { fill: var(--ok-soft); stroke: var(--ok); stroke-width: 1.2; }
+  .dg-t { fill: var(--text); font-size: 14px; font-weight: 600; font-family: inherit; }
+  .dg-s { fill: var(--muted); font-size: 12.5px; font-family: inherit; }
+  .dg-net { stroke: var(--muted); stroke-width: 1.6; fill: none; }
+  .dg-head { fill: var(--muted); }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <a class="back-home" href="../index.html">&#8592;&nbsp;All articles</a>
+    <span class="tag">Azure Storage · Hands-on Lab</span>
+    <h1>Azure Storage and Blob Storage: From Concepts to a Keyless VM Backup</h1>
+    <p class="lead">What Azure Storage offers, how Blob Storage works in detail, and a lab that backs up files from a VM to a blob container without storing a single key or password.</p>
+    <div class="meta">By Nithin Sunke · 17 November 2026 · 12 min read</div>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+<article>
+
+  <nav class="toc" aria-label="Contents">
+    <strong>In this post</strong>
+    <ol>
+      <li><a href="#storage">What Azure Storage is</a></li>
+      <li><a href="#account">Storage accounts and redundancy</a></li>
+      <li><a href="#blob">Blob Storage in depth</a></li>
+      <li><a href="#lab">The lab: a keyless VM backup</a></li>
+      <li><a href="#p1">Part 1: Create the storage account</a></li>
+      <li><a href="#p2">Part 2: Grant yourself data access</a></li>
+      <li><a href="#p3">Part 3: Create a container</a></li>
+      <li><a href="#p4">Part 4: Give the VM an identity and a role</a></li>
+      <li><a href="#p5">Part 5: Upload the backup from the VM</a></li>
+      <li><a href="#extend">Extending the lab</a></li>
+      <li><a href="#trouble">Troubleshooting</a></li>
+      <li><a href="#best">Best practices</a></li>
+      <li><a href="#cli">Azure CLI version</a></li>
+      <li><a href="#cleanup">Cost and clean-up</a></li>
+    </ol>
+  </nav>
+
+  <h2 id="storage">1. What Azure Storage is</h2>
+  <p>Azure Storage is Microsoft's managed platform for keeping data in the cloud. It is not one service but a family, and most of the family lives inside a single resource called a <strong>storage account</strong>.</p>
+  <div class="table-scroll">
+  <table>
+    <thead><tr><th>Service</th><th>What it stores</th><th>Typical use</th></tr></thead>
+    <tbody>
+      <tr><td>Blob</td><td>Objects: any file, any size</td><td>Backups, images, logs, data lakes, static websites</td></tr>
+      <tr><td>Files</td><td>Shared folders over SMB or NFS</td><td>Replacing a file server, shared configuration across VMs</td></tr>
+      <tr><td>Queue</td><td>Small messages between parts of an application</td><td>Passing work from a web front end to background jobs</td></tr>
+      <tr><td>Table</td><td>Schema-less rows of keys and attributes</td><td>Simple lookups, device or user metadata</td></tr>
+      <tr><td>Disks</td><td>Block storage for virtual machines</td><td>Operating system and data disks</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>Blob, Files, Queue and Table can all sit in one storage account. Managed disks belong to the same family but are created alongside a VM rather than inside an account.</p>
+
+  <h2 id="account">2. Storage accounts and redundancy</h2>
+  <p>The storage account is the top-level container. It fixes the region, the redundancy, the network rules and the security settings for everything inside it, and its name becomes part of every address, so the name must be unique across all of Azure.</p>
+  <h3>Account types</h3>
+  <ul>
+    <li><strong>Standard general-purpose v2.</strong> The default. Supports every service and every blob access tier. Use it unless you have a specific reason not to.</li>
+    <li><strong>Premium block blobs.</strong> SSD-backed, blobs only, for workloads with very high transaction rates or a need for consistently low latency.</li>
+    <li><strong>Premium file shares.</strong> SSD-backed, Files only.</li>
+  </ul>
+  <h3>Redundancy</h3>
+  <p>Every account keeps several copies of your data. You choose how far apart those copies are.</p>
+  <div class="table-scroll">
+  <table>
+    <thead><tr><th>Option</th><th>Copies</th><th>Survives</th></tr></thead>
+    <tbody>
+      <tr><td>LRS, locally redundant</td><td>3 in one data centre</td><td>Disk and server failures</td></tr>
+      <tr><td>ZRS, zone-redundant</td><td>3 across availability zones in one region</td><td>The loss of a data centre</td></tr>
+      <tr><td>GRS, geo-redundant</td><td>6: LRS plus 3 in a paired region</td><td>The loss of a region</td></tr>
+      <tr><td>GZRS, geo-zone-redundant</td><td>6: ZRS plus 3 in a paired region</td><td>Zone and regional failures</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>The read-access variants, RA-GRS and RA-GZRS, also let you read from the second region at any time. More redundancy costs more, so LRS is the sensible choice for a lab.</p>
+
+  <h2 id="blob">3. Blob Storage in depth</h2>
+  <h3>The hierarchy</h3>
+  <p>Blob Storage has three levels and nothing else: the account, containers inside it, and blobs inside those.</p>
+  <figure class="diagram">
+    <svg viewBox="0 0 760 250" role="img" aria-label="Blob storage hierarchy: a storage account contains a container, which contains a blob">
+      <rect class="dg-vnet" x="30" y="20" width="700" height="170" rx="10"/>
+      <text class="dg-t" x="50" y="46">Storage account</text>
+      <text class="dg-s" x="50" y="65">scslabstore01</text>
+      <rect class="dg-zone" x="230" y="40" width="480" height="130" rx="10"/>
+      <text class="dg-t" x="250" y="66">Container</text>
+      <text class="dg-s" x="250" y="85">backups</text>
+      <rect class="dg-node" x="400" y="62" width="290" height="88" rx="8"/>
+      <text class="dg-t" x="545" y="100" text-anchor="middle">Blob</text>
+      <text class="dg-s" x="545" y="121" text-anchor="middle">web/www-2026-11-17.tar.gz</text>
+      <text class="dg-s" x="380" y="222" text-anchor="middle">https://scslabstore01.blob.core.windows.net/backups/web/www-2026-11-17.tar.gz</text>
+    </svg>
+    <figcaption>Account, container, blob. The three names together form the blob's address.</figcaption>
+  </figure>
+  <p>Folders are an illusion. A blob called <code>web/www-2026-11-17.tar.gz</code> simply has a slash in its name, and tools display the slash as a folder. Real directories exist only if you enable the hierarchical namespace, which turns the account into Data Lake Storage.</p>
+
+  <h3>Blob types</h3>
+  <div class="table-scroll">
+  <table>
+    <thead><tr><th>Type</th><th>How it works</th><th>Used for</th></tr></thead>
+    <tbody>
+      <tr><td>Block blob</td><td>Uploaded as blocks, then committed as one object</td><td>Almost everything: files, backups, media</td></tr>
+      <tr><td>Append blob</td><td>New data can only be added to the end</td><td>Logs that grow continuously</td></tr>
+      <tr><td>Page blob</td><td>Random reads and writes in fixed-size pages</td><td>Virtual hard disks</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>The type is set when the blob is created and cannot be changed afterwards.</p>
+
+  <h3>Access tiers</h3>
+  <div class="table-scroll">
+  <table>
+    <thead><tr><th>Tier</th><th>Minimum stay</th><th>Reading it back</th><th>Use for</th></tr></thead>
+    <tbody>
+      <tr><td>Hot</td><td>None</td><td>Instant</td><td>Data in active use</td></tr>
+      <tr><td>Cool</td><td>30 days</td><td>Instant</td><td>Recent backups</td></tr>
+      <tr><td>Cold</td><td>90 days</td><td>Instant</td><td>Older backups that are rarely read</td></tr>
+      <tr><td>Archive</td><td>180 days</td><td>Offline; must be rehydrated first, which can take hours</td><td>Long-term retention</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>Going down the table, storing data gets cheaper and reading it gets more expensive. Moving or deleting a blob before its minimum stay brings an early deletion charge.</p>
+
+  <h3>Data protection</h3>
+  <ul>
+    <li><strong>Soft delete</strong> keeps deleted blobs and containers for a retention period so they can be restored.</li>
+    <li><strong>Versioning</strong> keeps the previous copy every time a blob is overwritten.</li>
+    <li><strong>Lifecycle management</strong> moves blobs to cheaper tiers, or deletes them, based on age.</li>
+    <li><strong>Immutability</strong> stops blobs being changed or deleted for a fixed time, for compliance and ransomware protection.</li>
+    <li><strong>Object replication</strong> copies blobs asynchronously to another storage account.</li>
+  </ul>
+
+  <h3>Ways to grant access</h3>
+  <div class="table-scroll">
+  <table>
+    <thead><tr><th>Method</th><th>What it is</th><th>When to use it</th></tr></thead>
+    <tbody>
+      <tr><td>Microsoft Entra ID roles</td><td>Users and groups are given roles such as Storage Blob Data Contributor</td><td>The default choice for people</td></tr>
+      <tr><td>Managed identity</td><td>An identity that belongs to an Azure resource, such as a VM</td><td>Applications and scripts running in Azure</td></tr>
+      <tr><td>SAS token</td><td>A signed link with an expiry time and limited permissions</td><td>Short-term sharing with someone outside</td></tr>
+      <tr><td>Account key</td><td>A master key to the whole account</td><td>Avoid where possible</td></tr>
+      <tr><td>Anonymous access</td><td>Public read with no sign-in</td><td>Only for content that is meant to be public</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2 id="lab">4. The lab: a keyless VM backup</h2>
+  <p><strong>The use case.</strong> A VM runs a web server. Its web content should be backed up to Blob Storage on a schedule. The usual shortcut is to paste a storage account key into the backup script, which leaves a master key sitting in a file on the server. This lab does it properly: the VM proves who it is with a <strong>managed identity</strong>, and the storage account trusts that identity through a role.</p>
+  <figure class="diagram">
+    <svg viewBox="0 0 760 215" role="img" aria-label="Lab flow: the VM requests a token from Microsoft Entra ID using its managed identity, then uploads the backup to the storage account with that token, and the storage account checks the role before storing the blob">
+      <defs><marker id="blarrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="dg-head" d="M0 0 L10 5 L0 10 Z"/></marker></defs>
+      <rect class="dg-vnet" x="30" y="125" width="210" height="60" rx="8"/>
+      <text class="dg-t" x="135" y="151" text-anchor="middle">VM: scsubtusrv01</text>
+      <text class="dg-s" x="135" y="171" text-anchor="middle">Managed identity</text>
+      <rect class="dg-node" x="275" y="20" width="210" height="60" rx="8"/>
+      <text class="dg-t" x="380" y="46" text-anchor="middle">Microsoft Entra ID</text>
+      <text class="dg-s" x="380" y="66" text-anchor="middle">Issues a short-lived token</text>
+      <rect class="dg-zone" x="520" y="125" width="210" height="60" rx="8"/>
+      <text class="dg-t" x="625" y="151" text-anchor="middle">Storage account</text>
+      <text class="dg-s" x="625" y="171" text-anchor="middle">Checks the role, stores blob</text>
+      <path class="dg-net" d="M160 125 L300 82" marker-end="url(#blarrow)"/>
+      <path class="dg-net" d="M240 155 L518 155" marker-end="url(#blarrow)"/>
+      <text class="dg-s" x="150" y="96" text-anchor="middle">1. Request a token</text>
+      <text class="dg-s" x="380" y="145" text-anchor="middle">2. Upload with the token</text>
+    </svg>
+    <figcaption>No key or password is stored on the VM. Azure issues the token, and the role assignment decides what it can do.</figcaption>
+  </figure>
+  <div class="table-scroll">
+  <table>
+    <thead><tr><th>Item</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Resource group</td><td><code>scslabs-rg</code>, West US 3</td></tr>
+      <tr><td>Storage account</td><td><code>scslabstore01</code>, Standard, LRS</td></tr>
+      <tr><td>Container</td><td><code>backups</code></td></tr>
+      <tr><td>VM</td><td><code>scsubtusrv01</code>, Ubuntu, running Apache</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2 id="p1">5. Part 1: Create the storage account</h2>
+
+  <h3><span class="step">Step 1</span>Open Storage accounts</h3>
+  <p>In the portal, go to <strong>All services → Storage → Storage accounts</strong> and click <strong>Create</strong>.</p>
+  <figure>
+    <img loading="lazy" src="images/fig01.png" alt="Azure portal All services page, Storage category, with the Storage accounts tile selected and its Create and View links showing">
+    <figcaption>Storage accounts under the Storage category.</figcaption>
+  </figure>
+
+  <h3><span class="step">Step 2</span>Basics</h3>
+  <p>Choose the resource group, a globally unique account name (3 to 24 characters, lowercase letters and digits only), the region and the primary service.</p>
+  <figure class="small">
+    <img loading="lazy" src="images/fig02.png" alt="Create a storage account Basics tab with resource group scslabs-rg, storage account name scslabstore01, region West US 3 and primary service Azure Blob Storage or Azure Data Lake Storage">
+    <figcaption>The account name, region and primary service.</figcaption>
+  </figure>
+  <figure class="small">
+    <img loading="lazy" src="images/fig03.png" alt="Lower part of the Basics tab with primary workload General purpose, performance Standard and redundancy Locally redundant storage, with a note that RA-GRS is recommended">
+    <figcaption>Standard performance with locally redundant storage.</figcaption>
+  </figure>
+  <p>The portal recommends RA-GRS for a general-purpose workload. I chose LRS because this is a lab and three local copies are enough. For production data, pick the redundancy that matches how much an outage would cost you.</p>
+
+  <h3><span class="step">Step 3</span>Networking</h3>
+  <figure class="small">
+    <img loading="lazy" src="images/fig04.png" alt="Networking tab with public network access set to Enable, scope set to Enable from all networks, no private endpoint and Microsoft network routing">
+    <figcaption>Public network access enabled from all networks.</figcaption>
+  </figure>
+  <p>For the lab I left the account reachable from any network. That only means the endpoint answers; every request still has to be authorised. In production, restrict access to selected networks or use a private endpoint.</p>
+
+  <h3><span class="step">Step 4</span>Security</h3>
+  <figure class="small">
+    <img loading="lazy" src="images/fig05.png" alt="Security tab with secure transfer required, allow enabling anonymous access on individual containers ticked, storage account key access enabled and minimum TLS version 1.2">
+    <figcaption>The Security tab as I submitted it.</figcaption>
+  </figure>
+  <div class="note warn">
+    <strong>A setting to change</strong>
+    I left <strong>Allow enabling anonymous access on individual containers</strong> ticked. It does not make anything public by itself, but it allows someone to make a container public later. Untick it here, or turn it off afterwards under <strong>Settings → Configuration</strong>. Ticking <strong>Default to Microsoft Entra authorization in the Azure portal</strong> is also worthwhile, so the portal uses your role rather than the account key.
+  </div>
+
+  <h3><span class="step">Step 5</span>Encryption</h3>
+  <figure class="small">
+    <img loading="lazy" src="images/fig06.png" alt="Encryption tab with Microsoft-managed keys selected, customer-managed key support for blobs and files only, and infrastructure encryption unticked">
+    <figcaption>Microsoft-managed keys, the default.</figcaption>
+  </figure>
+  <p>Data is always encrypted at rest. The only choice is who manages the key. Microsoft-managed keys need no work; customer-managed keys in Key Vault give you control over rotation and revocation.</p>
+
+  <h3><span class="step">Step 6</span>Review and create</h3>
+  <figure class="small">
+    <img loading="lazy" src="images/fig07.png" alt="Review and create summary showing storage account scslabstore01, Standard performance, LRS replication, Hot access tier, public network access enabled, and blob and container soft delete enabled for 7 days">
+    <figcaption>The summary. Blob and container soft delete are on, with 7 days of retention.</figcaption>
+  </figure>
+  <figure>
+    <img loading="lazy" src="images/fig08.png" alt="Overview page of storage account scslabstore01 showing StorageV2 general purpose v2, LRS, default access tier Hot, blob anonymous access Enabled, soft delete Enabled for 7 days and versioning Disabled">
+    <figcaption>The finished account. Two things to note: <strong>Blob anonymous access: Enabled</strong>, which is the setting from step 4, and <strong>Versioning: Disabled</strong>.</figcaption>
+  </figure>
+
+  <h2 id="p2">6. Part 2: Grant yourself data access</h2>
+  <p>This step surprises most people. Being Owner of the subscription lets you manage the storage account, but it does not let you read or write the blobs in it. Data access is a separate set of roles.</p>
+  <figure>
+    <img loading="lazy" src="images/fig09.png" alt="Access Control (IAM) page of the storage account with the Add role assignment button highlighted">
+    <figcaption>Open <strong>Access Control (IAM)</strong> and click <strong>Add role assignment</strong>.</figcaption>
+  </figure>
+  <figure>
+    <img loading="lazy" src="images/fig10.png" alt="Add role assignment Role tab filtered on storage blob, listing Storage Blob Data Contributor, Storage Blob Data Owner, Storage Blob Data Reader and Storage Blob Delegator among others">
+    <figcaption>The blob data roles. <strong>Storage Blob Data Contributor</strong> allows reading, writing and deleting blobs.</figcaption>
+  </figure>
+  <div class="table-scroll">
+  <table>
+    <thead><tr><th>Role</th><th>Allows</th></tr></thead>
+    <tbody>
+      <tr><td>Storage Blob Data Reader</td><td>Read and list blobs</td></tr>
+      <tr><td>Storage Blob Data Contributor</td><td>Read, write and delete blobs and containers</td></tr>
+      <tr><td>Storage Blob Data Owner</td><td>Everything above, plus setting ownership and POSIX permissions</td></tr>
+      <tr><td>Storage Blob Delegator</td><td>Create the key used to sign user delegation SAS tokens</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <figure>
+    <img loading="lazy" src="images/fig11.png" alt="Add role assignment Members tab with the Select members panel open and two users selected; their names and sign-in addresses are masked">
+    <figcaption>Selecting the users who need access. Names are masked.</figcaption>
+  </figure>
+  <figure class="small">
+    <img loading="lazy" src="images/fig12.png" alt="Members tab showing the selected role Storage Blob Data Contributor and two members of type User, with names and object IDs masked">
+    <figcaption>Click <strong>Review + assign</strong> to finish. Grant the role only to the people who need it.</figcaption>
+  </figure>
+
+  <h2 id="p3">7. Part 3: Create a container</h2>
+  <figure>
+    <img loading="lazy" src="images/fig13.png" alt="Containers page of the storage account listing only the system container $logs, with Add container and Upload buttons">
+    <figcaption>Under <strong>Data storage → Containers</strong>. The <code>$logs</code> container is created by Azure for storage logs.</figcaption>
+  </figure>
+  <figure class="small">
+    <img loading="lazy" src="images/fig14.png" alt="New container panel with name backups and anonymous access level Private (no anonymous access)">
+    <figcaption>A container named <code>backups</code> with anonymous access set to Private.</figcaption>
+  </figure>
+  <figure>
+    <img loading="lazy" src="images/fig15.png" alt="The empty backups container showing Authentication method: Access key with a link to switch to Microsoft Entra user account">
+    <figcaption>The empty container. Note the authentication method: <strong>Access key</strong>.</figcaption>
+  </figure>
+  <p>By default the portal browses blobs using the account key. Click <strong>Switch to Microsoft Entra user account</strong> so it uses the role from part 2 instead. If the list then fails to load, the role assignment is missing or has not taken effect yet.</p>
+
+  <h2 id="p4">8. Part 4: Give the VM an identity and a role</h2>
+
+  <h3><span class="step">Step 7</span>Turn on the system-assigned identity</h3>
+  <p>On the VM, open <strong>Security → Identity</strong>, set Status to <strong>On</strong>, save, and confirm.</p>
+  <figure>
+    <img loading="lazy" src="images/fig16.png" alt="Identity page of virtual machine scsubtusrv01 with system assigned status set to On and a confirmation prompt to enable the managed identity">
+    <figcaption>Enabling the system-assigned managed identity. Azure registers the VM in Microsoft Entra ID.</figcaption>
+  </figure>
+  <p>A system-assigned identity belongs to this one VM and is deleted with it. The alternative, a user-assigned identity, is a separate resource that can be shared by several VMs.</p>
+
+  <h3><span class="step">Step 8</span>Assign the role to the VM</h3>
+  <p>On the same page, click <strong>Azure role assignments</strong>, then <strong>Add role assignment</strong>.</p>
+  <figure class="small">
+    <img loading="lazy" src="images/fig17.png" alt="Azure role assignments page for the VM identity showing no role assignments and an Add role assignment button">
+    <figcaption>The new identity has no permissions yet.</figcaption>
+  </figure>
+  <figure class="small">
+    <img loading="lazy" src="images/fig18.png" alt="Add role assignment panel with scope Storage, resource scslabstore01 and role Storage Blob Data Contributor">
+    <figcaption>Scope: Storage. Resource: the storage account. Role: Storage Blob Data Contributor.</figcaption>
+  </figure>
+  <figure>
+    <img loading="lazy" src="images/fig19.png" alt="Azure role assignments list showing Storage Blob Data Contributor on storage account scslabstore01 assigned to scsubtusrv01">
+    <figcaption>The VM now holds the data role on this one storage account and nothing else.</figcaption>
+  </figure>
+
+  <h2 id="p5">9. Part 5: Upload the backup from the VM</h2>
+
+  <h3><span class="step">Step 9</span>Sign in as the VM and create the backup</h3>
+  <p>On the VM, install the Azure CLI, sign in with the managed identity, and archive the web content.</p>
+<pre><code>curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+az login --identity
+tar czf /tmp/www-$(date +%F).tar.gz -C /var/www html</code></pre>
+  <figure>
+    <img loading="lazy" src="images/fig20.png" alt="Terminal on scsubtusrv01: az login --identity returns an account of type servicePrincipal named systemAssignedIdentity, then tar creates www-2026-11-17.tar.gz in /tmp; tenant and subscription IDs are masked">
+    <figcaption><code>az login --identity</code> signs in with no password. The user type is <code>servicePrincipal</code> and the name is <code>systemAssignedIdentity</code>.</figcaption>
+  </figure>
+
+  <h3><span class="step">Step 10</span>Upload</h3>
+<pre><code>az storage blob upload \
+  --account-name scslabstore01 \
+  --container-name backups \
+  --name web/www-$(date +%F).tar.gz \
+  --file /tmp/www-$(date +%F).tar.gz \
+  --auth-mode login</code></pre>
+  <figure>
+    <img loading="lazy" src="images/fig21.png" alt="Terminal output of az storage blob upload showing 100 percent finished, request_server_encrypted true and version_id null">
+    <figcaption>The upload completes. <code>--auth-mode login</code> tells the CLI to use the signed-in identity rather than look for a key.</figcaption>
+  </figure>
+  <p>Two fields in the output are worth reading. <code>request_server_encrypted: true</code> confirms the blob was encrypted at rest. <code>version_id: null</code> shows that versioning is off, so overwriting this blob would replace it with no way back.</p>
+
+  <h3><span class="step">Step 11</span>Check in the portal</h3>
+  <figure>
+    <img loading="lazy" src="images/fig22.png" alt="The backups container, web folder, showing block blob www-2026-11-17.tar.gz, 3.19 KiB, access tier Hot (Inferred), with authentication method Microsoft Entra user account">
+    <figcaption>The backup inside the <code>web</code> folder. The portal is now using the Microsoft Entra user account.</figcaption>
+  </figure>
+  <div class="note ok">
+    <strong>Result</strong>
+    The VM uploaded a backup to Blob Storage without any key, password or connection string on the server. <strong>Hot (Inferred)</strong> means the blob has no tier of its own and takes the account's default.
+  </div>
+
+  <h2 id="extend">10. Extending the lab</h2>
+  <p>The backup works. These four additions make it production-shaped. I have not captured screenshots for them here.</p>
+
+  <h3>Turn on versioning and test recovery</h3>
+  <ol>
+    <li>In the storage account, open <strong>Data management → Data protection</strong> and tick <strong>Enable versioning for blobs</strong>.</li>
+    <li>Upload the same blob name again with <code>--overwrite</code>. The blob's <strong>Versions</strong> tab now lists the earlier copy.</li>
+    <li>Delete the blob, switch the list to show deleted blobs, and choose <strong>Undelete</strong>.</li>
+  </ol>
+
+  <h3>Age backups into cheaper tiers</h3>
+  <p>Under <strong>Data management → Lifecycle management</strong>, add a rule for block blobs with the prefix <code>backups/web/</code>:</p>
+  <ul>
+    <li>More than 30 days since last modified: move to Cool</li>
+    <li>More than 90 days: move to Archive</li>
+    <li>More than 365 days: delete</li>
+  </ul>
+  <p>The rule runs about once a day.</p>
+
+  <h3>Share one backup with a time-limited link</h3>
+  <p>On a blob, choose <strong>Generate SAS</strong>. Set the signing method to <strong>User delegation key</strong>, permissions to Read, an expiry one hour ahead, and HTTPS only. The resulting URL downloads the file with no sign-in until it expires. A user delegation SAS is signed with your Entra identity rather than the account key, which makes it the safer kind.</p>
+
+  <h3>Schedule it</h3>
+  <p>Put the <code>tar</code> and upload commands in a script and run it from cron. Because the VM authenticates as itself, the script contains nothing secret.</p>
+<pre><code>#!/bin/bash
+set -e
+az login --identity --output none
+F=www-$(date +%F).tar.gz
+tar czf /tmp/$F -C /var/www html
+az storage blob upload --account-name scslabstore01 \
+  --container-name backups --name web/$F --file /tmp/$F \
+  --auth-mode login --overwrite --output none
+rm -f /tmp/$F</code></pre>
+
+  <h2 id="trouble">11. Troubleshooting</h2>
+  <div class="table-scroll">
+  <table>
+    <thead><tr><th>Symptom</th><th>Likely cause</th><th>Fix</th></tr></thead>
+    <tbody>
+      <tr><td><code>AuthorizationPermissionMismatch</code> on upload</td><td>The identity has no data role, or the role was assigned moments ago</td><td>Check the role assignment; wait a few minutes and retry</td></tr>
+      <tr><td>Portal says you do not have permission to list the data</td><td>You are Owner but hold no data role</td><td>Assign yourself Storage Blob Data Contributor</td></tr>
+      <tr><td><code>az login --identity</code> fails</td><td>The managed identity is not enabled on the VM</td><td>Turn on the system-assigned identity and save</td></tr>
+      <tr><td>CLI asks for an account key or connection string</td><td><code>--auth-mode login</code> was left out</td><td>Add it to the command</td></tr>
+      <tr><td>Account name rejected at creation</td><td>Name already taken, or contains capitals or hyphens</td><td>Use 3 to 24 lowercase letters and digits</td></tr>
+      <tr><td><code>PublicAccessNotPermitted</code> when opening a blob URL</td><td>Anonymous access is off, as it should be</td><td>Sign in, or use a SAS link</td></tr>
+      <tr><td>Requests time out from one network only</td><td>The storage firewall excludes that network</td><td>Check <strong>Security + networking → Networking</strong></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2 id="best">12. Best practices</h2>
+  <h3>Access</h3>
+  <ul>
+    <li><strong>Use Microsoft Entra ID and managed identities</strong> instead of account keys. Disable key access on the account once nothing depends on it.</li>
+    <li><strong>Assign roles at the narrowest scope.</strong> A container is better than the account, and the account is better than the subscription.</li>
+    <li><strong>Turn off anonymous access at account level</strong> unless you are hosting public content.</li>
+    <li><strong>Prefer user delegation SAS</strong>, keep expiry times short, and require HTTPS.</li>
+  </ul>
+  <h3>Network</h3>
+  <ul>
+    <li><strong>Restrict the firewall</strong> to known networks, or use a private endpoint so the account is reachable only from your virtual networks.</li>
+    <li><strong>Require secure transfer and TLS 1.2</strong> or later.</li>
+  </ul>
+  <h3>Protection</h3>
+  <ul>
+    <li><strong>Enable soft delete and versioning</strong> on any account that holds backups.</li>
+    <li><strong>Add a CanNotDelete lock</strong> to important storage accounts.</li>
+    <li><strong>Use immutability policies</strong> for backups that must survive a compromised administrator account.</li>
+    <li><strong>Choose redundancy deliberately.</strong> LRS protects against hardware failure, not against losing the region.</li>
+  </ul>
+  <h3>Cost</h3>
+  <ul>
+    <li><strong>Automate tiering</strong> with lifecycle rules rather than moving blobs by hand.</li>
+    <li><strong>Respect minimum stays.</strong> Do not send data to Cool, Cold or Archive if you expect to delete or read it soon.</li>
+    <li><strong>Remember that versions and soft-deleted data are billed.</strong> Add lifecycle rules for old versions too.</li>
+    <li><strong>Watch data leaving Azure.</strong> Downloads to the internet are charged; uploads are not.</li>
+  </ul>
+
+  <h2 id="cli">13. Azure CLI version</h2>
+<pre><code># Storage account
+az storage account create \
+  --resource-group scslabs-rg --name scslabstore01 \
+  --location westus3 --sku Standard_LRS --kind StorageV2 \
+  --access-tier Hot --allow-blob-public-access false \
+  --min-tls-version TLS1_2
+
+SA_ID=$(az storage account show -g scslabs-rg -n scslabstore01 --query id -o tsv)
+
+# Data role for yourself
+az role assignment create \
+  --assignee $(az ad signed-in-user show --query id -o tsv) \
+  --role "Storage Blob Data Contributor" --scope $SA_ID
+
+# Container
+az storage container create \
+  --account-name scslabstore01 --name backups --auth-mode login
+
+# Managed identity for the VM, and its role
+az vm identity assign -g scslabs-rg -n scsubtusrv01
+az role assignment create \
+  --assignee $(az vm show -g scslabs-rg -n scsubtusrv01 --query identity.principalId -o tsv) \
+  --role "Storage Blob Data Contributor" --scope $SA_ID
+
+# Versioning and soft delete
+az storage account blob-service-properties update \
+  -g scslabs-rg --account-name scslabstore01 \
+  --enable-versioning true \
+  --enable-delete-retention true --delete-retention-days 7</code></pre>
+
+  <h2 id="cleanup">14. Cost and clean-up</h2>
+  <p>Blob Storage is billed on four things: how much you store, which tier it is in, how many read and write operations you make, and how much data leaves Azure. A few kilobytes on LRS in the Hot tier costs effectively nothing.</p>
+  <p>To remove everything, delete the storage account. That deletes all containers and blobs in it. The VM's role assignment disappears with the account; turn off the VM's managed identity as well if nothing else uses it.</p>
+
+  <h2>Key takeaways</h2>
+  <ul>
+    <li>Azure Storage is a family: Blob, Files, Queue, Table and Disks. A storage account sets region, redundancy and security for what it holds.</li>
+    <li>Blob Storage is account, container, blob. Tiers trade storage price against access price.</li>
+    <li>Managing an account and reading its data are separate permissions. Owner alone cannot read blobs.</li>
+    <li>A managed identity lets a VM authenticate to storage with no stored secret.</li>
+    <li>Soft delete, versioning and lifecycle rules turn a container into a dependable backup target.</li>
+  </ul>
+
+  <h2>References</h2>
+  <ul>
+    <li><a href="https://learn.microsoft.com/azure/storage/common/storage-introduction">Introduction to Azure Storage, Microsoft Learn</a></li>
+    <li><a href="https://learn.microsoft.com/azure/storage/blobs/storage-blobs-introduction">Introduction to Azure Blob Storage, Microsoft Learn</a></li>
+    <li><a href="https://learn.microsoft.com/azure/storage/blobs/access-tiers-overview">Access tiers for blob data, Microsoft Learn</a></li>
+    <li><a href="https://learn.microsoft.com/azure/storage/blobs/authorize-access-azure-active-directory">Authorize access to blobs using Microsoft Entra ID, Microsoft Learn</a></li>
+    <li><a href="https://learn.microsoft.com/entra/identity/managed-identities-azure-resources/overview">Managed identities for Azure resources, Microsoft Learn</a></li>
+  </ul>
+
+</article>
+</div>
+</main>
+
+<footer>
+  <p>Written by Nithin Sunke · Azure learning series</p>
+</footer>
+
+</body>
+</html>
