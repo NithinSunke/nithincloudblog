@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Public DNS Zones: Hosting a Domain in Azure DNS</title>
+<meta name="description" content="A hands-on lab that hosts a real domain in an Azure public DNS zone, delegates it from the registrar, and serves a website by name, with troubleshooting, best practices, and pros and cons.">
+<style>
+  :root {
+    --bg: #f6f8fb;
+    --surface: #ffffff;
+    --text: #1c2733;
+    --muted: #5b6b7c;
+    --line: #dde4ec;
+    --accent: #0067b8;
+    --accent-soft: #e6f1fa;
+    --ok: #107c41;
+    --ok-soft: #e7f5ec;
+    --warn: #8a5a00;
+    --warn-soft: #fff5dc;
+    --code-bg: #10202f;
+    --code-text: #e3edf7;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f161d;
+      --surface: #17212b;
+      --text: #e4ebf2;
+      --muted: #9aabbb;
+      --line: #2a3846;
+      --accent: #5db3f0;
+      --accent-soft: #16324a;
+      --ok: #6fd39a;
+      --ok-soft: #153526;
+      --warn: #f0c668;
+      --warn-soft: #3a2f12;
+      --code-bg: #0a1118;
+      --code-text: #dbe7f3;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    font-size: 17px;
+    line-height: 1.7;
+  }
+  header.hero {
+    background: linear-gradient(135deg, #003a6c 0%, #0067b8 60%, #2b8fd6 100%);
+    color: #fff;
+    padding: 56px 20px 48px;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; }
+  .tag {
+    display: inline-block;
+    font-size: 13px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    background: rgba(255,255,255,.16);
+    padding: 4px 12px;
+    border-radius: 999px;
+    margin-bottom: 16px;
+  }
+  h1 {
+    font-size: clamp(28px, 4.6vw, 42px);
+    line-height: 1.2;
+    margin: 0 0 14px;
+    text-wrap: balance;
+  }
+  .hero p.lead { font-size: 19px; margin: 0 0 18px; max-width: 46em; opacity: .95; }
+  .meta { font-size: 14px; opacity: .85; }
+  main { padding: 36px 20px 64px; }
+  article {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: clamp(20px, 4vw, 44px);
+  }
+  h2 {
+    font-size: 26px;
+    line-height: 1.3;
+    margin: 44px 0 12px;
+    padding-top: 8px;
+    border-top: 1px solid var(--line);
+  }
+  h2:first-of-type { margin-top: 28px; }
+  h3 { font-size: 20px; margin: 30px 0 8px; }
+  p { margin: 0 0 16px; }
+  a { color: var(--accent); }
+  ul, ol { padding-left: 24px; margin: 0 0 16px; }
+  li { margin-bottom: 6px; }
+  code {
+    font-family: Consolas, "Cascadia Mono", Menlo, monospace;
+    font-size: .9em;
+    background: var(--accent-soft);
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+  pre {
+    background: var(--code-bg);
+    color: var(--code-text);
+    padding: 16px 18px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: 14.5px;
+    line-height: 1.55;
+    margin: 0 0 18px;
+  }
+  td code { white-space: nowrap; }
+  pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+  nav.toc {
+    background: var(--accent-soft);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 8px;
+  }
+  nav.toc strong { display: block; margin-bottom: 6px; }
+  nav.toc ol { margin: 0; }
+  .table-scroll { overflow-x: auto; margin: 0 0 18px; }
+  table { border-collapse: collapse; width: 100%; font-size: 15.5px; }
+  th, td { border: 1px solid var(--line); padding: 9px 12px; text-align: left; vertical-align: top; }
+  th { background: var(--accent-soft); }
+  figure { margin: 18px 0 24px; }
+  figure img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+  }
+  figure.small img { max-width: min(100%, 540px); }
+  figcaption { font-size: 14px; color: var(--muted); margin-top: 8px; }
+  .note {
+    border-left: 4px solid var(--accent);
+    background: var(--accent-soft);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 0 0 18px;
+  }
+  .note.ok { border-color: var(--ok); background: var(--ok-soft); }
+  .note.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .note > strong:first-child { display: block; margin-bottom: 2px; }
+  .step {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    padding: 2px 10px;
+    border-radius: 4px;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+  @media (prefers-color-scheme: dark) { .step { color: #06131f; } }
+  footer { text-align: center; color: var(--muted); font-size: 14px; padding: 0 20px 40px; }
+.back-home{display:inline-block;margin:0 0 14px;font-size:14px;font-weight:600;text-decoration:none;color:#fff;opacity:.85}
+.back-home:hover{opacity:1;text-decoration:underline}
+</style>
+<style>
+  .diagram { margin: 18px 0 24px; }
+  .diagram svg { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+  .diagram figcaption { font-size: 14px; color: var(--muted); margin-top: 8px; }
+  .dg-vnet { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.2; }
+  .dg-node { fill: var(--surface); stroke: var(--muted); stroke-width: 1; }
+  .dg-zone { fill: var(--ok-soft); stroke: var(--ok); stroke-width: 1.2; }
+  .dg-t { fill: var(--text); font-size: 14px; font-weight: 600; font-family: inherit; }
+  .dg-s { fill: var(--muted); font-size: 12.5px; font-family: inherit; }
+  .dg-net { stroke: var(--muted); stroke-width: 1.6; fill: none; }
+  .dg-head { fill: var(--muted); }
+  .proscons { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 0 0 18px; }
+  .proscons > div { border: 1px solid var(--line); border-radius: 8px; padding: 14px 18px; }
+  .proscons h3 { margin: 0 0 8px; font-size: 18px; }
+  .proscons ul { margin: 0; }
+  .proscons .pro { border-top: 4px solid var(--ok); }
+  .proscons .con { border-top: 4px solid var(--warn); }
+  @media (max-width: 640px) { .proscons { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <a class="back-home" href="../index.html">&#8592;&nbsp;All articles</a>
+    <span class="tag">Azure Networking · Hands-on Lab</span>
+    <h1>Azure Public DNS Zones: Hosting a Domain in Azure DNS</h1>
+    <p class="lead">In this lab I take a real domain, hand its DNS over to Azure, and serve a web page from an Azure VM by name. Along the way: how delegation works, what to check when it does not, best practices, and the pros and cons of Azure DNS.</p>
+    <div class="meta">By Nithin Sunke · 16 November 2026 · 10 min read</div>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+<article>
+
+  <nav class="toc" aria-label="Contents">
+    <strong>In this post</strong>
+    <ol>
+      <li><a href="#what">What a public DNS zone is</a></li>
+      <li><a href="#how">How delegation works</a></li>
+      <li><a href="#setup">Lab setup</a></li>
+      <li><a href="#zone">Part 1: Create the zone</a></li>
+      <li><a href="#delegate">Part 2: Delegate the domain to Azure</a></li>
+      <li><a href="#web">Part 3: Put a web server behind the name</a></li>
+      <li><a href="#records">Part 4: Add records and test</a></li>
+      <li><a href="#types">Record types at a glance</a></li>
+      <li><a href="#trouble">Troubleshooting</a></li>
+      <li><a href="#best">Best practices</a></li>
+      <li><a href="#proscons">Pros and cons</a></li>
+      <li><a href="#cli">Azure CLI version</a></li>
+      <li><a href="#cleanup">Cost and clean-up</a></li>
+    </ol>
+  </nav>
+
+  <h2 id="what">1. What a public DNS zone is</h2>
+  <p>A DNS zone holds the records for one domain: which IP address <code>www</code> points to, where mail goes, and so on. A <strong>public</strong> DNS zone in Azure hosts those records on Microsoft's global name servers, so anyone on the internet can look them up.</p>
+  <p>Two points are worth settling early:</p>
+  <ul>
+    <li><strong>Azure DNS is a hosting service, not a registrar.</strong> You register the domain somewhere else, then tell that registrar to send DNS queries to Azure.</li>
+    <li><strong>Public and private zones are different resources.</strong> A private zone answers only inside linked virtual networks. A public zone answers the whole internet.</li>
+  </ul>
+  <div class="table-scroll">
+  <table>
+    <thead><tr><th></th><th>Public DNS zone</th><th>Private DNS zone</th></tr></thead>
+    <tbody>
+      <tr><td>Who can query it</td><td>Anyone on the internet</td><td>Only linked virtual networks</td></tr>
+      <tr><td>Typical records</td><td>Websites, APIs, mail</td><td>VMs, databases, private endpoints</td></tr>
+      <tr><td>Needs a registered domain</td><td>Yes</td><td>No, any name you choose</td></tr>
+      <tr><td>Needs delegation</td><td>Yes, at the registrar</td><td>No, VNet links instead</td></tr>
+      <tr><td>Auto-registration of VMs</td><td>No</td><td>Yes</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2 id="how">2. How delegation works</h2>
+  <p>Creating a zone in Azure does nothing on its own. The internet finds a domain by following referrals from the top of the DNS tree downwards, so the parent domain must point at Azure's name servers. That pointer is called <strong>delegation</strong>.</p>
+  <figure class="diagram">
+    <svg viewBox="0 0 760 310" role="img" aria-label="DNS resolution path: the browser asks a recursive resolver, which is referred by the root and .org servers to dpdns.org, then to the Azure DNS zone, which returns the IP address; the browser then connects to the web server VM">
+      <defs><marker id="pdarrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="dg-head" d="M0 0 L10 5 L0 10 Z"/></marker></defs>
+      <rect class="dg-node" x="30" y="110" width="200" height="56" rx="8"/>
+      <text class="dg-t" x="130" y="134" text-anchor="middle">Your browser</text>
+      <text class="dg-s" x="130" y="153" text-anchor="middle">www.snvcloud.dpdns.org</text>
+      <rect class="dg-node" x="280" y="110" width="200" height="56" rx="8"/>
+      <text class="dg-t" x="380" y="134" text-anchor="middle">Recursive resolver</text>
+      <text class="dg-s" x="380" y="153" text-anchor="middle">Your ISP or 8.8.8.8</text>
+      <rect class="dg-node" x="530" y="20" width="200" height="56" rx="8"/>
+      <text class="dg-t" x="630" y="44" text-anchor="middle">Root and .org servers</text>
+      <text class="dg-s" x="630" y="63" text-anchor="middle">1. Refer to dpdns.org</text>
+      <rect class="dg-node" x="530" y="110" width="200" height="56" rx="8"/>
+      <text class="dg-t" x="630" y="134" text-anchor="middle">dpdns.org servers</text>
+      <text class="dg-s" x="630" y="153" text-anchor="middle">2. Refer to Azure DNS</text>
+      <rect class="dg-zone" x="530" y="200" width="200" height="56" rx="8"/>
+      <text class="dg-t" x="630" y="224" text-anchor="middle">Azure DNS zone</text>
+      <text class="dg-s" x="630" y="243" text-anchor="middle">3. Returns the IP address</text>
+      <rect class="dg-vnet" x="30" y="226" width="200" height="56" rx="8"/>
+      <text class="dg-t" x="130" y="250" text-anchor="middle">Web server VM</text>
+      <text class="dg-s" x="130" y="269" text-anchor="middle">4. Browser connects</text>
+      <path class="dg-net" d="M230 138 L278 138" marker-end="url(#pdarrow)"/>
+      <path class="dg-net" d="M480 124 L528 56" marker-end="url(#pdarrow)"/>
+      <path class="dg-net" d="M480 138 L528 138" marker-end="url(#pdarrow)"/>
+      <path class="dg-net" d="M480 152 L528 220" marker-end="url(#pdarrow)"/>
+      <path class="dg-net" d="M130 166 L130 224" marker-end="url(#pdarrow)"/>
+    </svg>
+    <figcaption>The resolver follows referrals down the tree. Step 2 only works after the registrar lists Azure's name servers for the domain.</figcaption>
+  </figure>
+
+  <h2 id="setup">3. Lab setup</h2>
+  <div class="table-scroll">
+  <table>
+    <thead><tr><th>Item</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Domain</td><td><code>snvcloud.dpdns.org</code>, a free name from DigitalPlat FreeDomain</td></tr>
+      <tr><td>Resource group</td><td><code>scslabs-rg</code></td></tr>
+      <tr><td>Web server</td><td><code>scsubtusrv01</code>, Ubuntu, with a public IP address</td></tr>
+      <tr><td>Client for testing</td><td>My laptop, outside Azure</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p><strong>Prerequisites:</strong> a domain you control with the ability to change its name servers, an Azure subscription, and a VM with a public IP if you want to serve a page.</p>
+
+  <h2 id="zone">4. Part 1: Create the zone</h2>
+
+  <h3><span class="step">Step 1</span>Open Public DNS zones</h3>
+  <p>In the portal, search for <strong>DNS zones</strong>. There are none yet. Click <strong>Create</strong>.</p>
+  <figure>
+    <img loading="lazy" src="images/fig01.png" alt="Public DNS zones page in the Azure portal with no zones listed and a Create button">
+    <figcaption>No public DNS zones in the subscription.</figcaption>
+  </figure>
+
+  <h3><span class="step">Step 2</span>Name the zone after the domain</h3>
+  <p>The zone name must be exactly the domain name. Leave the child zone box unticked, because the parent, <code>dpdns.org</code>, is not hosted in my Azure DNS.</p>
+  <figure class="small">
+    <img loading="lazy" src="images/fig02.png" alt="Create a DNS Zone Basics tab with resource group scslabs-rg, the child zone checkbox unticked and name snvcloud.dpdns.org">
+    <figcaption>The Basics tab with the domain as the zone name.</figcaption>
+  </figure>
+  <figure class="small">
+    <img loading="lazy" src="images/fig03.png" alt="Review and Create tab showing validation passed for zone snvcloud.dpdns.org with 0 record sets">
+    <figcaption>Validation passed. Click <strong>Create</strong>.</figcaption>
+  </figure>
+  <figure>
+    <img loading="lazy" src="images/fig04.png" alt="Public DNS zones list showing snvcloud.dpdns.org with 2 record sets and a maximum of 10,000 record sets">
+    <figcaption>The zone exists, with 2 record sets created automatically and a limit of 10,000.</figcaption>
+  </figure>
+
+  <h3><span class="step">Step 3</span>Note the four name servers</h3>
+  <p>Open the zone. The overview lists the name servers Azure assigned to it.</p>
+  <figure>
+    <img loading="lazy" src="images/fig05.png" alt="Overview of the snvcloud.dpdns.org DNS zone showing location Global and four name servers: ns1-01.azure-dns.com, ns2-01.azure-dns.net, ns3-01.azure-dns.org and ns4-01.azure-dns.info">
+    <figcaption>Four name servers, each under a different top-level domain, so a problem with one of those domains cannot take the zone offline.</figcaption>
+  </figure>
+  <p>The same four appear in the zone's NS record, alongside the SOA record. These two record sets are created with every zone and should be left alone.</p>
+  <figure>
+    <img loading="lazy" src="images/fig06.png" alt="Recordsets page showing the default NS record with four Azure name servers and TTL 172800, and the SOA record with TTL 3600">
+    <figcaption>The default NS and SOA records.</figcaption>
+  </figure>
+
+  <h2 id="delegate">5. Part 2: Delegate the domain to Azure</h2>
+
+  <h3><span class="step">Step 4</span>Set the name servers at the registrar</h3>
+  <p>In the DigitalPlat dashboard, open the domain, go to <strong>DNS → Nameservers</strong>, and enter the four Azure name servers without the trailing dot.</p>
+  <figure>
+    <img loading="lazy" src="images/fig07.png" alt="DigitalPlat domain management page for snvcloud.dpdns.org with the Nameservers tab showing the four Azure DNS name servers entered">
+    <figcaption>All four Azure name servers entered at the registrar. The order does not matter.</figcaption>
+  </figure>
+  <div class="note">
+    <strong>Use your own values</strong>
+    The number in the name server names differs from zone to zone. Copy the four from your zone's overview page, never from a tutorial.
+  </div>
+
+  <h3><span class="step">Step 5</span>Confirm the delegation has spread</h3>
+  <p>A propagation checker asks resolvers around the world for the domain's NS records. Every location returned the Azure name servers within a few minutes.</p>
+  <figure>
+    <img loading="lazy" src="images/fig08.png" alt="whatsmydns.net results for the NS records of snvcloud.dpdns.org, showing the four Azure name servers with green ticks from locations in the United States, Canada, Mexico, Brazil, Spain and France, and a world map covered in ticks">
+    <figcaption>NS lookups from around the world all return the Azure name servers.</figcaption>
+  </figure>
+
+  <h2 id="web">6. Part 3: Put a web server behind the name</h2>
+  <p>DNS only maps a name to an address. To see something at that address, I installed a web server on the VM.</p>
+
+  <h3><span class="step">Step 6</span>Install Apache</h3>
+  <figure>
+    <img loading="lazy" src="images/fig09.png" alt="Terminal on scsubtusrv01 running apt install apache2 and downloading the packages">
+    <figcaption>Installing Apache with <code>apt install apache2</code>.</figcaption>
+  </figure>
+
+  <h3><span class="step">Step 7</span>Allow HTTP through the network security group</h3>
+  <p>On the VM, open <strong>Networking → Network settings</strong> and add an inbound rule for port 80.</p>
+  <figure>
+    <img loading="lazy" src="images/fig10.png" alt="Network settings of scsubtusrv01 with the Add inbound security rule panel open: source Any, destination port 80, action Allow, priority 310, name http">
+    <figcaption>An inbound rule allowing port 80, priority 310.</figcaption>
+  </figure>
+  <div class="note warn">
+    <strong>Tighter is better</strong>
+    I left the protocol as Any for the lab. HTTP only needs <strong>TCP</strong>, so select TCP in a real deployment. The existing SSH rule also carries a warning icon because it is open to the whole internet; restrict its source to your own IP address.
+  </div>
+
+  <h3><span class="step">Step 8</span>Test by IP address first</h3>
+  <p>Before involving DNS, browse to the VM's public IP. If this fails, the problem is the web server or the NSG, not DNS.</p>
+  <figure class="small">
+    <img loading="lazy" src="images/fig11.png" alt="Browser showing the Apache2 default page on Ubuntu, loaded by the VM's public IP address">
+    <figcaption>The Apache default page, loaded by IP address.</figcaption>
+  </figure>
+
+  <h2 id="records">7. Part 4: Add records and test</h2>
+
+  <h3><span class="step">Step 9</span>Add an A record</h3>
+  <p>In the zone, open <strong>Recordsets → Add</strong>. Name the record <code>www</code>, choose type A, and enter the VM's public IP.</p>
+  <figure class="small">
+    <img loading="lazy" src="images/fig12.png" alt="Add record set panel with name www, type A, alias record set No, TTL 1 hour and the VM's public IP address">
+    <figcaption>An A record for <code>www</code> with a TTL of 1 hour.</figcaption>
+  </figure>
+  <p>I also added a TXT record on the domain itself, as a harmless second record to test with.</p>
+  <figure>
+    <img loading="lazy" src="images/fig13.png" alt="Recordsets page now listing four record sets: NS, SOA, a TXT record on @ with the value hello from azure dns, and an A record for www">
+    <figcaption>Four record sets: the two defaults, the TXT record on <code>@</code>, and the A record for <code>www</code>.</figcaption>
+  </figure>
+
+  <h3><span class="step">Step 10</span>Look the records up from outside Azure</h3>
+  <figure class="small">
+    <img loading="lazy" src="images/fig14.png" alt="Terminal on a laptop: nslookup of www.snvcloud.dpdns.org returns the VM's public IP, and a TXT lookup of snvcloud.dpdns.org returns hello from azure dns with the four Azure name servers listed as authoritative">
+    <figcaption>From my laptop: the A record and the TXT record both resolve, and the authoritative servers are Azure's.</figcaption>
+  </figure>
+
+  <h3><span class="step">Step 11</span>Open the site by name</h3>
+  <figure class="small">
+    <img loading="lazy" src="images/fig15.png" alt="Browser showing the Apache2 default page loaded from the domain name">
+    <figcaption>The same Apache page, now loaded by name. Safari hides the <code>www</code> prefix in the address bar.</figcaption>
+  </figure>
+  <div class="note ok">
+    <strong>Result</strong>
+    The domain is hosted in Azure DNS, delegated from the registrar, and serving a page from an Azure VM. The browser says "Not Secure" because the site uses plain HTTP; adding a TLS certificate is a separate step.
+  </div>
+
+  <h2 id="types">8. Record types at a glance</h2>
+  <div class="table-scroll">
+  <table>
+    <thead><tr><th>Type</th><th>Purpose</th><th>Example</th></tr></thead>
+    <tbody>
+      <tr><td>A</td><td>Name to IPv4 address</td><td><code>www</code> → a public IP</td></tr>
+      <tr><td>AAAA</td><td>Name to IPv6 address</td><td><code>www</code> → an IPv6 address</td></tr>
+      <tr><td>CNAME</td><td>Alias to another name</td><td><code>blog</code> → <code>myapp.azurewebsites.net</code></td></tr>
+      <tr><td>MX</td><td>Mail servers for the domain</td><td><code>@</code> → <code>10 mail.example.com</code></td></tr>
+      <tr><td>TXT</td><td>Free text: domain verification, SPF, DKIM</td><td><code>@</code> → <code>v=spf1 ...</code></td></tr>
+      <tr><td>NS</td><td>Name servers for the zone, or delegation of a child zone</td><td><code>dev</code> → another zone's name servers</td></tr>
+      <tr><td>CAA</td><td>Which certificate authorities may issue certificates</td><td><code>@</code> → <code>0 issue "letsencrypt.org"</code></td></tr>
+      <tr><td>Alias (Azure)</td><td>An A, AAAA or CNAME record that follows an Azure resource</td><td><code>@</code> → a public IP resource</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p><code>@</code> stands for the domain itself. A CNAME cannot be placed on <code>@</code>, which is one reason alias records exist.</p>
+
+  <h2 id="trouble">9. Troubleshooting</h2>
+  <div class="table-scroll">
+  <table>
+    <thead><tr><th>Symptom</th><th>Likely cause</th><th>What to check</th></tr></thead>
+    <tbody>
+      <tr><td>Name does not resolve anywhere</td><td>Delegation missing or wrong</td><td>NS lookup of the domain returns the Azure name servers from your zone</td></tr>
+      <tr><td>Azure answers directly, but public resolvers do not</td><td>Registrar still points elsewhere, or the change has not spread</td><td>Name servers at the registrar; wait and retry</td></tr>
+      <tr><td>Resolves to an old IP</td><td>Cached answer, up to the record's TTL</td><td>Query the Azure name server directly; flush the local DNS cache</td></tr>
+      <tr><td>Resolves, but the page does not load</td><td>NSG, web server or VM issue</td><td>Browse by IP; inbound rule for port 80; <code>systemctl status apache2</code></td></tr>
+      <tr><td>Works on <code>www</code> but not on the bare domain</td><td>No record on <code>@</code></td><td>Add an A or alias record for <code>@</code></td></tr>
+      <tr><td>Record stops working after a VM restart</td><td>Dynamic public IP changed</td><td>Make the public IP static, or use an alias record</td></tr>
+    </tbody>
+  </table>
+  </div>
+<pre><code># Ask Azure's name server directly (bypasses caching and delegation)
+nslookup www.snvcloud.dpdns.org ns1-01.azure-dns.com
+
+# Ask a public resolver (tests the full path)
+nslookup www.snvcloud.dpdns.org 8.8.8.8
+
+# Check the delegation
+nslookup -type=NS snvcloud.dpdns.org 8.8.8.8
+
+# Check the web server separately from DNS
+curl -I http://172.182.193.37</code></pre>
+  <p>The first two commands are the key pair. If the first works and the second does not, the zone is fine and the delegation is the problem.</p>
+
+  <h2 id="best">10. Best practices</h2>
+  <h3>Delegation and records</h3>
+  <ul>
+    <li><strong>Enter all four name servers</strong> at the registrar, exactly as Azure lists them.</li>
+    <li><strong>Leave the default NS and SOA records alone.</strong></li>
+    <li><strong>Plan TTLs.</strong> Use a longer TTL, such as an hour, for stable records. Before a planned change, lower the TTL a day ahead so the switch takes effect quickly, then raise it again.</li>
+    <li><strong>Use alias records for Azure resources.</strong> An alias to a public IP, Traffic Manager profile or Front Door updates itself when the resource changes, and it works on the bare domain.</li>
+    <li><strong>Use static public IPs</strong> for anything a record points at.</li>
+    <li><strong>Delete records when you delete resources.</strong> A record left pointing at a released IP or a deleted app can be claimed by someone else, who then serves content on your name. This is known as subdomain takeover.</li>
+  </ul>
+  <h3>Security and governance</h3>
+  <ul>
+    <li><strong>Keep internal names out of public zones.</strong> Everything here is visible to the world. Private IPs and internal hostnames belong in a private zone.</li>
+    <li><strong>Lock the zone.</strong> Add a CanNotDelete resource lock so the zone cannot be removed by accident.</li>
+    <li><strong>Grant least privilege.</strong> Give DNS administrators the DNS Zone Contributor role on the zone rather than Contributor on the subscription.</li>
+    <li><strong>Consider DNSSEC.</strong> Azure can sign a public zone so resolvers can verify its answers. It only takes effect if your registrar can publish the DS record in the parent zone.</li>
+    <li><strong>Add CAA records</strong> to restrict which certificate authorities can issue certificates for the domain.</li>
+    <li><strong>Review the activity log</strong> for record changes, and alert on unexpected ones.</li>
+  </ul>
+  <h3>Operations</h3>
+  <ul>
+    <li><strong>Manage zones as code.</strong> Use Bicep, Terraform or CLI scripts so records are reviewed and repeatable.</li>
+    <li><strong>Export the zone</strong> regularly as a backup: <code>az network dns zone export</code> writes a standard zone file.</li>
+    <li><strong>Delegate child zones</strong> such as <code>dev.snvcloud.dpdns.org</code> to separate teams or environments, so each manages its own records.</li>
+    <li><strong>Serve the site over HTTPS</strong> once DNS works. A free Let's Encrypt certificate is enough for a lab.</li>
+  </ul>
+
+  <h2 id="proscons">11. Pros and cons of Azure public DNS</h2>
+  <div class="proscons">
+    <div class="pro">
+      <h3>Pros</h3>
+      <ul>
+        <li>Global anycast name servers, so queries are answered from a nearby location</li>
+        <li>Very high availability, backed by a Microsoft service level agreement</li>
+        <li>Same portal, CLI, access control, locks and activity log as every other Azure resource</li>
+        <li>Alias records that follow Azure resources automatically</li>
+        <li>Fits infrastructure as code and deployment pipelines</li>
+        <li>Low cost: a small monthly fee per zone plus a charge per million queries</li>
+        <li>DNSSEC signing available</li>
+        <li>Public and private zones managed with the same tooling</li>
+      </ul>
+    </div>
+    <div class="con">
+      <h3>Cons</h3>
+      <ul>
+        <li>Not a registrar, so the domain must be bought and renewed elsewhere</li>
+        <li>Not free, unlike the basic plans of some DNS providers</li>
+        <li>DNS only: no bundled CDN, web firewall or proxy on the name</li>
+        <li>No zone transfers to or from other DNS servers</li>
+        <li>No URL redirect records; redirects need a web server or Front Door</li>
+        <li>Advanced routing such as geographic or weighted answers relies on Traffic Manager</li>
+        <li>DNSSEC depends on the registrar supporting it for your domain</li>
+      </ul>
+    </div>
+  </div>
+  <p><strong>When it fits:</strong> your workloads already run in Azure and you want DNS under the same access control, automation and audit trail. <strong>When to look elsewhere:</strong> you want registration, DNS, CDN and web firewall from a single provider, or a free tier for a hobby domain.</p>
+
+  <h2 id="cli">12. Azure CLI version</h2>
+<pre><code># Create the zone
+az network dns zone create \
+  --resource-group scslabs-rg \
+  --name snvcloud.dpdns.org
+
+# Show the name servers to enter at the registrar
+az network dns zone show \
+  --resource-group scslabs-rg \
+  --name snvcloud.dpdns.org \
+  --query nameServers --output tsv
+
+# A record for www
+az network dns record-set a add-record \
+  --resource-group scslabs-rg \
+  --zone-name snvcloud.dpdns.org \
+  --record-set-name www \
+  --ipv4-address 172.182.193.37
+
+# TXT record on the domain itself
+az network dns record-set txt add-record \
+  --resource-group scslabs-rg \
+  --zone-name snvcloud.dpdns.org \
+  --record-set-name "@" \
+  --value "hello from azure dns"
+
+# Protect the zone from accidental deletion
+az lock create \
+  --name dns-nodelete \
+  --lock-type CanNotDelete \
+  --resource-group scslabs-rg \
+  --resource-name snvcloud.dpdns.org \
+  --resource-type Microsoft.Network/dnszones
+
+# Back up the zone to a file
+az network dns zone export \
+  --resource-group scslabs-rg \
+  --name snvcloud.dpdns.org \
+  --file-name snvcloud.zone</code></pre>
+
+  <h2 id="cleanup">13. Cost and clean-up</h2>
+  <p>A public zone is billed per zone per month, plus a charge per million queries. A lab zone costs well under a dollar a month. The VM and its public IP cost far more, so stop or delete those when you finish. Check the Azure DNS pricing page for current rates.</p>
+  <div class="note warn">
+    <strong>Clean up in the right order</strong>
+    If you delete the zone while the registrar still points at Azure, the domain stops resolving. Change the name servers at the registrar first, then delete the zone. Remove the port 80 rule from the NSG if the web server is no longer needed.
+  </div>
+
+  <h2>Key takeaways</h2>
+  <ul>
+    <li>A public DNS zone hosts a domain's records on Azure's global name servers. Azure does not register domains.</li>
+    <li>The zone only goes live when the registrar delegates the domain to the zone's four name servers.</li>
+    <li>Test in layers: the web server by IP, then Azure's name server directly, then a public resolver.</li>
+    <li>Keep public zones clean: no internal names, no records pointing at resources that no longer exist.</li>
+    <li>Azure DNS suits teams already in Azure; it is not a bundled registrar, CDN and firewall service.</li>
+  </ul>
+
+  <h2>References</h2>
+  <ul>
+    <li><a href="https://learn.microsoft.com/azure/dns/public-dns-overview">What is Azure Public DNS, Microsoft Learn</a></li>
+    <li><a href="https://learn.microsoft.com/azure/dns/dns-delegate-domain-azure-dns">Host your domain in Azure DNS, Microsoft Learn</a></li>
+    <li><a href="https://learn.microsoft.com/azure/dns/dns-alias">Alias records overview, Microsoft Learn</a></li>
+    <li><a href="https://azure.microsoft.com/pricing/details/dns/">Azure DNS pricing</a></li>
+    <li><a href="https://github.com/DigitalPlatDev/FreeDomain">DigitalPlat FreeDomain</a></li>
+  </ul>
+
+</article>
+</div>
+</main>
+
+<footer>
+  <p>Written by Nithin Sunke · Azure learning series</p>
+</footer>
+
+</body>
+</html>
