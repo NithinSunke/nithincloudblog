@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Files: Mounting an SMB File Share on Linux, and Fixing Permission Denied</title>
+<meta name="description" content="A hands-on lab that creates an Azure premium file share, mounts it over SMB on an Ubuntu VM, and fixes the permission denied error that the portal's mount script causes, plus how NFS shares differ.">
+<style>
+  :root {
+    --bg: #f6f8fb;
+    --surface: #ffffff;
+    --text: #1c2733;
+    --muted: #5b6b7c;
+    --line: #dde4ec;
+    --accent: #0067b8;
+    --accent-soft: #e6f1fa;
+    --ok: #107c41;
+    --ok-soft: #e7f5ec;
+    --warn: #8a5a00;
+    --warn-soft: #fff5dc;
+    --code-bg: #10202f;
+    --code-text: #e3edf7;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f161d;
+      --surface: #17212b;
+      --text: #e4ebf2;
+      --muted: #9aabbb;
+      --line: #2a3846;
+      --accent: #5db3f0;
+      --accent-soft: #16324a;
+      --ok: #6fd39a;
+      --ok-soft: #153526;
+      --warn: #f0c668;
+      --warn-soft: #3a2f12;
+      --code-bg: #0a1118;
+      --code-text: #dbe7f3;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    font-size: 17px;
+    line-height: 1.7;
+  }
+  header.hero {
+    background: linear-gradient(135deg, #003a6c 0%, #0067b8 60%, #2b8fd6 100%);
+    color: #fff;
+    padding: 56px 20px 48px;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; }
+  .tag {
+    display: inline-block;
+    font-size: 13px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    background: rgba(255,255,255,.16);
+    padding: 4px 12px;
+    border-radius: 999px;
+    margin-bottom: 16px;
+  }
+  h1 {
+    font-size: clamp(28px, 4.6vw, 42px);
+    line-height: 1.2;
+    margin: 0 0 14px;
+    text-wrap: balance;
+  }
+  .hero p.lead { font-size: 19px; margin: 0 0 18px; max-width: 46em; opacity: .95; }
+  .meta { font-size: 14px; opacity: .85; }
+  main { padding: 36px 20px 64px; }
+  article {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: clamp(20px, 4vw, 44px);
+  }
+  h2 {
+    font-size: 26px;
+    line-height: 1.3;
+    margin: 44px 0 12px;
+    padding-top: 8px;
+    border-top: 1px solid var(--line);
+  }
+  h2:first-of-type { margin-top: 28px; }
+  h3 { font-size: 20px; margin: 30px 0 8px; }
+  p { margin: 0 0 16px; }
+  a { color: var(--accent); }
+  ul, ol { padding-left: 24px; margin: 0 0 16px; }
+  li { margin-bottom: 6px; }
+  code {
+    font-family: Consolas, "Cascadia Mono", Menlo, monospace;
+    font-size: .9em;
+    background: var(--accent-soft);
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+  pre {
+    background: var(--code-bg);
+    color: var(--code-text);
+    padding: 16px 18px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: 14.5px;
+    line-height: 1.55;
+    margin: 0 0 18px;
+  }
+  td code { white-space: nowrap; }
+  pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+  nav.toc {
+    background: var(--accent-soft);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 8px;
+  }
+  nav.toc strong { display: block; margin-bottom: 6px; }
+  nav.toc ol { margin: 0; }
+  .table-scroll { overflow-x: auto; margin: 0 0 18px; }
+  table { border-collapse: collapse; width: 100%; font-size: 15.5px; }
+  th, td { border: 1px solid var(--line); padding: 9px 12px; text-align: left; vertical-align: top; }
+  th { background: var(--accent-soft); }
+  figure { margin: 18px 0 24px; }
+  figure img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+  }
+  figure.small img { max-width: min(100%, 540px); }
+  figcaption { font-size: 14px; color: var(--muted); margin-top: 8px; }
+  .note {
+    border-left: 4px solid var(--accent);
+    background: var(--accent-soft);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 0 0 18px;
+  }
+  .note.ok { border-color: var(--ok); background: var(--ok-soft); }
+  .note.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .note > strong:first-child { display: block; margin-bottom: 2px; }
+  .step {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    padding: 2px 10px;
+    border-radius: 4px;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+  @media (prefers-color-scheme: dark) { .step { color: #06131f; } }
+  footer { text-align: center; color: var(--muted); font-size: 14px; padding: 0 20px 40px; }
+.back-home{display:inline-block;margin:0 0 14px;font-size:14px;font-weight:600;text-decoration:none;color:#fff;opacity:.85}
+.back-home:hover{opacity:1;text-decoration:underline}
+</style>
+<style>
+  .diagram { margin: 18px 0 24px; }
+  .diagram svg { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+  .diagram figcaption { font-size: 14px; color: var(--muted); margin-top: 8px; }
+  .dg-vnet { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.2; }
+  .dg-node { fill: var(--surface); stroke: var(--muted); stroke-width: 1; }
+  .dg-zone { fill: var(--ok-soft); stroke: var(--ok); stroke-width: 1.2; }
+  .dg-t { fill: var(--text); font-size: 14px; font-weight: 600; font-family: inherit; }
+  .dg-s { fill: var(--muted); font-size: 12.5px; font-family: inherit; }
+  .dg-net { stroke: var(--muted); stroke-width: 1.6; fill: none; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <a class="back-home" href="../index.html">&#8592;&nbsp;All articles</a>
+    <span class="tag">Azure Storage · Hands-on Lab</span>
+    <h1>Azure Files: Mounting an SMB File Share on Linux, and Fixing Permission Denied</h1>
+    <p class="lead">I created an Azure file share, mounted it on an Ubuntu VM with the portal's own script, and could not write a single file to it. This post covers the setup, why that happens, the one-line fix, and how NFS shares behave differently.</p>
+    <div class="meta">By Nithin Sunke · 17 November 2026 · 10 min read</div>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+<article>
+
+  <nav class="toc" aria-label="Contents">
+    <strong>In this post</strong>
+    <ol>
+      <li><a href="#what">What Azure Files is</a></li>
+      <li><a href="#choices">The choices you make</a></li>
+      <li><a href="#setup">Lab setup</a></li>
+      <li><a href="#p1">Part 1: Create a premium storage account</a></li>
+      <li><a href="#p2">Part 2: Create the SMB share</a></li>
+      <li><a href="#p3">Part 3: Mount it on Linux</a></li>
+      <li><a href="#p4">Part 4: Permission denied, and the fix</a></li>
+      <li><a href="#nfs">Adding an NFS share</a></li>
+      <li><a href="#trouble">Troubleshooting</a></li>
+      <li><a href="#best">Best practices</a></li>
+      <li><a href="#cleanup">Cost and clean-up</a></li>
+    </ol>
+  </nav>
+
+  <h2 id="what">1. What Azure Files is</h2>
+  <p>Azure Files is a managed file share in the cloud. You mount it with the SMB or NFS client already built into Windows, Linux and macOS, and applications read and write it like any network drive. Several machines can mount the same share at the same time, in Azure or on-premises.</p>
+  <div class="table-scroll">
+  <table>
+    <thead><tr><th></th><th>Blob Storage</th><th>Azure Files</th></tr></thead>
+    <tbody>
+      <tr><td>Access</td><td>HTTPS API and tools such as AzCopy</td><td>Mounted as a drive or directory</td></tr>
+      <tr><td>Structure</td><td>Flat, with names that look like folders</td><td>Real folders, file locking, permissions</td></tr>
+      <tr><td>Best for</td><td>Backups, media, logs, data lakes</td><td>Shared application files, home folders, apps that expect a file path</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2 id="choices">2. The choices you make</h2>
+  <h3>Protocol</h3>
+  <div class="table-scroll">
+  <table>
+    <thead><tr><th></th><th>SMB</th><th>NFS</th></tr></thead>
+    <tbody>
+      <tr><td>Clients</td><td>Windows, Linux, macOS</td><td>Linux</td></tr>
+      <tr><td>Storage tier</td><td>HDD or SSD</td><td>SSD only</td></tr>
+      <tr><td>Authentication</td><td>Storage account key, or identity-based with Active Directory or Microsoft Entra</td><td>None; access is controlled by network rules</td></tr>
+      <tr><td>Linux permissions</td><td>Set once at mount time</td><td>Real POSIX owners and modes</td></tr>
+      <tr><td>Port</td><td>TCP 445</td><td>TCP 2049</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>A share uses one protocol, never both. SMB and NFS shares can sit side by side in the same storage account.</p>
+  <h3>Media tier</h3>
+  <ul>
+    <li><strong>HDD (standard)</strong> lives in an ordinary general-purpose v2 storage account and is the low-cost option.</li>
+    <li><strong>SSD (premium)</strong> needs a FileStorage account and gives single-digit millisecond latency. It is also the only tier that supports NFS.</li>
+  </ul>
+  <h3>Billing model</h3>
+  <ul>
+    <li><strong>Provisioned v2</strong> lets you set storage, IOPS and throughput separately. Microsoft recommends it for new deployments.</li>
+    <li><strong>Provisioned v1</strong> is the older SSD model. You choose the size, and IOPS and throughput grow with it.</li>
+    <li><strong>Pay-as-you-go</strong> charges for data stored and each transaction. HDD only.</li>
+  </ul>
+  <p>With either provisioned model you pay for the size you provision, not the amount you use.</p>
+  <h3>Classic file shares or file shares</h3>
+  <p>The portal now labels shares inside a storage account as <strong>classic file shares</strong>. A newer resource type, simply called <strong>file shares</strong>, can be deployed straight into a resource group without a storage account, but for now it supports NFS only. Classic shares support everything, so that is what this lab uses.</p>
+
+  <h2 id="setup">3. Lab setup</h2>
+  <figure class="diagram">
+    <svg viewBox="0 0 760 250" role="img" aria-label="Lab design: a premium storage account holding the SMB share scssmb, mounted by two Ubuntu VMs over SMB on port 445">
+      <rect class="dg-zone" x="230" y="20" width="300" height="90" rx="10"/>
+      <text class="dg-t" x="380" y="48" text-anchor="middle">Storage account: scslabstore01</text>
+      <text class="dg-s" x="380" y="68" text-anchor="middle">FileStorage, SSD, LRS</text>
+      <text class="dg-s" x="380" y="88" text-anchor="middle">Classic file share: scssmb (100 GiB, SMB)</text>
+      <rect class="dg-vnet" x="40" y="160" width="260" height="64" rx="10"/>
+      <text class="dg-t" x="170" y="187" text-anchor="middle">scsubtusrv01</text>
+      <text class="dg-s" x="170" y="207" text-anchor="middle">Mounted at /media/scssmb</text>
+      <rect class="dg-vnet" x="460" y="160" width="260" height="64" rx="10"/>
+      <text class="dg-t" x="590" y="187" text-anchor="middle">scsubtusrv02</text>
+      <text class="dg-s" x="590" y="207" text-anchor="middle">Same share, same files</text>
+      <path class="dg-net" d="M300 110 L200 160"/>
+      <path class="dg-net" d="M460 110 L560 160"/>
+      <text class="dg-s" x="215" y="132" text-anchor="middle">SMB, TCP 445</text>
+      <text class="dg-s" x="545" y="132" text-anchor="middle">SMB, TCP 445</text>
+    </svg>
+    <figcaption>One share, mounted by two VMs. A file written on one appears on the other.</figcaption>
+  </figure>
+  <div class="table-scroll">
+  <table>
+    <thead><tr><th>Item</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Resource group</td><td><code>scslabs-rg</code>, West US 3</td></tr>
+      <tr><td>Storage account</td><td><code>scslabstore01</code>, Azure Files, SSD (premium), LRS</td></tr>
+      <tr><td>Share</td><td><code>scssmb</code>, SMB, 100 GiB</td></tr>
+      <tr><td>Client</td><td><code>scsubtusrv01</code>, Ubuntu</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2 id="p1">4. Part 1: Create a premium storage account</h2>
+
+  <h3><span class="step">Step 1</span>Basics</h3>
+  <p>Create a storage account and choose <strong>Azure Files</strong> as the primary service. That reveals the media tier and billing options.</p>
+  <figure class="small">
+    <img loading="lazy" src="images/fig01.png" alt="Create a storage account Basics tab with name scslabstore01, region West US 3, primary service Azure Files, media tier SSD (premium) and file share billing Provisioned v1">
+    <figcaption>Primary service Azure Files, media tier SSD (premium), billing provisioned v1.</figcaption>
+  </figure>
+  <p>I picked SSD so the same account could hold an NFS share later. I chose provisioned v1; provisioned v2, the next option down, is the recommended model for new accounts and allows a smaller minimum size.</p>
+
+  <h3><span class="step">Step 2</span>Advanced</h3>
+  <figure class="small">
+    <img loading="lazy" src="images/fig02.png" alt="Advanced tab with hierarchical namespace, NFS v3, SFTP and access tiers unavailable for this account kind, and Azure Files settings: managed identity for SMB unticked, require encryption in transit for SMB and for NFS both ticked">
+    <figcaption>The blob options are greyed out because this account kind only holds file shares. Encryption in transit is required for both SMB and NFS.</figcaption>
+  </figure>
+  <p>The "Enable network file system v3" box here is about NFS for Blob Storage, not Azure Files. NFS for file shares is chosen per share later.</p>
+
+  <h3><span class="step">Step 3</span>Networking</h3>
+  <figure class="small">
+    <img loading="lazy" src="images/fig03.png" alt="Networking tab with public network access enabled from all networks and no private endpoint">
+    <figcaption>Public access from all networks, which is fine for SMB with a key but not for NFS.</figcaption>
+  </figure>
+  <div class="note warn">
+    <strong>Plan ahead for NFS</strong>
+    NFS shares have no password, so they rely on the network to keep them private. Before adding an NFS share, change this to <strong>Enable from selected virtual networks and IP addresses</strong> or add a private endpoint. Section 8 covers this.
+  </div>
+
+  <h3><span class="step">Step 4</span>Data protection, security and encryption</h3>
+  <figure class="small">
+    <img loading="lazy" src="images/fig04.png" alt="Data protection tab with all blob options unticked and soft delete for classic file shares enabled for 7 days">
+    <figcaption>Soft delete for file shares, 7 days. The blob options do not apply to this account.</figcaption>
+  </figure>
+  <figure class="small">
+    <img loading="lazy" src="images/fig05.png" alt="Security tab with secure transfer required, storage account key access enabled and minimum TLS 1.2">
+    <figcaption>Leave <strong>Enable storage account key access</strong> on. SMB from Linux signs in with the key.</figcaption>
+  </figure>
+  <figure class="small">
+    <img loading="lazy" src="images/fig06.png" alt="Encryption tab with Microsoft-managed keys selected">
+    <figcaption>Microsoft-managed encryption keys, the default.</figcaption>
+  </figure>
+
+  <h2 id="p2">5. Part 2: Create the SMB share</h2>
+  <figure>
+    <img loading="lazy" src="images/fig07.png" alt="Classic file shares page of scslabstore01 with no shares, a warning about Windows Kerberos RC4 hardening, and settings showing identity-based access not configured, soft delete 7 days and SMB Multichannel enabled">
+    <figcaption>Under <strong>Data storage → Classic file shares</strong>. The Kerberos warning only matters if you use Active Directory sign-in, which this lab does not.</figcaption>
+  </figure>
+
+  <h3><span class="step">Step 5</span>Name, size and protocol</h3>
+  <figure class="small">
+    <img loading="lazy" src="images/fig08.png" alt="New classic file share Basics tab with name scssmb, provisioned storage 100 GiB, showing 3100 IOPS, 10000 burst IOPS and 110 MiB/s, with protocol SMB selected">
+    <figcaption>A 100 GiB SMB share. With provisioned v1, performance is set by the size: here 3,100 IOPS and 110 MiB/s.</figcaption>
+  </figure>
+
+  <h3><span class="step">Step 6</span>Backup</h3>
+  <figure class="small">
+    <img loading="lazy" src="images/fig09.png" alt="Backup tab with Enable backup ticked, creating a new Recovery Services vault with a daily policy retained for 30 days">
+    <figcaption>Backup is ticked by default and would create a Recovery Services vault with a daily policy.</figcaption>
+  </figure>
+  <p>Azure Backup is the right choice for real data, but the vault and its backups are billed separately. For a lab, untick it. The share overview below shows backup as not configured.</p>
+  <figure>
+    <img loading="lazy" src="images/fig10.png" alt="Overview of the SMB classic file share scssmb showing 100 GiB provisioned, 0 used, 3100 IOPS, 110 MiB/s, soft delete 7 days, SMB Multichannel enabled and backup not configured">
+    <figcaption>The new share. Its address is <code>https://scslabstore01.file.core.windows.net/scssmb</code>.</figcaption>
+  </figure>
+
+  <h2 id="p3">6. Part 3: Mount it on Linux</h2>
+
+  <h3><span class="step">Step 7</span>Find the key and the mount script</h3>
+  <figure class="small">
+    <img loading="lazy" src="images/fig11.png" alt="Access keys page of scslabstore01 with key1 revealed and copied; the key is masked">
+    <figcaption><strong>Security + networking → Access keys</strong>. The key is masked here; treat it like a root password.</figcaption>
+  </figure>
+  <p>You rarely need to copy the key yourself. The share's <strong>Connect</strong> button builds a complete Linux script with the key already in it.</p>
+  <figure>
+    <img loading="lazy" src="images/fig12.png" alt="Connect panel for scssmb on the Linux tab showing a generated script that creates /media/scssmb, writes a credentials file, adds an fstab entry and mounts the share; the key is masked">
+    <figcaption>The generated script. It creates the mount point and a credentials file, adds an <code>/etc/fstab</code> line, and mounts the share.</figcaption>
+  </figure>
+
+  <h3><span class="step">Step 8</span>Check port 445 and the SMB client</h3>
+<pre><code>nc -zv scslabstore01.file.core.windows.net 445
+sudo apt update &amp;&amp; sudo apt install -y cifs-utils</code></pre>
+  <figure>
+    <img loading="lazy" src="images/fig13.png" alt="Terminal: nc to port 445 on scslabstore01.file.core.windows.net succeeds, and cifs-utils is already the newest version">
+    <figcaption>Port 445 is reachable and <code>cifs-utils</code> is already installed.</figcaption>
+  </figure>
+  <p>Many home and office internet providers block port 445. From an Azure VM it is open, but test it before blaming anything else.</p>
+
+  <h3><span class="step">Step 9</span>Run the script</h3>
+  <figure>
+    <img loading="lazy" src="images/fig14.png" alt="Terminal running the portal's mount script, followed by df showing //scslabstore01.file.core.windows.net/scssmb mounted at /media/scssmb with 100G size; the key is masked">
+    <figcaption>The share mounts at <code>/media/scssmb</code> and <code>df</code> shows its 100 GiB.</figcaption>
+  </figure>
+  <p>The <code>mount: (hint)</code> message is not an error. The script edited <code>/etc/fstab</code>, and systemd wants to reload it: run <code>sudo systemctl daemon-reload</code>.</p>
+
+  <h2 id="p4">7. Part 4: Permission denied, and the fix</h2>
+
+  <h3>The problem</h3>
+  <p>The share mounted, but my normal user could not create a file. With <code>sudo</code> it worked. Changing ownership or modes silently did nothing.</p>
+  <figure class="small">
+    <img loading="lazy" src="images/fig15.png" alt="Terminal in /media/scssmb: touch fails with permission denied, sudo touch works, rm fails, sudo chown on a directory leaves it owned by root, and chmod 777 has no effect">
+    <figcaption><code>touch</code> fails, <code>sudo touch</code> works, and <code>chown</code> leaves the folder owned by <code>root</code>.</figcaption>
+  </figure>
+
+  <h3>Why it happens</h3>
+  <p>An SMB share does not store Linux owners and permission bits. The Linux client invents them for every file from the mount options. The portal's script mounts with:</p>
+<pre><code>dir_mode=0755,file_mode=0755</code></pre>
+  <p>and no owner, so the client shows every file as owned by <code>root</code> with mode 755. Only root can write. <code>chown</code> and <code>chmod</code> cannot change this, because there is nowhere on the share to save the result.</p>
+
+  <h3>The fix</h3>
+  <p>Tell the client which user should appear to own the files, by adding <code>uid</code> and <code>gid</code>:</p>
+<pre><code>sudo umount /media/scssmb
+sudo mount -t cifs //scslabstore01.file.core.windows.net/scssmb /media/scssmb \
+  -o credentials=/etc/smbcredentials/scslabstore01.cred,uid=$(id -u),gid=$(id -g),dir_mode=0755,file_mode=0644,serverino,nosharesock,mfsymlinks,actimeo=30</code></pre>
+  <figure>
+    <img loading="lazy" src="images/fig16.png" alt="Terminal: after remounting with uid and gid, ls -ld shows /media/scssmb owned by nsunke, and touch, rm and rm -rf all work without sudo">
+    <figcaption>The mount point now belongs to <code>nsunke</code>, and files can be created and removed without <code>sudo</code>.</figcaption>
+  </figure>
+  <div class="note ok">
+    <strong>Result</strong>
+    The share is mounted and writable by the normal user. For a share that several Linux users must write to, use <code>dir_mode=0777,file_mode=0777</code> instead of <code>uid</code> and <code>gid</code>.
+  </div>
+
+  <h3>Make it survive a reboot</h3>
+  <p>The portal's script also added an <code>/etc/fstab</code> line with the old options, so the share would come back owned by root after a restart. Edit that line to include <code>uid=1000,gid=1000,dir_mode=0755,file_mode=0644</code> (check your IDs with <code>id</code>), then test it:</p>
+<pre><code>sudo systemctl daemon-reload
+sudo umount /media/scssmb &amp;&amp; sudo mount -a
+ls -ld /media/scssmb</code></pre>
+  <p>Repeat the mount on a second VM, write a file on one and read it on the other, and you have shared storage for both.</p>
+
+  <h2 id="nfs">8. Adding an NFS share</h2>
+  <p>The account is SSD, so an NFS share can go in the same account. I have not captured screenshots for this part.</p>
+  <ol>
+    <li><strong>Restrict the network.</strong> In <strong>Security + networking → Networking</strong>, choose <strong>Enable from selected virtual networks and IP addresses</strong> and add the subnets of the VMs that will mount the share. NFS has no password, so this is its access control.</li>
+    <li><strong>Create the share.</strong> Add a classic file share named <code>scsnfs</code>, set the protocol to <strong>NFS</strong>, and choose <strong>No root squash</strong> for a lab.</li>
+    <li><strong>Mount it.</strong> Open the share and click <strong>Connect</strong>. Because encryption in transit is required for NFS on this account, the page gives commands for Microsoft's <code>aznfs</code> mount helper. Use them as shown. The mount path has the form <code>scslabstore01.file.core.windows.net:/scslabstore01/scsnfs</code>.</li>
+  </ol>
+  <p>Then try the test that failed on SMB:</p>
+<pre><code>sudo mkdir /media/scsnfs/test
+sudo chown nsunke:nsunke /media/scsnfs/test
+ls -ld /media/scsnfs/test     # really owned by nsunke</code></pre>
+  <p>On NFS, ownership and permissions are stored on the share, so <code>chown</code> takes effect and every client sees the same owner.</p>
+
+  <h2 id="trouble">9. Troubleshooting</h2>
+  <div class="table-scroll">
+  <table>
+    <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+    <tbody>
+      <tr><td>SMB: permission denied as a normal user</td><td>Mounted without <code>uid</code> and <code>gid</code>, so files appear owned by root</td><td>Remount with <code>uid</code>, <code>gid</code> or wider modes</td></tr>
+      <tr><td>SMB: <code>chown</code> or <code>chmod</code> has no effect</td><td>SMB does not store Linux ownership</td><td>Set ownership through mount options</td></tr>
+      <tr><td>SMB: <code>mount error(13): Permission denied</code></td><td>Wrong key, or key access disabled on the account</td><td>Check the credentials file and the account's key access setting</td></tr>
+      <tr><td>SMB: mount times out</td><td>Port 445 blocked</td><td>Test with <code>nc -zv ... 445</code>; mount from an Azure VM or over VPN</td></tr>
+      <tr><td><code>mount: (hint) your fstab has been modified</code></td><td>systemd has not reloaded fstab</td><td><code>sudo systemctl daemon-reload</code></td></tr>
+      <tr><td>Share comes back owned by root after reboot</td><td>The fstab line still has the old options</td><td>Add <code>uid</code> and <code>gid</code> to the fstab line</td></tr>
+      <tr><td>NFS: access denied by server</td><td>The VM's subnet is not allowed on the account</td><td>Add the subnet under Networking</td></tr>
+      <tr><td>NFS: mount hangs</td><td>Encryption in transit required, but plain <code>nfs</code> was used</td><td>Use the <code>aznfs</code> commands from the Connect page</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2 id="best">10. Best practices</h2>
+  <ul>
+    <li><strong>Protect the storage account key.</strong> It gives full control of the account. Keep it only in a root-readable credentials file, never in scripts or screenshots, and rotate it if it is ever exposed. The Connect script also leaves the key in your shell history.</li>
+    <li><strong>Prefer identity-based access for SMB</strong> where you can, using Active Directory or Microsoft Entra, so users sign in as themselves instead of sharing the key.</li>
+    <li><strong>Restrict the network.</strong> Use selected networks or a private endpoint, especially for NFS.</li>
+    <li><strong>Keep encryption in transit required.</strong> It needs SMB 3 or later, which every current Linux client supports.</li>
+    <li><strong>Set ownership at mount time</strong> for SMB on Linux, and write the same options to fstab.</li>
+    <li><strong>Use <code>nofail</code> in fstab</strong> so the VM still boots if the share is unreachable.</li>
+    <li><strong>Turn on soft delete and snapshots</strong>, and Azure Backup for data that matters.</li>
+    <li><strong>Size deliberately.</strong> Provisioned shares bill for their full size; provisioned v2 lets you choose capacity, IOPS and throughput separately.</li>
+    <li><strong>Use the right storage for databases.</strong> File shares suit dumps, exports and scripts. Database data files belong on managed disks.</li>
+  </ul>
+
+  <h2 id="cleanup">11. Cost and clean-up</h2>
+  <p>A provisioned share is billed for its full size every hour, used or not. This 100 GiB SSD share costs far more than a few files in Blob Storage, so delete it when the lab is over.</p>
+<pre><code># On each VM
+sudo umount /media/scssmb
+sudo sed -i '/scslabstore01.file.core.windows.net/d' /etc/fstab
+sudo rm -f /etc/smbcredentials/scslabstore01.cred</code></pre>
+  <p>Then delete the share, or the whole storage account, in the portal. Soft delete keeps a deleted share for 7 days, so it may still be billed until that period ends.</p>
+
+  <h2>Key takeaways</h2>
+  <ul>
+    <li>Azure Files gives several machines one shared folder, mounted with ordinary SMB or NFS clients.</li>
+    <li>NFS needs SSD and relies on network rules; SMB works on HDD or SSD and signs in with a key or an identity.</li>
+    <li>On Linux, an SMB share has no real owners. The mount options decide who can write.</li>
+    <li>The portal's mount script mounts as root only. Add <code>uid</code> and <code>gid</code>, and update fstab to match.</li>
+    <li>Provisioned shares bill for what you provision, so size them carefully and delete lab shares promptly.</li>
+  </ul>
+
+  <h2>References</h2>
+  <ul>
+    <li><a href="https://learn.microsoft.com/azure/storage/files/storage-files-planning">Plan for an Azure Files deployment, Microsoft Learn</a></li>
+    <li><a href="https://learn.microsoft.com/azure/storage/files/storage-how-to-use-files-linux">Mount SMB Azure file shares on Linux clients, Microsoft Learn</a></li>
+    <li><a href="https://learn.microsoft.com/azure/storage/files/storage-files-how-to-mount-nfs-shares">Mount NFS Azure file shares on Linux, Microsoft Learn</a></li>
+    <li><a href="https://learn.microsoft.com/azure/storage/files/understanding-billing">Understand Azure Files billing, Microsoft Learn</a></li>
+  </ul>
+
+</article>
+</div>
+</main>
+
+<footer>
+  <p>Written by Nithin Sunke · Azure learning series</p>
+</footer>
+
+</body>
+</html>
